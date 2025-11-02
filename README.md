@@ -1,2 +1,2 @@
 # alligator
-Software engineering and quality assurance course
+ Software Development and Quality Assurance course
