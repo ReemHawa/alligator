@@ -10,10 +10,30 @@ public class board {
 		private final boolean[][] mines = new boolean[rows][cols];
 	    private final boolean[][] revealed = new boolean[rows][cols];
 	    private final int[][] surroundingMines = new int[rows][cols];
+	    private final cellType[][] type = new cellType[rows][cols];
 
 	    public board() {
 	        placeMines();
 	        computeSurroundingMines();
+	        assignBaseTypes();
+	    }
+	    
+	    private void assignBaseTypes() {
+	    	for (int r=0; r<rows;r++) {
+	    		for(int c=0;c<cols;c++) {
+	    			if(mines[r][c]) {
+	    				type[r][c]=cellType.mine;
+	    			}else if (surroundingMines[r][c]==0) {
+	    				type[r][c]=cellType.empty;
+	    			}else {
+	    				type[r][c]=cellType.number;
+	    			}
+	    		}
+	    	}
+	    }
+	    
+	    public cellType getType(int r, int c ) {
+	    	return type[r][c];
 	    }
 
 	    private void placeMines() {
