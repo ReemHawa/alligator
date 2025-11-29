@@ -50,7 +50,9 @@ public class gameView extends JFrame {
 
         // Hearts panel
         JPanel lifePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5)) {
-            @Override
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {}
         };
         lifePanel.setOpaque(false);
@@ -130,7 +132,9 @@ public class gameView extends JFrame {
     }
 
     private static class BackgroundPanel extends JPanel {
-        private Image bg;
+       
+		private static final long serialVersionUID = 1L;
+		private Image bg;
         BackgroundPanel(String path) {
             try {
                 bg = new ImageIcon(path).getImage();

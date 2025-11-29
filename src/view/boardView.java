@@ -17,7 +17,6 @@ public class boardView extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
 
-    private final int boardIndex;
     private final JButton[][] buttons = new JButton[board.rows][board.cols];
     private final JPanel borderPanel = new JPanel(new GridBagLayout());
     private final ArrayList<ImageIcon> stoneIcons = new ArrayList<>();
@@ -31,7 +30,6 @@ public class boardView extends JPanel {
     private final gameController controller;
 
     public boardView(int boardIndex, String title, gameController controller) {
-        this.boardIndex = boardIndex;
         this.controller = controller;
 
         setLayout(new BorderLayout());
@@ -167,4 +165,8 @@ public class boardView extends JPanel {
             default: return Color.WHITE;
         }
     }
+
+	public gameController getController() {
+		return controller;
+	}
 }

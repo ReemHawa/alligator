@@ -4,6 +4,9 @@ import model.board;
 import model.game;
 import view.gameView;
 
+import static model.board.cols;
+import static model.board.rows;
+
 import javax.swing.*;
 
 public class gameController {
@@ -76,7 +79,7 @@ public class gameController {
                 int nr = row + di;
                 int nc = col + dj;
                 if (di == 0 && dj == 0) continue;
-                if (nr < 0 || nr >= board.rows || nc < 0 || nc >= board.cols) continue;
+                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
 
                 if (!board.isRevealed(nr, nc) && !board.isMine(nr, nc)) {
                     board.setRevealed(nr, nc);
