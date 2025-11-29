@@ -96,11 +96,13 @@ public class boardView extends JPanel {
         btn.setEnabled(false);
         btn.setIcon(null);
 
-        if (count > 0) {
-            btn.setText(String.valueOf(count));
+        if (count == 0) {
+           btn.setText("");
+           return;
+        }
+         btn.setText(String.valueOf(count));
             btn.setFont(numberFont);
             btn.setForeground(getNumberColor(count));
-        }
     }
 
     public void revealMineHit(int row, int col) {
