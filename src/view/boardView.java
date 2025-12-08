@@ -3,58 +3,87 @@ package view;
 import controller.gameController;
 import model.board;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import javax.imageio.ImageIO;
 
 public class boardView extends JPanel {
-	
-	private static final long serialVersionUID = 1L;
 
-    private final JButton[][] buttons = new JButton[board.rows][board.cols];
+    private static final long serialVersionUID = 1L;
+
+    private JButton[][] buttons;
+    private ImageIcon[][] stoneForCell;
     private final JPanel borderPanel = new JPanel(new GridBagLayout());
     private final ArrayList<ImageIcon> stoneIcons = new ArrayList<>();
-    private final ImageIcon[][] stoneForCell = new ImageIcon[board.rows][board.cols];
 
     private final Font numberFont = new Font("Verdana", Font.BOLD, 20);
+    private static int TILE_SIZE = 40;
 
-    private static final int TILE_SIZE = 40;
-    private static final String STONES_FOLDER = "src/stones/";
+    private boolean flagMode = false;
+    private ImageIcon flagIcon;
+    private final JLabel flagButton;
 
-    private final gameController controller;
+    
+    private static final String FLAG = "/images/flag.png";
+    private static final String STONES_FOLDER = "/stones/";
+
+    private final int rows;
+    private final int cols;
 
     public boardView(int boardIndex, String title, gameController controller) {
-        this.controller = controller;
+
+        board model = controller.getModel().getBoard(boardIndex);
+        this.rows = model.getRows();
+        this.cols = model.getCols();
+        
+        if (this.rows == 9 && cols == 9) {   //   Easy level
+            TILE_SIZE= 45;                
+        }
+        if (this.rows == 16 && cols == 16) {   // Hard level
+            TILE_SIZE= 32;                
+        }
+
+        buttons = new JButton[rows][cols];
+        stoneForCell = new ImageIcon[rows][cols];
 
         setLayout(new BorderLayout());
         setOpaque(false);
 
+        // Load flag icon from resources
+        flagIcon = loadIcon(FLAG, 32, 32);
+        flagButton = new JLabel(flagIcon);
+        flagButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
         JLabel label = new JLabel(title, SwingConstants.CENTER);
         label.setForeground(Color.WHITE);
         label.setFont(new Font("Verdana", Font.BOLD, 26));
-        add(label, BorderLayout.NORTH);
 
-        borderPanel.setOpaque(false);
-        JPanel boardPanel = new JPanel(new GridLayout(board.rows, board.cols, 2, 2));
-        boardPanel.setOpaque(false);
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        topPanel.setOpaque(false);
+        topPanel.add(label);
+        topPanel.add(flagButton);
+        add(topPanel, BorderLayout.NORTH);
 
+        // Load stone icons
         loadStoneIcons();
-
         Random r = new Random();
-        for (int i = 0; i < board.rows; i++) {
-            for (int j = 0; j < board.cols; j++) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 stoneForCell[i][j] = stoneIcons.get(r.nextInt(stoneIcons.size()));
             }
         }
 
-        for (int row = 0; row < board.rows; row++) {
-            for (int col = 0; col < board.cols; col++) {
+        borderPanel.setOpaque(false);
+        JPanel boardPanel = new JPanel(new GridLayout(rows, cols, 2, 2));
+        boardPanel.setOpaque(false);
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+
                 final int rIdx = row;
                 final int cIdx = col;
 
@@ -64,10 +93,17 @@ public class boardView extends JPanel {
                 btn.setFocusPainted(false);
                 btn.setContentAreaFilled(false);
                 btn.setMargin(new Insets(0, 0, 0, 0));
+
                 btn.setIcon(stoneForCell[row][col]);
                 btn.setHorizontalTextPosition(SwingConstants.CENTER);
 
-                btn.addActionListener(e -> controller.handleCellClick(boardIndex, rIdx, cIdx));
+                btn.addActionListener(e -> {
+                    if (flagMode) {
+                        controller.handleFlagClick(boardIndex, rIdx, cIdx);
+                    } else {
+                        controller.handleCellClick(boardIndex, rIdx, cIdx);
+                    }
+                });
 
                 buttons[row][col] = btn;
                 boardPanel.add(btn);
@@ -78,31 +114,49 @@ public class boardView extends JPanel {
         add(borderPanel, BorderLayout.CENTER);
 
         setActive(false);
-    }
 
-    // ---------------- PUBLIC METHODS FOR Controller ----------------
+        flagButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                controller.toggleFlagMode(boardIndex);
+            }
+        });
+    }
 
     public void setActive(boolean active) {
         Color borderColor = active ? new Color(255, 165, 0) : new Color(150, 150, 150);
         borderPanel.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(borderColor, 4, true),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                BorderFactory.createEmptyBorder(1, 1, 1, 1)
         ));
+    }
+
+    public void setFlagMode(boolean enabled) {
+        this.flagMode = enabled;
+    }
+
+    public void setFlagAtCell(int row, int col) {
+        JButton btn = buttons[row][col];
+        btn.setIcon(flagIcon);
+        btn.setText(null);
+        btn.setEnabled(false);
     }
 
     public void revealSafeCell(int row, int col, int count) {
         JButton btn = buttons[row][col];
         if (!btn.isEnabled()) return;
+
         btn.setEnabled(false);
         btn.setIcon(null);
 
         if (count == 0) {
-           btn.setText("");
-           return;
+            btn.setText("");
+            return;
         }
-         btn.setText(String.valueOf(count));
-            btn.setFont(numberFont);
-            btn.setForeground(getNumberColor(count));
+
+        btn.setText(String.valueOf(count));
+        btn.setFont(numberFont);
+        btn.setForeground(getNumberColor(count));
     }
 
     public void revealMineHit(int row, int col) {
@@ -115,10 +169,11 @@ public class boardView extends JPanel {
     }
 
     public void revealAllMines(board model) {
-        for (int r = 0; r < board.rows; r++) {
-            for (int c = 0; c < board.cols; c++) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
                 JButton btn = buttons[r][c];
                 btn.setEnabled(false);
+
                 if (model.isMine(r, c)) {
                     btn.setIcon(null);
                     btn.setText("💣");
@@ -129,29 +184,48 @@ public class boardView extends JPanel {
         }
     }
 
-    // ---------------- HELPER METHODS ----------------
-
+    // ------------------------------------------------------------
+    // FIXED: Load stones from resources inside JAR
+    // ------------------------------------------------------------
     private void loadStoneIcons() {
-        File folder = new File(STONES_FOLDER);
-        File[] files = folder.listFiles();
+        try {
+            // Try loading 20 stone images automatically
+            for (int i = 1; i <= 20; i++) {
+                String path = STONES_FOLDER + "stone" + i + ".png";
+                java.net.URL url = getClass().getResource(path);
 
-        if (files != null) {
-            for (File f : files) {
-                if (f.getName().toLowerCase().endsWith(".png")) {
-                    stoneIcons.add(loadAndScaleIcon(f.getPath(), TILE_SIZE, TILE_SIZE));
+                if (url != null) {
+                    stoneIcons.add(loadIcon(path, TILE_SIZE, TILE_SIZE));
                 }
             }
+        } catch (Exception ignored) {}
+    }
+
+
+    private ImageIcon loadIcon(String path, int w, int h) {
+        try {
+            java.net.URL url = getClass().getResource(path);
+            if (url == null) return emptyIcon(w, h);
+
+            BufferedImage img = ImageIO.read(url);
+
+            BufferedImage resized = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = resized.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.drawImage(img, 0, 0, w, h, null);
+            g2.dispose();
+
+            return new ImageIcon(resized);
+        } catch (Exception e) {
+            return emptyIcon(w, h);
         }
     }
 
-    private ImageIcon loadAndScaleIcon(String path, int w, int h) {
-        try {
-            BufferedImage img = ImageIO.read(new File(path));
-            Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaled);
-        } catch (IOException e) {
-            return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
-        }
+
+    private ImageIcon emptyIcon(int w, int h) {
+        return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
     }
 
     private Color getNumberColor(int n) {
@@ -167,8 +241,4 @@ public class boardView extends JPanel {
             default: return Color.WHITE;
         }
     }
-
-	public gameController getController() {
-		return controller;
-	}
 }
