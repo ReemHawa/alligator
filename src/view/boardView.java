@@ -25,11 +25,14 @@ public class boardView extends JPanel {
 
     private boolean flagMode = false;
     private ImageIcon flagIcon;
+    private ImageIcon mineIcon;
     private final JLabel flagButton;
 
     
     private static final String FLAG = "/images/flag.png";
     private static final String STONES_FOLDER = "/stones/";
+    private static final String MINE = "/images/mine.png";
+
 
     private final int rows;
     private final int cols;
@@ -162,10 +165,14 @@ public class boardView extends JPanel {
     public void revealMineHit(int row, int col) {
         JButton btn = buttons[row][col];
         btn.setEnabled(false);
-        btn.setIcon(null);
+      /**  btn.setIcon(null);
         btn.setText("💥");
         btn.setForeground(Color.RED);
-        btn.setFont(numberFont);
+        btn.setFont(numberFont);**/
+        
+        mineIcon = loadIcon(MINE, 32, 32);
+       // btn.setIcon(MINE);
+        btn.setText(null);
     }
 
     public void revealAllMines(board model) {
@@ -184,9 +191,7 @@ public class boardView extends JPanel {
         }
     }
 
-    // ------------------------------------------------------------
-    // FIXED: Load stones from resources inside JAR
-    // ------------------------------------------------------------
+   
     private void loadStoneIcons() {
         try {
             // Try loading 20 stone images automatically

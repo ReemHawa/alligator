@@ -1,0 +1,4 @@
+question,correctAnswer,wrongAnswer1,wrongAnswer2,wrongAnswer3,difficultyLevel,gameLevel
+"In the MVC architecture,what is the main responsibility of the Controller?",Handling user input and directing it to the Model or View.,Storing all application data.,Rendering the final user interface.,Running automated tests.,Hard
+What is the purpose of a Test Plan document?,"Describing the testing strategy,scope,and schedule.",Listing all system requirements.,Designing the system architecture.,Creating user interface mockups.
+"In risk management,what is mitigation?",Reducing the likelihood or impact of a risk.,Ignoring low-impact risks.,Waiting until a risk occurs.,Documenting future requirements only.,Expert
