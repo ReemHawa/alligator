@@ -49,6 +49,7 @@ public class boardView extends JPanel {
         if (this.rows == 16 && cols == 16) {   // Hard level
             TILE_SIZE= 32;                
         }
+        //med level
 
         buttons = new JButton[rows][cols];
         stoneForCell = new ImageIcon[rows][cols];
