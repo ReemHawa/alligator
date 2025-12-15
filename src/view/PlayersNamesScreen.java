@@ -20,7 +20,7 @@ public class PlayersNamesScreen extends JFrame {
         this.levelScreen = levelScreen;
         this.homeScreen = homeScreen;
 
-        setTitle("MineSweepesrPlayers");
+        setTitle("players");
         setSize(800, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
