@@ -55,6 +55,9 @@ public class boardView extends JPanel {
 
         setLayout(new BorderLayout());
         setOpaque(false);
+        
+        mineIcon = loadIcon(MINE, TILE_SIZE, TILE_SIZE);
+
 
         // Load flag icon from resources
         flagIcon = loadIcon(FLAG, 32, 32);
@@ -140,17 +143,34 @@ public class boardView extends JPanel {
 
     public void setFlagAtCell(int row, int col) {
         JButton btn = buttons[row][col];
+
         btn.setIcon(flagIcon);
         btn.setText(null);
-        btn.setEnabled(false);
+
+        // Prevent further clicks without disabling
+        for (java.awt.event.ActionListener al : btn.getActionListeners()) {
+            btn.removeActionListener(al);
+        }
     }
+
 
     public void revealSafeCell(int row, int col, int count) {
         JButton btn = buttons[row][col];
-        if (!btn.isEnabled()) return;
 
-        btn.setEnabled(false);
+        // Prevent double reveal
+        if (btn.getIcon() == null && btn.getText() != null) return;
+
+        // Remove stone icon
         btn.setIcon(null);
+
+        // Disable further clicks WITHOUT disabling the button
+        for (java.awt.event.ActionListener al : btn.getActionListeners()) {
+            btn.removeActionListener(al);
+        }
+
+        btn.setBorder(null);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
 
         if (count == 0) {
             btn.setText("");
@@ -161,35 +181,45 @@ public class boardView extends JPanel {
         btn.setFont(numberFont);
         btn.setForeground(getNumberColor(count));
     }
-
     public void revealMineHit(int row, int col) {
         JButton btn = buttons[row][col];
-        btn.setEnabled(false);
-      /**  btn.setIcon(null);
-        btn.setText("💥");
-        btn.setForeground(Color.RED);
-        btn.setFont(numberFont);**/
-        
-        mineIcon = loadIcon(MINE, 32, 32);
-       // btn.setIcon(MINE);
+
+        // Remove stone
+        btn.setIcon(mineIcon);
         btn.setText(null);
+
+        // Prevent further clicks
+        for (java.awt.event.ActionListener al : btn.getActionListeners()) {
+            btn.removeActionListener(al);
+        }
+
+        btn.setBorder(null);
+        btn.setContentAreaFilled(false);
     }
+
 
     public void revealAllMines(board model) {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
+
                 JButton btn = buttons[r][c];
-                btn.setEnabled(false);
+
+                // Stop interaction
+                for (java.awt.event.ActionListener al : btn.getActionListeners()) {
+                    btn.removeActionListener(al);
+                }
 
                 if (model.isMine(r, c)) {
-                    btn.setIcon(null);
-                    btn.setText("💣");
-                    btn.setForeground(Color.RED);
-                    btn.setFont(numberFont);
+                    btn.setIcon(mineIcon);
+                    btn.setText(null);
+                    btn.setBorder(null);
+                    btn.setContentAreaFilled(false);
                 }
             }
         }
     }
+
+
 
    
     private void loadStoneIcons() {
@@ -235,15 +265,16 @@ public class boardView extends JPanel {
 
     private Color getNumberColor(int n) {
         switch (n) {
-            case 1: return new Color(52, 152, 219);
-            case 2: return new Color(46, 204, 113);
-            case 3: return new Color(231, 76, 60);
-            case 4: return new Color(155, 89, 182);
-            case 5: return new Color(241, 196, 15);
-            case 6: return new Color(26, 188, 156);
-            case 7: return new Color(236, 240, 241);
-            case 8: return new Color(127, 140, 141);
+            case 1: return new Color(52, 152, 219);   // Blue
+            case 2: return new Color(46, 204, 113);   // Green
+            case 3: return new Color(231, 76, 60);    // Red
+            case 4: return new Color(155, 89, 182);   // Purple
+            case 5: return new Color(241, 196, 15);   // Yellow
+            case 6: return new Color(26, 188, 156);   // Teal
+            case 7: return Color.WHITE;
+            case 8: return Color.GRAY;
             default: return Color.WHITE;
         }
     }
+
 }
