@@ -30,14 +30,15 @@ public class gameController {
     public game getModel() {
         return model;
     }
-    
+
     public gameView getView() {
         return view;
     }
-    
+
     public void startGame() {
         if (view != null) {
             view.setVisible(true);
+            // timer is already started in gameView constructor
         }
     }
 
@@ -56,8 +57,6 @@ public class gameController {
         }
 
         board b = model.getBoard(boardIndex);
-      //  int rows = b.getRows();
-      //  int cols = b.getCols();
 
         if (b.isRevealed(row, col)) return;
 
@@ -73,6 +72,9 @@ public class gameController {
             if (model.isGameOver()) {
                 view.revealAllMines(0, model.getBoard(0));
                 view.revealAllMines(1, model.getBoard(1));
+
+                // ✅ stop timer before dialog / restart / exit
+                view.stopTimer();
 
                 int choice = view.showGameOverDialog();
                 if (choice == JOptionPane.YES_OPTION) {
@@ -161,16 +163,16 @@ public class gameController {
     private void checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             model.setGameOver(true);
+            // gameView will stop timer inside showWinForBoth
             view.showWinForBoth(model.getScore());
         }
     }
 
     public void exitToHome() {
+        if (view != null) view.stopTimer();
+
         view.dispose();
         if (homeScreen != null) homeScreen.setVisible(true);
         else new HomeScreen().setVisible(true);
     }
-    
- 
-
 }
