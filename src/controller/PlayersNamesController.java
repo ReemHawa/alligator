@@ -48,7 +48,7 @@ public class PlayersNamesController {
 
         view.setVisible(false);
     }
-      /// the names must have only letters and each name must has at least 4 letters
+      /// the names must have only letters and each name must has at least 4 letterss
     private boolean isValidName(String name) {
         if (name == null) return false;
         return name.matches("^\\S{4,}$");

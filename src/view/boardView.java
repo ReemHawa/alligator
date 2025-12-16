@@ -205,7 +205,7 @@ public class boardView extends JPanel {
 
                 JButton btn = buttons[r][c];
 
-                // Stop interaction
+                
                 for (java.awt.event.ActionListener al : btn.getActionListeners()) {
                     btn.removeActionListener(al);
                 }

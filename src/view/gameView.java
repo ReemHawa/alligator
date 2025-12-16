@@ -127,7 +127,7 @@ public class gameView extends JFrame {
         });
         gameTimer.start();
     }
-   /// when the game finished
+   ///  when the game end
     public void stopTimer() {
         if (gameTimer != null) {
             gameTimer.stop();

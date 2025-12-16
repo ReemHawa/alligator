@@ -18,7 +18,6 @@ public class PlayersNamesScreen extends JFrame {
     private chooseLevelView levelScreen;
     private HomeScreen homeScreen;
     private PlayersNamesController controller;
-    //placeholders for the boxes
     private static final String PH_A = "Enter first player name";     
     private static final String PH_B = "Enter second player name";
 
