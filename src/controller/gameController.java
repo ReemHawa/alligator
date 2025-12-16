@@ -30,20 +30,23 @@ public class gameController {
     public game getModel() {
         return model;
     }
-    
+
     public gameView getView() {
         return view;
     }
-    
+
     public void startGame() {
         if (view != null) {
             view.setVisible(true);
+            // timer is already started in gameView constructor
         }
     }
 
     public void handleCellClick(int boardIndex, int row, int col) {
 
         if (model.isGameOver()) return;
+        
+        board b = model.getBoard(boardIndex);
 
         if (flagMode[boardIndex]) {
             handleFlagClick(boardIndex, row, col);
@@ -55,11 +58,42 @@ public class gameController {
             return;
         }
 
-        board b = model.getBoard(boardIndex);
-      //  int rows = b.getRows();
-      //  int cols = b.getCols();
 
         if (b.isRevealed(row, col)) return;
+        
+        // ===== SURPRISE =====
+        if (b.isSurprise(row, col) && !b.isSurpriseActivated(row, col)) {
+
+            int cost, reward;
+            switch (model.getLevel()) {
+                case EASY: cost = 5; reward = 8; break;
+                case MEDIUM: cost = 8; reward = 12; break;
+                default: cost = 12; reward = 16;
+            }
+
+            model.addToScore(-cost);
+
+            boolean good = b.isGoodSurprise(row, col);
+            int scoreDelta = good ? reward : -reward;
+
+            if (good && model.getLivesRemaining() < model.getMaxLives())
+                model.addLife(1);
+            else if (!good)
+                model.loseLife();
+
+            model.addToScore(scoreDelta);
+
+            b.activateSurprise(row, col);
+            view.activateSurprise(boardIndex, row, col);
+            view.showSurpriseResult(good, scoreDelta, cost);
+
+            view.updateScore(model.getScore());
+            view.updateLives(model.getLivesRemaining());
+
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+            return;
+        }
 
         b.setRevealed(row, col);
 
@@ -73,6 +107,9 @@ public class gameController {
             if (model.isGameOver()) {
                 view.revealAllMines(0, model.getBoard(0));
                 view.revealAllMines(1, model.getBoard(1));
+
+                // ✅ stop timer before dialog / restart / exit
+                view.stopTimer();
 
                 int choice = view.showGameOverDialog();
                 if (choice == JOptionPane.YES_OPTION) {
@@ -161,16 +198,16 @@ public class gameController {
     private void checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             model.setGameOver(true);
+            // gameView will stop timer inside showWinForBoth
             view.showWinForBoth(model.getScore());
         }
     }
 
     public void exitToHome() {
+        if (view != null) view.stopTimer();
+
         view.dispose();
         if (homeScreen != null) homeScreen.setVisible(true);
         else new HomeScreen().setVisible(true);
     }
-    
- 
-
 }

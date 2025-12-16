@@ -32,6 +32,13 @@ public class boardView extends JPanel {
     private static final String FLAG = "/images/flag.png";
     private static final String STONES_FOLDER = "/stones/";
     private static final String MINE = "/images/mine.png";
+    
+    private static final String SURPRISE = "/images/surprise.png";
+    private static final String OPENED_SURPRISE = "/images/openedsurprise.png";
+
+    private ImageIcon surpriseIcon;
+    private ImageIcon openedSurpriseIcon;
+
 
 
     private final int rows;
@@ -58,6 +65,15 @@ public class boardView extends JPanel {
         setOpaque(false);
         
         mineIcon = loadIcon(MINE, TILE_SIZE, TILE_SIZE);
+        
+        //Load surprise icon
+        
+        surpriseIcon = loadIcon(SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
+        openedSurpriseIcon = loadIcon(OPENED_SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
+        
+       
+
+
 
 
         // Load flag icon from resources
@@ -182,6 +198,16 @@ public class boardView extends JPanel {
         btn.setFont(numberFont);
         btn.setForeground(getNumberColor(count));
     }
+    
+    public void revealSurprise(int r, int c) {
+        buttons[r][c].setIcon(surpriseIcon);
+    }
+
+    public void activateSurprise(int r, int c) {
+        buttons[r][c].setIcon(openedSurpriseIcon);
+    }
+
+    
     public void revealMineHit(int row, int col) {
         JButton btn = buttons[row][col];
 
@@ -205,7 +231,7 @@ public class boardView extends JPanel {
 
                 JButton btn = buttons[r][c];
 
-                // Stop interaction
+                
                 for (java.awt.event.ActionListener al : btn.getActionListeners()) {
                     btn.removeActionListener(al);
                 }
@@ -263,6 +289,20 @@ public class boardView extends JPanel {
     private ImageIcon emptyIcon(int w, int h) {
         return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
     }
+    
+    ///////////////////////////////////////////////////////////////////
+ // //////////DEBUG ONLY – reveal all surprise cells at game start//////////////
+    ///////////////////////////////
+    public void debugRevealAllSurprises(board model) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (model.isSurprise(r, c)) {
+                    buttons[r][c].setIcon(surpriseIcon);
+                }
+            }
+        }
+    }
+
 
     private Color getNumberColor(int n) {
         switch (n) {

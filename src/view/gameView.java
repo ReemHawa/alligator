@@ -16,13 +16,16 @@ public class gameView extends JFrame {
     private final boardView[] boardViews = new boardView[2];
     private final JLabel[] heartLabels;
     private JLabel scoreLabel;
+//// timer
+    private JLabel timerLabel;
+    private javax.swing.Timer gameTimer;
+    private int elapsedSeconds = 0;
 
     private final ImageIcon fullheart;
     private final ImageIcon emptyheart;
 
     private JButton btnExit;
 
-    // FIXED: resources inside JAR
     private static final String BG_PATH = "/images/background.jpeg";
     private static final String HEART_FULL = "/images/live.png";
     private static final String HEART_EMPTY = "/images/Llive.png";
@@ -38,67 +41,113 @@ public class gameView extends JFrame {
         BackgroundPanel root = new BackgroundPanel(BG_PATH);
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // top panel
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setOpaque(false);
 
         btnExit = new JButton("Exit to Home");
         topPanel.add(btnExit);
-
         root.add(topPanel, BorderLayout.NORTH);
 
         btnExit.addActionListener(e -> controller.exitToHome());
 
-        // boards
-        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 100, 0));
+        timerLabel = new JLabel("Timer: 00:00");
+        timerLabel.setForeground(Color.WHITE);
+        timerLabel.setFont(new Font("Verdana", Font.BOLD, 26));
+
+        JPanel timerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        timerPanel.setOpaque(false);
+        timerPanel.add(timerLabel);
+
+ 
+        JPanel boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 100, 0));
+        boardsPanel.setOpaque(false);
+        
+        // using the actual player names
+
+        boardViews[0] = new boardView(0, model.getPlayer1Name(), controller);
+        boardViews[1] = new boardView(1, model.getPlayer2Name(), controller);
+
+        
+    ////////////////// // 🔴 DEBUG ONLY///////////////////////////
+      //  boardViews[0].debugRevealAllSurprises(model.getBoard(0));
+       // boardViews[1].debugRevealAllSurprises(model.getBoard(1));
+        
+        
+        boardsPanel.add(boardViews[0]);
+        boardsPanel.add(boardViews[1]);
+
+    
+        JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
 
-        boardViews[0] = new boardView(0, "Player A", controller);
-        boardViews[1] = new boardView(1, "Player B", controller);
-
-        centerPanel.add(boardViews[0]);
-        centerPanel.add(boardViews[1]);
+        centerPanel.add(timerPanel, BorderLayout.NORTH);
+        centerPanel.add(boardsPanel, BorderLayout.CENTER);
 
         root.add(centerPanel, BorderLayout.CENTER);
 
-        // hearts panel
         JPanel lifePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
         lifePanel.setOpaque(false);
 
         heartLabels = new JLabel[model.getMaxLives()];
         for (int i = 0; i < model.getMaxLives(); i++) {
             heartLabels[i] = new JLabel(fullheart);
-            heartLabels[i].setOpaque(false);
             lifePanel.add(heartLabels[i]);
         }
 
-        // score
+     
         scoreLabel = new JLabel("Score: 0");
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Verdana", Font.BOLD, 22));
 
-        // bottom panel 
+ 
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setOpaque(false);
+
         bottomPanel.add(lifePanel, BorderLayout.CENTER);
         bottomPanel.add(scoreLabel, BorderLayout.EAST);
 
         root.add(bottomPanel, BorderLayout.SOUTH);
 
-        setContentPane(root);
-        setSize(1200, 700);
-        //
+                setContentPane(root);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-
         setResizable(false);
         setLocationRelativeTo(null);
         setVisible(true);
 
         setActiveBoard(0);
+
+        // start timer automatically
+        startTimer();
     }
 
-    // methods
+ 
+
+    public void startTimer() {
+        stopTimer();
+        elapsedSeconds = 0;
+        timerLabel.setText("Timer: 00:00");
+
+        gameTimer = new javax.swing.Timer(1000, e -> {
+            elapsedSeconds++;
+            timerLabel.setText("Timer: " + formatTime(elapsedSeconds));
+        });
+        gameTimer.start();
+    }
+   ///  when the game end
+    public void stopTimer() {
+        if (gameTimer != null) {
+            gameTimer.stop();
+            gameTimer = null;
+        }
+    }
+
+    private String formatTime(int totalSeconds) {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
+   
 
     public void setActiveBoard(int playerIndex) {
         boardViews[0].setActive(playerIndex == 0);
@@ -143,11 +192,25 @@ public class gameView extends JFrame {
                 JOptionPane.ERROR_MESSAGE
         );
     }
+    
+    public void activateSurprise(int boardIndex, int row, int col) {
+        boardViews[boardIndex].activateSurprise(row, col);
+    }
+
+    public void showSurpriseResult(boolean good, int scoreDelta, int cost) {
+        String msg = good
+            ? "🎉 Lucky find!\nGood surprise!\n+" + scoreDelta + " points\nCost: -" + cost
+            : "💥 Oops!\nBad surprise!\n" + scoreDelta + " points\nCost: -" + cost;
+
+        JOptionPane.showMessageDialog(this, msg, "Surprise!", JOptionPane.INFORMATION_MESSAGE);
+    }
+
 
     public int showGameOverDialog() {
+        stopTimer();
         return JOptionPane.showOptionDialog(
                 this,
-                "No lives remaining! Game Over!",
+                "No lives remaining!\nTimer: " + formatTime(elapsedSeconds),
                 "Game Over",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.ERROR_MESSAGE,
@@ -158,9 +221,11 @@ public class gameView extends JFrame {
     }
 
     public void showWinForBoth(int finalScore) {
+        stopTimer();
         int choice = JOptionPane.showOptionDialog(
                 this,
-                "You won!\nFinal Score: " + finalScore + "\n\nPlay again?",
+                "You won!\nFinal Score: " + finalScore +
+                        "\nTimer: " + formatTime(elapsedSeconds),
                 "Victory",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
@@ -177,37 +242,46 @@ public class gameView extends JFrame {
         }
     }
 
+
+
     private ImageIcon loadIcon(String path, int w, int h) {
         try {
-            java.net.URL url = getClass().getResource(path);
-            if (url == null) {
-                System.out.println("❌ Missing image: " + path);
+            var url = getClass().getResource(path);
+            if (url == null)
                 return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
-            }
 
             BufferedImage img = ImageIO.read(url);
             Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
             return new ImageIcon(scaled);
-
         } catch (Exception e) {
-            System.out.println("❌ Error loading: " + path);
             return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
         }
+    }
+    
+    public void showSurpriseResult(boolean good, int lifeDelta, int scoreDelta, int cost) {
+        String msg;
+
+        if (good) {
+            msg = "🎉 Lucky you!\nGood surprise!\n" +
+                  "You gained " + lifeDelta + " ❤️ and " + scoreDelta + " points!\n" +
+                  "Activation cost: -" + cost;
+        } else {
+            msg = "😬 Oops!\nBad surprise!\n" +
+                  "You lost 1 ❤️ and " + Math.abs(scoreDelta) + " points!\n" +
+                  "Activation cost: -" + cost;
+        }
+
+        JOptionPane.showMessageDialog(this, msg, "Surprise!", JOptionPane.INFORMATION_MESSAGE);
     }
 
 
     private static class BackgroundPanel extends JPanel {
-        /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		private Image bg;
+        private static final long serialVersionUID = 1L;
+        private Image bg;
 
         BackgroundPanel(String path) {
             try {
-                bg = new ImageIcon(
-                        BackgroundPanel.class.getResource(path)
-                ).getImage();
+                bg = new ImageIcon(BackgroundPanel.class.getResource(path)).getImage();
             } catch (Exception e) {
                 bg = null;
             }
