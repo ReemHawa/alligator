@@ -74,7 +74,7 @@ public class PlayersNamesScreen extends JFrame {
         });
 
         txtPlayerB = new JTextField(PH_B);
-        txtPlayerB.setFont(new Font("Serif", Font.PLAIN, 18));
+        txtPlayerB.setFont(new Font("Arial", Font.PLAIN, 18));
         txtPlayerB.setForeground(new Color(180, 180, 180));
         txtPlayerB.setBounds(260, 280, 280, 48);
         bg.add(txtPlayerB);
@@ -105,7 +105,6 @@ public class PlayersNamesScreen extends JFrame {
 
         btnBack = new JButton("← Go Back");
         btnBack.setBounds(640, 20, 110, 30);
-        btnBack.setFont(new Font("Serif", Font.BOLD, 16));
         bg.add(btnBack);
 
         btnBack.addActionListener(e -> {
