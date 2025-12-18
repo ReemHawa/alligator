@@ -1,8 +1,7 @@
 package view;
 
 import controller.gameHistoryController;
-import controller.gameHistoryController.GameHistoryEntry;
-
+import model.gameHistory;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
@@ -87,7 +86,7 @@ public class gameHistoryView extends JFrame {
         Object[][] data = new Object[rows][columnNames.length];
 
         for (int i = 0; i < rows; i++) {
-            GameHistoryEntry entry = controller.getEntry(i);
+        	gameHistory entry = controller.getEntry(i);
             data[i][0] = entry.getDate();
             data[i][1] = entry.getPlayerA();
             data[i][2] = entry.getPlayerB();
