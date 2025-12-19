@@ -18,6 +18,8 @@ public class board {
     private boolean[][] surprise;
     private boolean[][] goodSurprise;
     private boolean[][] surpriseActivated;
+    private boolean[][] surpriseRevealed;
+
 
     /* ======================================================
        ✅ OLD CONSTRUCTOR (REQUIRED BY game.java)
@@ -43,11 +45,13 @@ public class board {
         surprise = new boolean[rows][cols];
         goodSurprise = new boolean[rows][cols];
         surpriseActivated = new boolean[rows][cols];
+        surpriseRevealed = new boolean[rows][cols];
+
 
         placeMines();
-        placeSurprises(surpriseCount);
         computeSurroundingMines();
         assignBaseTypes();
+        placeSurprises(surpriseCount);
     }
 
     /* ======================================================
@@ -79,17 +83,28 @@ public class board {
             int r = rnd.nextInt(rows);
             int c = rnd.nextInt(cols);
 
-            if (!mines[r][c] && !surprise[r][c]) {
+            if (type[r][c] == cellType.empty && !surprise[r][c]) {
+
                 surprise[r][c] = true;
-                goodSurprise[r][c] = placed < count / 2; // 50/50
+                type[r][c] = cellType.surprise; 
                 placed++;
             }
         }
     }
 
     public boolean isSurprise(int r, int c) {
-        return surprise[r][c];
+        return type[r][c] == cellType.surprise;
     }
+
+    
+    public boolean isSurpriseRevealed(int r, int c) {
+        return surpriseRevealed[r][c];
+    }
+
+    public void revealSurprise(int r, int c) {
+        surpriseRevealed[r][c] = true;
+    }
+
 
     public boolean isGoodSurprise(int r, int c) {
         return goodSurprise[r][c];
@@ -114,12 +129,17 @@ public class board {
     private void assignBaseTypes() {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                if (mines[r][c]) type[r][c] = cellType.mine;
-                else if (surroundingMines[r][c] == 0) type[r][c] = cellType.empty;
-                else type[r][c] = cellType.number;
+                if (mines[r][c]) {
+                    type[r][c] = cellType.mine;
+                } else if (surroundingMines[r][c] > 0) {
+                    type[r][c] = cellType.number;
+                } else {
+                    type[r][c] = cellType.empty;
+                }
             }
         }
     }
+
 
     private void computeSurroundingMines() {
         for (int r = 0; r < rows; r++) {

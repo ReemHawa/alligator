@@ -45,58 +45,102 @@ public class gameController {
     public void handleCellClick(int boardIndex, int row, int col) {
 
         if (model.isGameOver()) return;
-        
+
         board b = model.getBoard(boardIndex);
 
+        // ===== FLAG MODE =====
         if (flagMode[boardIndex]) {
             handleFlagClick(boardIndex, row, col);
             return;
         }
 
+        // ===== TURN CHECK =====
         if (boardIndex != model.getCurrentPlayer()) {
             view.showNotYourTurnMessage();
             return;
         }
 
-
+        // ===== ALREADY REVEALED =====
         if (b.isRevealed(row, col)) return;
-        
-        // ===== SURPRISE =====
-        if (b.isSurprise(row, col) && !b.isSurpriseActivated(row, col)) {
 
-            int cost, reward;
-            switch (model.getLevel()) {
-                case EASY: cost = 5; reward = 8; break;
-                case MEDIUM: cost = 8; reward = 12; break;
-                default: cost = 12; reward = 16;
+        // =====================================================
+        // ================= SURPRISE LOGIC ====================
+        // =====================================================
+        if (b.isSurprise(row, col)) {
+
+            // -------- FIRST CLICK → REVEAL SURPRISE ONLY --------
+            if (!b.isSurpriseRevealed(row, col)) {
+                b.revealSurprise(row, col);
+                view.revealSurprise(boardIndex, row, col);
+
+                // turn switches immediately
+                model.switchTurn();
+                view.setActiveBoard(model.getCurrentPlayer());
+                return;
             }
 
-            model.addToScore(-cost);
+            // -------- SECOND CLICK → ACTIVATE SURPRISE --------
+            if (!b.isSurpriseActivated(row, col)) {
 
-            boolean good = b.isGoodSurprise(row, col);
-            int scoreDelta = good ? reward : -reward;
+                int cost, reward;
+                switch (model.getLevel()) {
+                    case EASY:   cost = 5;  reward = 8;  break;
+                    case MEDIUM: cost = 8;  reward = 12; break;
+                    default:     cost = 12; reward = 16;
+                }
 
-            if (good && model.getLivesRemaining() < model.getMaxLives())
-                model.addLife(1);
-            else if (!good)
-                model.loseLife();
+                boolean good = b.isGoodSurprise(row, col);
 
-            model.addToScore(scoreDelta);
+                // points from surprise itself
+                int rewardPoints = good ? reward : -reward;
 
-            b.activateSurprise(row, col);
-            view.activateSurprise(boardIndex, row, col);
-            view.showSurpriseResult(good, scoreDelta, cost);
+                // extra penalty if good surprise but lives already full
+                boolean livesFull = (model.getLivesRemaining() >= model.getMaxLives());
+                int fullLifePenalty = (good && livesFull) ? cost : 0;
 
-            view.updateScore(model.getScore());
-            view.updateLives(model.getLivesRemaining());
+                // ===== Apply score exactly as rules =====
+                model.addToScore(-cost);            // activation cost
+                model.addToScore(rewardPoints);     // reward (+) or bad (-)
+                model.addToScore(-fullLifePenalty); // extra cost if lives were full
 
-            model.switchTurn();
-            view.setActiveBoard(model.getCurrentPlayer());
-            return;
+                // ===== Apply life change =====
+                int lifeDelta;
+                if (good) {
+                    if (!livesFull) {
+                        model.addLife(1);
+                        lifeDelta = +1;
+                    } else {
+                        // life stays same, paid penalty instead
+                        lifeDelta = 0;
+                    }
+                } else {
+                    model.loseLife();
+                    lifeDelta = -1;
+                }
+
+                b.activateSurprise(row, col);
+                view.activateSurprise(boardIndex, row, col);
+
+                int netPoints = rewardPoints - cost - fullLifePenalty;
+
+                // ✅ updated message (see view change below)
+                view.showSurpriseResult(good, lifeDelta, rewardPoints, cost, fullLifePenalty, netPoints);
+
+                view.updateScore(model.getScore());
+                view.updateLives(model.getLivesRemaining());
+
+                model.switchTurn();
+                view.setActiveBoard(model.getCurrentPlayer());
+                return;
+            }
         }
 
+        // =====================================================
+        // ================= NORMAL CELL =======================
+        // =====================================================
         b.setRevealed(row, col);
 
+        // ===== MINE =====
         if (b.isMine(row, col)) {
 
             model.loseLife();
@@ -105,10 +149,12 @@ public class gameController {
             checkWinForBoard(boardIndex);
 
             if (model.isGameOver()) {
-                view.revealAllMines(0, model.getBoard(0));
-                view.revealAllMines(1, model.getBoard(1));
-
-                // ✅ stop timer before dialog / restart / exit
+            	for (int i = 0; i < 2; i++) {
+            	    view.revealAllMines(i, model.getBoard(i));
+            	    view.revealAllSurprises(i, model.getBoard(i));
+            	}
+               // view.revealAllMines(0, model.getBoard(0));
+               // view.revealAllMines(1, model.getBoard(1));
                 view.stopTimer();
 
                 int choice = view.showGameOverDialog();
@@ -119,8 +165,9 @@ public class gameController {
                     System.exit(0);
                 }
             }
-        } else {
-
+        }
+        // ===== SAFE CELL =====
+        else {
             int count = b.getSurroundingMines(row, col);
             view.revealSafeCell(boardIndex, row, col, count);
 
@@ -131,9 +178,11 @@ public class gameController {
                 floodReveal(boardIndex, row, col);
         }
 
+        // ===== SWITCH TURN =====
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
     }
+
 
     private void floodReveal(int boardIndex, int row, int col) {
         board b = model.getBoard(boardIndex);
@@ -149,16 +198,35 @@ public class gameController {
                 if (di == 0 && dj == 0) continue;
                 if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
 
-                if (!b.isRevealed(nr, nc) && !b.isMine(nr, nc)) {
-                    b.setRevealed(nr, nc);
-                    int count = b.getSurroundingMines(nr, nc);
-                    view.revealSafeCell(boardIndex, nr, nc, count);
+                // already revealed → skip
+                if (b.isRevealed(nr, nc)) continue;
 
-                    model.addToScore(+1);
-                    view.updateScore(model.getScore());
+                // mines are never revealed by cascade
+                if (b.isMine(nr, nc)) continue;
 
-                    if (count == 0)
-                        floodReveal(boardIndex, nr, nc);
+                // ================= SURPRISE CELL =================
+                if (b.isSurprise(nr, nc)) {
+
+                    // reveal surprise visually, but DO NOT activate
+                    if (!b.isSurpriseRevealed(nr, nc)) {
+                        b.revealSurprise(nr, nc);
+                        view.revealSurprise(boardIndex, nr, nc);
+                    }
+
+                    // IMPORTANT: cascade continues through surprise
+                    continue;
+                }
+
+                // ================= NORMAL SAFE CELL =================
+                b.setRevealed(nr, nc);
+                int count = b.getSurroundingMines(nr, nc);
+                view.revealSafeCell(boardIndex, nr, nc, count);
+
+                model.addToScore(+1);
+                view.updateScore(model.getScore());
+
+                if (count == 0) {
+                    floodReveal(boardIndex, nr, nc);
                 }
             }
         }

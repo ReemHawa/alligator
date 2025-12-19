@@ -69,8 +69,8 @@ public class gameView extends JFrame {
 
         
     ////////////////// // 🔴 DEBUG ONLY///////////////////////////
-      //  boardViews[0].debugRevealAllSurprises(model.getBoard(0));
-       // boardViews[1].debugRevealAllSurprises(model.getBoard(1));
+      // boardViews[0].debugRevealAllSurprises(model.getBoard(0));
+     //   boardViews[1].debugRevealAllSurprises(model.getBoard(1));
         
         
         boardsPanel.add(boardViews[0]);
@@ -120,8 +120,15 @@ public class gameView extends JFrame {
         startTimer();
     }
 
- 
+ //////////////////////////
+    /////////////////////////
+    public void revealAllSurprises(int boardIndex, board model) {
+        boardViews[boardIndex].revealAllSurprises(model);
+    }
 
+
+    
+    
     public void startTimer() {
         stopTimer();
         elapsedSeconds = 0;
@@ -193,16 +200,13 @@ public class gameView extends JFrame {
         );
     }
     
-    public void activateSurprise(int boardIndex, int row, int col) {
-        boardViews[boardIndex].activateSurprise(row, col);
+    public void revealSurprise(int boardIndex, int row, int col) {
+        boardViews[boardIndex].revealSurprise(row, col);
     }
 
-    public void showSurpriseResult(boolean good, int scoreDelta, int cost) {
-        String msg = good
-            ? "🎉 Lucky find!\nGood surprise!\n+" + scoreDelta + " points\nCost: -" + cost
-            : "💥 Oops!\nBad surprise!\n" + scoreDelta + " points\nCost: -" + cost;
-
-        JOptionPane.showMessageDialog(this, msg, "Surprise!", JOptionPane.INFORMATION_MESSAGE);
+    
+    public void activateSurprise(int boardIndex, int row, int col) {
+        boardViews[boardIndex].activateSurprise(row, col);
     }
 
 
@@ -258,21 +262,41 @@ public class gameView extends JFrame {
         }
     }
     
-    public void showSurpriseResult(boolean good, int lifeDelta, int scoreDelta, int cost) {
-        String msg;
+    public void showSurpriseResult(boolean good,
+            int lifeDelta,
+            int rewardPoints,
+            int activationCost,
+            int fullLifePenalty,
+            int netPoints) {
 
-        if (good) {
-            msg = "🎉 Lucky you!\nGood surprise!\n" +
-                  "You gained " + lifeDelta + " ❤️ and " + scoreDelta + " points!\n" +
-                  "Activation cost: -" + cost;
-        } else {
-            msg = "😬 Oops!\nBad surprise!\n" +
-                  "You lost 1 ❤️ and " + Math.abs(scoreDelta) + " points!\n" +
-                  "Activation cost: -" + cost;
-        }
+StringBuilder msg = new StringBuilder();
 
-        JOptionPane.showMessageDialog(this, msg, "Surprise!", JOptionPane.INFORMATION_MESSAGE);
-    }
+if (good) {
+msg.append("🎉 Lucky you!\nGood surprise!\n");
+msg.append("Reward: +").append(rewardPoints).append(" points\n");
+msg.append("Activation cost: -").append(activationCost).append(" points\n");
+
+if (lifeDelta == 1) {
+msg.append("Lives: +1 ❤️\n");
+} else {
+// ✅ special condition requested
+msg.append("Lives were full → extra cost: -")
+.append(fullLifePenalty)
+.append(" points (for the extra life)\n");
+}
+
+} else {
+msg.append("😬 Oops!\nBad surprise!\n");
+msg.append("Effect: ").append(rewardPoints).append(" points\n");
+msg.append("Activation cost: -").append(activationCost).append(" points\n");
+msg.append("Lives: -1 ❤️\n");
+}
+
+msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints).append(" points");
+
+JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
+}
+
 
 
     private static class BackgroundPanel extends JPanel {

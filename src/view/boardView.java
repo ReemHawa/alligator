@@ -245,6 +245,37 @@ public class boardView extends JPanel {
             }
         }
     }
+    
+    
+    ////////////////////////surprise test//////////////////
+///////////////////////////////////////////////////////////////////////
+    public void revealAllSurprises(board model) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                if (model.isSurprise(r, c)) {
+
+                    if (model.isSurpriseActivated(r, c)) {
+                        buttons[r][c].setIcon(openedSurpriseIcon);
+                    } else {
+                        buttons[r][c].setIcon(surpriseIcon);
+                    }
+
+                    buttons[r][c].setText(null);
+                    buttons[r][c].setBorder(null);
+                    buttons[r][c].setContentAreaFilled(false);
+
+                    // block further clicks
+                    for (var al : buttons[r][c].getActionListeners()) {
+                        buttons[r][c].removeActionListener(al);
+                    }
+                }
+            }
+        }
+    }
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
 
 
 
