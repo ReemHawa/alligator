@@ -5,7 +5,10 @@ import model.board;
 import model.game;
 import view.HomeScreen;
 import view.gameView;
-
+import model.CSVHandler;
+import model.gameHistory;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 
 public class gameController {
@@ -149,6 +152,9 @@ public class gameController {
             checkWinForBoard(boardIndex);
 
             if (model.isGameOver()) {
+            	
+            	saveGameHistory("lost");
+            	
             	for (int i = 0; i < 2; i++) {
             	    view.revealAllMines(i, model.getBoard(i));
             	    view.revealAllSurprises(i, model.getBoard(i));
@@ -266,10 +272,50 @@ public class gameController {
     private void checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             model.setGameOver(true);
+            
+            saveGameHistory("won");
             // gameView will stop timer inside showWinForBoth
             view.showWinForBoth(model.getScore());
         }
     }
+    
+    private void saveGameHistory(String result) {
+
+        // 1. Date
+        String date = LocalDate.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        // 2. Players
+        String playerA = model.getPlayer1Name();
+        String playerB = model.getPlayer2Name();
+
+        // 3. Duration (from view timer)
+        String duration = view != null
+                ? view.getFormattedElapsedTime()
+                : "00:00";
+
+        // 4. Score
+        int score = model.getScore();
+
+        // 5. Level
+        String level = model.getLevel().name();
+
+        // 6. Create history object
+        gameHistory entry = new gameHistory(
+                date,
+                playerA,
+                playerB,
+                result,
+                duration,
+                score,
+                level
+        );
+
+        // 7. Append to CSV
+        CSVHandler csv = new CSVHandler("src/data/game_history.csv");
+        csv.appendGameHistory(entry);
+    }
+
 
     public void exitToHome() {
         if (view != null) view.stopTimer();
@@ -278,4 +324,6 @@ public class gameController {
         if (homeScreen != null) homeScreen.setVisible(true);
         else new HomeScreen().setVisible(true);
     }
+    
+    
 }

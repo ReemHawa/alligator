@@ -319,4 +319,9 @@ JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INF
             if (bg != null) g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
         }
     }
+    
+    public String getFormattedElapsedTime() {
+        return formatTime(elapsedSeconds);
+    }
+
 }
