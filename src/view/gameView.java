@@ -93,6 +93,7 @@ public class gameView extends JFrame {
             heartLabels[i] = new JLabel(fullheart);
             lifePanel.add(heartLabels[i]);
         }
+        updateLives(model.getLivesRemaining());
 
      
         scoreLabel = new JLabel("Score: 0");

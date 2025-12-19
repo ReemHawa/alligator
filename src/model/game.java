@@ -13,7 +13,7 @@ public class game {
     private int score = 0;
 
     private final int maxLives = 10;
-    private int livesRemaining = maxLives;
+    private int livesRemaining ;
     private boolean gameOver = false;
 
     private DifficultyLevel level;
@@ -29,6 +29,8 @@ public class game {
         int rows = 9;
         int cols = 9;
         int mines = 10;
+        
+        livesRemaining = maxLives;
 
         boards = new board[2];
         boards[0] = new board(rows, cols, mines);
@@ -44,13 +46,13 @@ public class game {
 
         switch (level) {
             case EASY:
-                rows = 9; cols = 9; mines = 10; surprises = 2;
+                rows = 9; cols = 9; mines = 10; surprises = 2; livesRemaining = 10;
                 break;
             case MEDIUM:
-                rows = 13; cols = 13; mines = 26; surprises = 3;
+                rows = 13; cols = 13; mines = 26; surprises = 3;livesRemaining = 8;
                 break;
             case HARD:
-                rows = 16; cols = 16; mines = 44; surprises = 4;
+                rows = 16; cols = 16; mines = 44; surprises = 4; livesRemaining = 6;
                 break;
         }
 
