@@ -209,6 +209,22 @@ public class gameView extends JFrame {
     public void activateSurprise(int boardIndex, int row, int col) {
         boardViews[boardIndex].activateSurprise(row, col);
     }
+    
+    
+    public void removeFlag(int boardIndex, int row, int col) {
+        boardViews[boardIndex].removeFlag(row, col);
+    }
+
+    public void showRemoveFlagMessage() {
+        JOptionPane.showMessageDialog(
+            this,
+            "Remove the flag to reveal the cell",
+            "Flagged Cell",
+            JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+
 
 
     public int showGameOverDialog() {

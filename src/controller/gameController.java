@@ -50,6 +50,11 @@ public class gameController {
         if (model.isGameOver()) return;
 
         board b = model.getBoard(boardIndex);
+        
+        if (b.isFlagged(row, col)) {
+            view.showRemoveFlagMessage();
+            return;
+        }
 
         // ===== FLAG MODE =====
         if (flagMode[boardIndex]) {
@@ -315,6 +320,25 @@ public class gameController {
         CSVHandler csv = new CSVHandler("src/data/game_history.csv");
         csv.appendGameHistory(entry);
     }
+    
+    public void handleRightClick(int boardIndex, int row, int col) {
+
+        if (model.isGameOver()) return;
+
+        board b = model.getBoard(boardIndex);
+
+        // Right click removes flag and switches turn
+        if (b.isFlagged(row, col)) {
+            b.removeFlag(row, col);
+            view.removeFlag(boardIndex, row, col);
+
+            // switch turn
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+        }
+    }
+
+
 
 
     public void exitToHome() {

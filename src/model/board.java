@@ -173,6 +173,11 @@ public class board {
     public boolean isFlagged(int r, int c) {
         return flagged[r][c];
     }
+    
+    public void removeFlag(int r, int c) {
+        flagged[r][c] = false;
+    }
+
 
     /* ======================================================
        STATE

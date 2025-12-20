@@ -120,13 +120,29 @@ public class boardView extends JPanel {
                 btn.setIcon(stoneForCell[row][col]);
                 btn.setHorizontalTextPosition(SwingConstants.CENTER);
 
-                btn.addActionListener(e -> {
-                    if (flagMode) {
-                        controller.handleFlagClick(boardIndex, rIdx, cIdx);
-                    } else {
-                        controller.handleCellClick(boardIndex, rIdx, cIdx);
+                btn.addMouseListener(new java.awt.event.MouseAdapter() {
+
+                    @Override
+                    public void mousePressed(java.awt.event.MouseEvent e) {
+
+                        // ===== RIGHT CLICK → UNFLAG ONLY =====
+                        if (SwingUtilities.isRightMouseButton(e)) {
+                            controller.handleRightClick(boardIndex, rIdx, cIdx);
+                            return;
+                        }
+
+                        // ===== LEFT CLICK =====
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+
+                            if (flagMode) {
+                                controller.handleFlagClick(boardIndex, rIdx, cIdx);
+                            } else {
+                                controller.handleCellClick(boardIndex, rIdx, cIdx);
+                            }
+                        }
                     }
                 });
+
 
                 buttons[row][col] = btn;
                 boardPanel.add(btn);
@@ -246,6 +262,10 @@ public class boardView extends JPanel {
         }
     }
     
+    public void removeFlag(int row, int col) {
+        buttons[row][col].setIcon(stoneForCell[row][col]);
+    }
+
     
     ////////////////////////surprise test//////////////////
 ///////////////////////////////////////////////////////////////////////
