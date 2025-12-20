@@ -30,6 +30,32 @@ public class QuestionsManagementScreen extends JFrame {
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(new BorderLayout());
         setContentPane(bg);
+        
+     // ===== Speaker icon (bottom-left overlay) =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        bg.add(speaker);
+
+        int iconSize = 40;
+        int marginLeft = 10;
+        int marginBottom = 5;
+
+        speaker.setBounds(
+                marginLeft,
+                bg.getHeight() - iconSize - marginBottom,
+                iconSize,
+                iconSize
+        );
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                speaker.setLocation(
+                        marginLeft,
+                        bg.getHeight() - iconSize - marginBottom
+                );
+            }
+        });
+
 
         // --- TOP BAR ---
         JPanel topPanel = new JPanel(new BorderLayout());

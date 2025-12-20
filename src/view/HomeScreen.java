@@ -15,7 +15,7 @@ public class HomeScreen extends JFrame {
 
     public HomeScreen() {
     	
-    	music.bcMusic.play("/music/Host Entrance Background Music.wav");
+    	//music.bcMusic.play("/music/Host Entrance Background Music.wav");
 
         setTitle("MineSweeper - Home");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -25,6 +25,36 @@ public class HomeScreen extends JFrame {
         setContentPane(bg);
 
         setSize(800, 550);
+        
+     // ===== Speaker icon (bottom-left) =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        bg.add(speaker);
+
+        int iconSize = 40;     // recommended size
+        int marginLeft = 10;  // left margin
+        int marginBottom = 5; // how close to the bottom
+
+        // initial position
+        speaker.setBounds(
+                marginLeft,
+                getContentPane().getHeight() - iconSize - marginBottom,
+                iconSize,
+                iconSize
+        );
+
+        // keep bottom-left on resize
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                speaker.setLocation(
+                        marginLeft,
+                        getContentPane().getHeight() - iconSize - marginBottom
+                );
+            }
+        });
+
+        
+        
         setLocationRelativeTo(null);
 
         JLabel title = new JLabel("Welcome To Minesweeper", SwingConstants.CENTER);

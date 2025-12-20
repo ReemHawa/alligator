@@ -34,13 +34,41 @@ public class gameView extends JFrame {
 
         fullheart = loadIcon(HEART_FULL, 32, 32);
         emptyheart = loadIcon(HEART_EMPTY, 32, 32);
-
+        
         setTitle("Dual Minesweeper Boards");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         BackgroundPanel root = new BackgroundPanel(BG_PATH);
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+     // ===== Speaker icon (bottom-left) =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        root.add(speaker);
+
+        int iconSize = 40;
+        int marginLeft = 10;
+        int marginBottom = 5;
+
+        // initial position (after frame is visible)
+        speaker.setBounds(
+                marginLeft,
+                root.getHeight() - iconSize - marginBottom,
+                iconSize,
+                iconSize
+        );
+
+        // keep bottom-left on resize
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                speaker.setLocation(
+                        marginLeft,
+                        root.getHeight() - iconSize - marginBottom
+                );
+            }
+        });
+
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setOpaque(false);
 
@@ -68,7 +96,7 @@ public class gameView extends JFrame {
         boardViews[1] = new boardView(1, model.getPlayer2Name(), controller);
         
     ////////////////// // 🔴 DEBUG ONLY///////////////////////////
-      // boardViews[0].debugRevealAllSurprises(model.getBoard(0));
+     //  boardViews[0].debugRevealAllSurprises(model.getBoard(0));
      //   boardViews[1].debugRevealAllSurprises(model.getBoard(1));
 
         boardsPanel.add(boardViews[0]);

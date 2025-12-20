@@ -53,6 +53,32 @@ public class chooseLevelView extends JFrame {
         bg.setBounds(0, 0, 800, 550);
         bg.setLayout(null);
         add(bg);
+        
+     // ===== Speaker icon (bottom-left) =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        getLayeredPane().add(speaker, JLayeredPane.POPUP_LAYER);
+
+        int iconSize = 40;
+        int marginLeft = 10;
+        int marginBottom = 40;
+
+        speaker.setBounds(
+                marginLeft,
+                getHeight() - iconSize - marginBottom,
+                iconSize,
+                iconSize
+        );
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                speaker.setLocation(
+                        marginLeft,
+                        getHeight() - iconSize - marginBottom
+                );
+            }
+        });
+
 
         JLabel title = new JLabel("choose your level", SwingConstants.CENTER);
         title.setForeground(Color.WHITE);

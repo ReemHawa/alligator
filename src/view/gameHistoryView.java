@@ -39,6 +39,33 @@ public class gameHistoryView extends JFrame {
         bg.setLayout(null);
         add(bg);
 
+        //add speaker / mute feature
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        getLayeredPane().add(speaker, JLayeredPane.POPUP_LAYER);
+        
+        int iconSize = 40;
+        int marginLeft = 10;
+        int marginBottom = 40;
+
+        speaker.setBounds(
+                marginLeft,
+                getHeight() - iconSize - marginBottom,
+                iconSize,
+                iconSize
+        );
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                speaker.setLocation(
+                        marginLeft,
+                        getHeight() - iconSize - marginBottom
+                );
+            }
+        });
+
+
+        
         // ===== TITLE =====
         JLabel title = new JLabel("Games History", SwingConstants.CENTER);
         title.setForeground(Color.WHITE);

@@ -228,7 +228,8 @@ public class gameController {
                         view.revealSurprise(boardIndex, nr, nc);
                     }
 
-                    // IMPORTANT: cascade continues through surprise
+                    // cascade continues through surprise
+                    floodReveal(boardIndex, nr, nc);
                     continue;
                 }
 

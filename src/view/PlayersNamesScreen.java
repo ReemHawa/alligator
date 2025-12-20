@@ -34,6 +34,32 @@ public class PlayersNamesScreen extends JFrame {
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(null);
         setContentPane(bg);
+        
+     // ===== Speaker icon (bottom-left) =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        bg.add(speaker);
+
+        int iconSize = 40;
+        int marginLeft = 10;
+        int marginBottom = 5;
+
+        speaker.setBounds(
+                marginLeft,
+                bg.getHeight() - iconSize - marginBottom,
+                iconSize,
+                iconSize
+        );
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                speaker.setLocation(
+                        marginLeft,
+                        bg.getHeight() - iconSize - marginBottom
+                );
+            }
+        });
+
 
         JLabel lblTitle = new JLabel("Enter your names:");
         lblTitle.setFont(new Font("Serif", Font.BOLD, 26));
@@ -105,7 +131,7 @@ public class PlayersNamesScreen extends JFrame {
 
         btnBack = new JButton("← Go Back");
         btnBack.setBounds(640, 20, 110, 30);
-        btnBack.setFont(new Font("Serif", Font.BOLD, 16));
+      //  btnBack.setFont(new Font("Serif", Font.BOLD, 16));
         bg.add(btnBack);
 
         btnBack.addActionListener(e -> {

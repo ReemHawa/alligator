@@ -7,14 +7,14 @@ public class bcMusic {
 
     private static Clip clip;
     private static boolean isMuted = false;
+    private static FloatControl volumeControl;
+    private static float lastVolume = 0f; // store original volume
 
-    // play music from classpath
     public static void play(String resourcePath) {
-        if (isMuted) return;
-
         try {
-            if (clip != null && clip.isRunning()) {
+            if (clip != null) {
                 clip.stop();
+                clip.close();
             }
 
             AudioInputStream audioStream =
@@ -24,31 +24,35 @@ public class bcMusic {
 
             clip = AudioSystem.getClip();
             clip.open(audioStream);
+
+            // volume control
+            volumeControl = (FloatControl)
+                    clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+            lastVolume = volumeControl.getValue(); // remember normal volume
+
             clip.loop(Clip.LOOP_CONTINUOUSLY);
             clip.start();
 
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+        } catch (UnsupportedAudioFileException |
+                 IOException |
+                 LineUnavailableException e) {
             e.printStackTrace();
         }
     }
 
-    // stop music
-    public static void stop() {
-        if (clip != null) {
-            clip.stop();
-        }
-    }
-
-    // mute toggle
+    //  mute 
     public static void toggleMute() {
-        isMuted = !isMuted;
+        if (volumeControl == null) return;
 
-        if (isMuted) {
-            stop();
+        if (!isMuted) {
+            lastVolume = volumeControl.getValue();
+            volumeControl.setValue(volumeControl.getMinimum()); // silence
         } else {
-            // when unmuting: restart music
-            play("/music/Host Entrance Background Music.wav");
+            volumeControl.setValue(lastVolume); // restore volume
         }
+
+        isMuted = !isMuted;
     }
 
     public static boolean isMuted() {
