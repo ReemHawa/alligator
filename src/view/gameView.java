@@ -66,13 +66,11 @@ public class gameView extends JFrame {
 
         boardViews[0] = new boardView(0, model.getPlayer1Name(), controller);
         boardViews[1] = new boardView(1, model.getPlayer2Name(), controller);
-
         
     ////////////////// // 🔴 DEBUG ONLY///////////////////////////
       // boardViews[0].debugRevealAllSurprises(model.getBoard(0));
      //   boardViews[1].debugRevealAllSurprises(model.getBoard(1));
-        
-        
+
         boardsPanel.add(boardViews[0]);
         boardsPanel.add(boardViews[1]);
 
@@ -121,15 +119,11 @@ public class gameView extends JFrame {
         startTimer();
     }
 
- //////////////////////////
     /////////////////////////
     public void revealAllSurprises(int boardIndex, board model) {
         boardViews[boardIndex].revealAllSurprises(model);
     }
 
-
-    
-    
     public void startTimer() {
         stopTimer();
         elapsedSeconds = 0;
@@ -313,7 +307,6 @@ msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints)
 
 JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
 }
-
 
 
     private static class BackgroundPanel extends JPanel {

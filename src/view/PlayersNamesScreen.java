@@ -105,6 +105,7 @@ public class PlayersNamesScreen extends JFrame {
 
         btnBack = new JButton("← Go Back");
         btnBack.setBounds(640, 20, 110, 30);
+        btnBack.setFont(new Font("Serif", Font.BOLD, 16));
         bg.add(btnBack);
 
         btnBack.addActionListener(e -> {

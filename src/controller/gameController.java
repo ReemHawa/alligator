@@ -69,6 +69,7 @@ public class gameController {
         }
 
         // ===== ALREADY REVEALED =====
+
         if (b.isRevealed(row, col)) return;
 
         // =====================================================
@@ -166,6 +167,9 @@ public class gameController {
             	}
                // view.revealAllMines(0, model.getBoard(0));
                // view.revealAllMines(1, model.getBoard(1));
+                view.stopTimer();
+
+                // ✅ stop timer before dialog / restart / exit
                 view.stopTimer();
 
                 int choice = view.showGameOverDialog();
@@ -348,6 +352,5 @@ public class gameController {
         if (homeScreen != null) homeScreen.setVisible(true);
         else new HomeScreen().setVisible(true);
     }
-    
-    
+
 }
