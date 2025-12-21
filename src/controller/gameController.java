@@ -80,11 +80,7 @@ public class gameController {
         }
         board b = model.getBoard(boardIndex);
         
-     // ================= QUESTION CELL =================
-        if (b.isQuestionCell(row, col)) {
-            handleQuestionCell(boardIndex, row, col);
-            return;
-        }
+     
         // ================================================
 
         // block if flagged
@@ -107,7 +103,26 @@ public class gameController {
 
         // ===== ALREADY REVEALED =====
 
-        if (b.isRevealed(row, col)) return;
+      // if (b.isRevealed(row, col)) return;
+        
+     // ===== QUESTION CELL =====
+        if (b.isQuestionCell(row, col)) {
+
+            // FIRST CLICK → reveal only
+            if (!b.isQuestionRevealed(row, col)) {
+                b.revealQuestion(row, col);
+                view.revealQuestion(boardIndex, row, col);
+
+                model.switchTurn();
+                view.setActiveBoard(model.getCurrentPlayer());
+                return;
+            }
+
+            // SECOND CLICK → activate
+            handleQuestionCell(boardIndex, row, col);
+            return;
+        }
+
 
         // =====================================================
         // ================= SURPRISE LOGIC ====================
@@ -276,6 +291,18 @@ public class gameController {
                     // cascade continues through surprise
                     continue;
                 }
+                
+             // ================= QUESTION CELL =================
+                if (b.isQuestionCell(nr, nc)) {
+
+                    if (!b.isQuestionRevealed(nr, nc)) {
+                        b.revealQuestion(nr, nc);
+                        view.revealQuestion(boardIndex, nr, nc);
+                    }
+
+                    continue; // DO NOT activate
+                }
+
 
                 // ================= NORMAL SAFE CELL =================
                 b.setRevealed(nr, nc);
