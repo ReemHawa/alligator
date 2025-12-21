@@ -78,8 +78,16 @@ public class gameView extends JFrame {
         });
 
 
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // ===== TOP PANEL (Exit button) =====
+        btnExit = new JButton("Exit");
+        btnExit.setFocusable(false);
+        btnExit.addActionListener(e -> controller.exitToHome());
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         topPanel.setOpaque(false);
+        topPanel.add(btnExit);
+        topPanel.setBounds(0, 0, 300, 60);
+        root.add(topPanel);
         
         motivationLabel = new JLabel(" ");
         motivationLabel.setForeground(Color.WHITE);
@@ -98,10 +106,6 @@ public class gameView extends JFrame {
         bottomWrapper.setOpaque(false);
         bottomWrapper.add(msgPanel, BorderLayout.NORTH);
         bottomWrapper.add(bottomPanel, BorderLayout.SOUTH);*/
-
-        btnExit = new JButton("Exit to Home");
-        topPanel.add(btnExit);
-        root.add(topPanel, BorderLayout.NORTH);
       //  root.add(bottomWrapper, BorderLayout.SOUTH);
 
         // ===== Main transparent content panel (so BorderLayout still works) =====
@@ -111,10 +115,17 @@ public class gameView extends JFrame {
         root.add(content);
 
 
-        // ===== Exit button (if you actually want it on screen) =====
+     /*   // ===== Exit button (if you actually want it on screen) =====
         btnExit = new JButton("Exit");
         btnExit.addActionListener(e -> controller.exitToHome());
         btnExit.setFocusable(false);
+        
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
+        topPanel.setOpaque(false);
+        topPanel.add(btnExit);
+
+        root.add(topPanel, BorderLayout.NORTH);*/
+
 
         // ===== Timer =====
         timerLabel = new JLabel("Timer: 00:00");
@@ -171,10 +182,10 @@ public class gameView extends JFrame {
         bottomPanel.add(lifePanel, BorderLayout.CENTER);
         bottomPanel.add(scoreLabel, BorderLayout.EAST);
 
-        JPanel leftBottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+       /* JPanel leftBottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
         leftBottom.setOpaque(false);
         leftBottom.add(btnExit);
-        bottomPanel.add(leftBottom, BorderLayout.WEST);
+        bottomPanel.add(leftBottom, BorderLayout.WEST);*/
 
         content.add(bottomPanel, BorderLayout.SOUTH);
 
