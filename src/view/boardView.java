@@ -225,8 +225,20 @@ public class boardView extends JPanel {
     }
 
     public void activateSurprise(int r, int c) {
-        buttons[r][c].setIcon(openedSurpriseIcon);
+        JButton btn = buttons[r][c];
+
+        btn.setIcon(openedSurpriseIcon);
+        btn.setText(null);
+        btn.setBorder(null);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+
+        // 🔒 REMOVE ALL MOUSE LISTENERS (CRITICAL)
+        for (var ml : btn.getMouseListeners()) {
+            btn.removeMouseListener(ml);
+        }
     }
+
 
     
     public void revealMineHit(int row, int col) {
