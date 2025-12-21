@@ -48,7 +48,7 @@ public class gameController {
             view.setVisible(true);
             // timer is already started in gameView constructor
             
-         // ===== DEBUG: count & reveal question cells =====
+        /* // ===== DEBUG: count & reveal question cells =====
             for (int bi = 0; bi < 2; bi++) {
 
                 board b = model.getBoard(bi);
@@ -65,7 +65,7 @@ public class gameController {
                     }
                 }
             }
-            // ===============================================
+            // ===============================================*/
         }
     }
 
