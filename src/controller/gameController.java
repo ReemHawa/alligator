@@ -153,6 +153,9 @@ public class gameController {
         if (b.isMine(row, col)) {
 
             model.loseLife();
+            String msg = model.getMotivationManager().onBadMove(model.getCurrentPlayer());
+            view.showMotivationMessage(msg);
+
             view.revealMineHit(boardIndex, row, col);
             view.updateLives(model.getLivesRemaining());
             checkWinForBoard(boardIndex);
@@ -188,6 +191,10 @@ public class gameController {
 
             model.addToScore(+1);
             view.updateScore(model.getScore());
+            
+            String msg = model.getMotivationManager().onGoodMove(model.getCurrentPlayer());
+            view.showMotivationMessage(msg);
+
 
             if (count == 0)
                 floodReveal(boardIndex, row, col);
