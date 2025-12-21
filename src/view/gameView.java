@@ -3,7 +3,7 @@ package view;
 import controller.gameController;
 import model.board;
 import model.game;
-
+import model.DifficultyLevel;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -32,12 +32,20 @@ public class gameView extends JFrame {
     private final ImageIcon emptyheart;
 
     private JButton btnExit;
+    
+ // references for restart & dialogs
+    private final gameController controller;
+    private final game model;
+
 
     private static final String BG_PATH = "/images/background.jpeg";
     private static final String HEART_FULL = "/images/live.png";
     private static final String HEART_EMPTY = "/images/Llive.png";
 
     public gameView(gameController controller, game model) {
+    	
+    	this.controller = controller;
+    	this.model = model;
 
         fullheart = loadIcon(HEART_FULL, 32, 32);
         emptyheart = loadIcon(HEART_EMPTY, 32, 32);
@@ -361,8 +369,236 @@ public class gameView extends JFrame {
     public void markQuestionUsed(int boardIndex, int row, int col) {
         boardViews[boardIndex].markQuestionUsed(row, col);
     }
+    
+  //losing
 
     public int showGameOverDialog() {
+        stopTimer();
+
+        final int[] result = { JOptionPane.CLOSED_OPTION };
+
+        JDialog dialog = new JDialog(this, "Game Over", true);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0)); // transparent outside
+
+        JPanel outer = new JPanel(new GridBagLayout());
+        outer.setOpaque(false);
+
+        JPanel card = new JPanel();
+        card.setBackground(new Color(255, 255, 255, 235)); // white, slightly transparent
+        card.setBorder(new javax.swing.border.EmptyBorder(30, 80, 30, 80)); // bigger card
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setPreferredSize(new Dimension(450, 320));
+
+        JLabel lblTitle = new JLabel("Game Over!", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Serif", Font.BOLD, 32));
+        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        String p1 = model != null ? model.getPlayer1Name() : "Player A";
+        String p2 = model != null ? model.getPlayer2Name() : "Player B";
+
+        JLabel lblPlayers = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
+        lblPlayers.setFont(new Font("Serif", Font.PLAIN, 22));
+        lblPlayers.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // 🔹 NEW: show level
+        DifficultyLevel level = (model != null && model.getLevel() != null)
+                ? model.getLevel()
+                : DifficultyLevel.EASY;
+
+        String levelText;
+        switch (level) {
+            case MEDIUM:
+                levelText = "Medium";
+                break;
+            case HARD:
+                levelText = "Hard";
+                break;
+            case EASY:
+            default:
+                levelText = "Easy";
+                break;
+        }
+
+        JLabel lblLevel = new JLabel("Level: " + levelText, SwingConstants.CENTER);
+        lblLevel.setFont(new Font("Serif", Font.PLAIN, 18));
+        lblLevel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblResult = new JLabel("You lost 😕 Give it another shot!", SwingConstants.CENTER);
+        lblResult.setFont(new Font("Serif", Font.PLAIN, 18));
+        lblResult.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        int score = model != null ? model.getScore() : 0;
+        String timeText = formatTime(elapsedSeconds);
+
+        JLabel lblScoreTime = new JLabel(
+                "Score: " + score + "   Time: " + timeText,
+                SwingConstants.CENTER
+        );
+        lblScoreTime.setFont(new Font("Serif", Font.PLAIN, 16));
+        lblScoreTime.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        int livesRemaining = (model != null) ? model.getLivesRemaining() : 0;
+        JLabel lblLivesText = new JLabel("Remaining lives: " + livesRemaining, SwingConstants.CENTER);
+        lblLivesText.setFont(new Font("Serif", Font.PLAIN, 16));
+        lblLivesText.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton btnTryAgain = new JButton("Try Again");
+        btnTryAgain.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnTryAgain.addActionListener(e -> {
+            result[0] = JOptionPane.YES_OPTION;
+            dialog.dispose();
+        });
+
+        JButton btnExitDialog = new JButton("Exit");
+        btnExitDialog.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnExitDialog.addActionListener(e -> {
+            result[0] = JOptionPane.NO_OPTION;
+            dialog.dispose();
+        });
+
+        card.add(lblTitle);
+        card.add(Box.createVerticalStrut(10));
+        card.add(lblPlayers);
+        card.add(Box.createVerticalStrut(8));
+        card.add(lblLevel);         // 👈 level line
+        card.add(Box.createVerticalStrut(8));
+        card.add(lblResult);
+        card.add(Box.createVerticalStrut(10));
+        card.add(lblScoreTime);
+        card.add(Box.createVerticalStrut(8));
+        card.add(lblLivesText);
+        card.add(Box.createVerticalStrut(20));
+        card.add(btnTryAgain);
+        card.add(Box.createVerticalStrut(10));
+        card.add(btnExitDialog);
+
+        outer.add(card);
+        dialog.setContentPane(outer);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+
+        return result[0];
+    }
+
+
+    // winning
+    public void showWinForBoth(int finalScore) {
+        stopTimer();
+
+        final int[] result = { JOptionPane.CLOSED_OPTION };
+
+        JDialog dialog = new JDialog(this, "Victory", true);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0));
+
+        JPanel outer = new JPanel(new GridBagLayout());
+        outer.setOpaque(false);
+
+        JPanel card = new JPanel();
+        card.setBackground(new Color(255, 255, 255, 235));
+        card.setBorder(new javax.swing.border.EmptyBorder(30, 80, 30, 80));
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setPreferredSize(new Dimension(450, 320));
+
+        JLabel lblTitle = new JLabel("Game Over!", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Serif", Font.BOLD, 32));
+        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        String p1 = model != null ? model.getPlayer1Name() : "Player A";
+        String p2 = model != null ? model.getPlayer2Name() : "Player B";
+
+        JLabel lblPlayers = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
+        lblPlayers.setFont(new Font("Serif", Font.PLAIN, 22));
+        lblPlayers.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // 🔹 NEW: show level
+        DifficultyLevel level = (model != null && model.getLevel() != null)
+                ? model.getLevel()
+                : DifficultyLevel.EASY;
+
+        String levelText;
+        switch (level) {
+            case MEDIUM:
+                levelText = "Medium";
+                break;
+            case HARD:
+                levelText = "Hard";
+                break;
+            case EASY:
+            default:
+                levelText = "Easy";
+                break;
+        }
+
+        JLabel lblLevel = new JLabel("Level: " + levelText, SwingConstants.CENTER);
+        lblLevel.setFont(new Font("Serif", Font.PLAIN, 18));
+        lblLevel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblResult = new JLabel("You win 🥳 That was awesome!", SwingConstants.CENTER);
+        lblResult.setFont(new Font("Serif", Font.PLAIN, 18));
+        lblResult.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        String timeText = formatTime(elapsedSeconds);
+
+        JLabel lblScoreTime = new JLabel(
+                "Score: " + finalScore + "   Time: " + timeText,
+                SwingConstants.CENTER
+        );
+        lblScoreTime.setFont(new Font("Serif", Font.PLAIN, 16));
+        lblScoreTime.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        int livesRemaining = (model != null) ? model.getLivesRemaining() : 0;
+        JLabel lblLivesText = new JLabel("Remaining lives: " + livesRemaining, SwingConstants.CENTER);
+        lblLivesText.setFont(new Font("Serif", Font.PLAIN, 16));
+        lblLivesText.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton btnTryAgain = new JButton("Try Again");
+        btnTryAgain.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnTryAgain.addActionListener(e -> {
+            result[0] = JOptionPane.YES_OPTION;
+            dialog.dispose();
+        });
+
+        JButton btnExitDialog = new JButton("Exit");
+        btnExitDialog.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnExitDialog.addActionListener(e -> {
+            result[0] = JOptionPane.NO_OPTION;
+            dialog.dispose();
+        });
+
+        card.add(lblTitle);
+        card.add(Box.createVerticalStrut(10));
+        card.add(lblPlayers);
+        card.add(Box.createVerticalStrut(8));
+        card.add(lblLevel);          // 👈 level line
+        card.add(Box.createVerticalStrut(8));
+        card.add(lblResult);
+        card.add(Box.createVerticalStrut(10));
+        card.add(lblScoreTime);
+        card.add(Box.createVerticalStrut(8));
+        card.add(lblLivesText);
+        card.add(Box.createVerticalStrut(25));
+        card.add(btnTryAgain);
+        card.add(Box.createVerticalStrut(10));
+        card.add(btnExitDialog);
+
+        outer.add(card);
+        dialog.setContentPane(outer);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+
+        if (result[0] == JOptionPane.YES_OPTION) {
+            // restart with same names + same level
+            controller.restartSameGame();
+        } else {
+            System.exit(0);
+        }
+    }
+
+   /* public int showGameOverDialog() {
         stopTimer();
         return JOptionPane.showOptionDialog(
                 this,
@@ -393,10 +629,15 @@ public class gameView extends JFrame {
         if (choice == JOptionPane.YES_OPTION) {
             dispose();
             new controller.gameController();
+
         } else {
             System.exit(0);
         }
-    }
+    }*/
+    
+    
+    
+    
 
     private ImageIcon loadIcon(String path, int w, int h) {
         try {

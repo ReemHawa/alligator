@@ -14,15 +14,15 @@ public class game {
     private board[] boards;
     private int currentPlayer = 0;   // 0 = Player A, 1 = Player B
 
-    private int score = 0;
+    private int  score = 0;
 
     private final int maxLives = 10;
     private int livesRemaining ;
     private boolean gameOver = false;
 
     private DifficultyLevel level;
-    private String player1Name;
-    private String player2Name;
+    private String  player1Name;
+    private String  player2Name;
     
     private MotivationManager motivationManager = new MotivationManager();
     

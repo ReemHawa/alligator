@@ -68,6 +68,21 @@ public class gameController {
             // ===============================================*/
         }
     }
+    
+    public void restartSameGame() {
+        DifficultyLevel level = model.getLevel();
+        String p1 = model.getPlayer1Name();
+        String p2 = model.getPlayer2Name();
+        HomeScreen home = this.homeScreen;
+
+        if (view != null) {
+            view.dispose();
+        }
+
+        gameController newController = new gameController(level, p1, p2, home);
+        newController.startGame();
+    }
+
 
     public void handleCellClick(int boardIndex, int row, int col) {
 
@@ -231,7 +246,8 @@ public class gameController {
                 int choice = view.showGameOverDialog();
                 if (choice == JOptionPane.YES_OPTION) {
                     view.dispose();
-                    new gameController();
+                   // new gameController();
+                    restartSameGame();
                 } else {
                     System.exit(0);
                 }
@@ -257,6 +273,8 @@ public class gameController {
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
     }
+    
+    
 
 
     private void floodReveal(int boardIndex, int row, int col) {
