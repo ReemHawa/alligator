@@ -20,6 +20,9 @@ public class game {
     private String player1Name;
     private String player2Name;
 
+    
+    private MotivationManager motivationManager = new MotivationManager();
+
     public game() {
         // default is easy 9x9 board with 10 mines
         this.level = DifficultyLevel.EASY;
@@ -166,4 +169,8 @@ public class game {
         board b = boards[boardIndex];
         return b.getRevealedOrFlaggedMinesCount() == b.getMinesNum();
     }
+    public MotivationManager getMotivationManager() {
+        return motivationManager;
+    }
+
 }
