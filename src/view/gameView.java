@@ -322,6 +322,10 @@ public class gameView extends JFrame {
     public void setFlagMode(int boardIndex, boolean on) {
         boardViews[boardIndex].setFlagMode(on);
     }
+    public void setFlagAtCell(int boardIndex, int row, int col) {
+        boardViews[boardIndex].setFlagAtCell(row, col);
+    }
+
 
     public void showNotYourTurnMessage() {
         JOptionPane.showMessageDialog(

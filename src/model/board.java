@@ -53,13 +53,17 @@ public class board {
         surpriseActivated = new boolean[rows][cols];
         surpriseRevealed = new boolean[rows][cols];
 
+        // ✅ ADD THESE
+        question = new boolean[rows][cols];
+        questionRevealed = new boolean[rows][cols];
+        questionUsed = new boolean[rows][cols];
 
         placeMines();
         computeSurroundingMines();
         assignBaseTypes();
         placeSurprises(surpriseCount);
     }
-    
+
     /* ======================================================
     ✅ NEW CONSTRUCTOR (WITH SURPRISES + QUESTIONS)
     ====================================================== */

@@ -286,29 +286,32 @@ public class boardView extends JPanel {
  // ===== QUESTION =====
 
  // first click (reveal only) - MUST remain clickable
- public void revealQuestion(int r, int c) {
-     JButton btn = buttons[r][c];
-     btn.setIcon(questionIcon);
-     btn.setText(null);
-     btn.setBorder(null);
-     btn.setContentAreaFilled(false);
-     btn.setFocusPainted(false);
-     // DO NOT remove listeners (needs 2nd click)
- }
+    public void revealQuestion(int r, int c) {
+        JButton btn = buttons[r][c];
+        btn.setIcon(questionIcon);
+        btn.setText(null);
+        btn.setBorder(null);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        
+    }
+
 
  // after activation - becomes USED (no more clicks)
- public void markQuestionUsed(int r, int c) {
-     JButton btn = buttons[r][c];
-     btn.setIcon(questionUsedIcon);
-     btn.setText(null);
-     btn.setBorder(null);
-     btn.setContentAreaFilled(false);
-     btn.setFocusPainted(false);
+    public void markQuestionUsed(int r, int c) {
+        JButton btn = buttons[r][c];
+        btn.setIcon(questionUsedIcon);
+        btn.setText(null);
+        btn.setBorder(null);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
 
-     for (var al : btn.getActionListeners()) {
-         btn.removeActionListener(al);
-     }
- }
+        // 🔒 disable further interaction
+        for (var ml : btn.getMouseListeners()) {
+            btn.removeMouseListener(ml);
+        }
+    }
+
 
 //Show a mine icon WITHOUT losing life and WITHOUT disabling logic
 public void revealMineAuto(int row, int col) {

@@ -9,6 +9,10 @@ import view.HomeScreen;
 import view.gameView;
 import model.CSVHandler;
 import model.gameHistory;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -128,10 +132,10 @@ public class gameController {
 
       // if (b.isRevealed(row, col)) return;
         
-     // ===== QUESTION CELL =====
-        if (b.isQuestionCell(row, col)) {
+     // ================= QUESTION CELL =================
+        if (b.isQuestion(row, col)) {
 
-            // FIRST CLICK → reveal only
+            // -------- FIRST CLICK → REVEAL QUESTION --------
             if (!b.isQuestionRevealed(row, col)) {
                 b.revealQuestion(row, col);
                 view.revealQuestion(boardIndex, row, col);
@@ -141,10 +145,15 @@ public class gameController {
                 return;
             }
 
-            // SECOND CLICK → activate
-            handleQuestionCell(boardIndex, row, col);
+            // -------- SECOND CLICK → ACTIVATE QUESTION --------
+            if (!b.isQuestionUsed(row, col)) {
+                handleQuestionCell(boardIndex, row, col);
+                return;
+            }
+
             return;
         }
+
 
 
         // =====================================================
@@ -715,15 +724,45 @@ public class gameController {
     }
     
     private void loadQuestionsForGame() {
-    	CSVHandler csv = new CSVHandler("src/data/questions_data.csv");
-        gameQuestions = csv.readQuestions();
 
-        System.out.println("GAME LOADED QUESTIONS: " + gameQuestions.size());
+        try {
+            // 1️⃣ Load CSV from JAR resources
+            InputStream is = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("data/questions_data.csv");
 
-        for (Question q : gameQuestions) {
-            System.out.println(" → " + q.getQuestionText());
+            if (is == null) {
+                System.out.println("❌ questions_data.csv NOT FOUND in JAR!");
+                gameQuestions = new ArrayList<>();
+                return;
+            }
+
+            // 2️⃣ Copy resource to a temporary file (CSVHandler expects a file path)
+            File tempFile = File.createTempFile("questions_data", ".csv");
+            tempFile.deleteOnExit();
+
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                is.transferTo(fos);
+            }
+
+            // 3️⃣ Read questions normally
+            CSVHandler csv = new CSVHandler(tempFile.getAbsolutePath());
+            gameQuestions = csv.readQuestions();
+
+            // 4️⃣ Debug output
+            System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
+
+            for (Question q : gameQuestions) {
+                System.out.println(" → " + q.getQuestionText());
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Failed loading questions!");
+            e.printStackTrace();
+            gameQuestions = new ArrayList<>();
         }
     }
+
 
 
 

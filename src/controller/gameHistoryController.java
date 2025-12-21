@@ -5,6 +5,8 @@ import model.gameHistory;
 import view.gameHistoryView;
 
 import javax.swing.*;
+
+import java.io.File;
 import java.util.List;
 
 public class gameHistoryController {
@@ -12,7 +14,14 @@ public class gameHistoryController {
     private final List<gameHistory> historyEntries;
 
     public gameHistoryController() {
-        CSVHandler csv = new CSVHandler("src/data/game_history.csv");
+        CSVHandler csv = new CSVHandler(
+        	    System.getProperty("user.home")
+        	    + File.separator
+        	    + ".minesweeper"
+        	    + File.separator
+        	    + "game_history.csv"
+        	);
+
         historyEntries = csv.readGameHistory();
     }
 
@@ -37,4 +46,3 @@ public class gameHistoryController {
         });
     }
 }
-

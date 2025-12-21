@@ -1,18 +1,19 @@
 package model;
 
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
-import com.opencsv.CSVWriter;
-
-
 
 public class CSVHandler {
 
     private final String filePath;
+    
+    public static final String GAME_HISTORY_PATH =
+            System.getProperty("user.home")
+            + File.separator
+            + ".minesweeper"
+            + File.separator
+            + "game_history.csv";
 
     public CSVHandler(String filePath) {
         this.filePath = filePath;
@@ -22,15 +23,23 @@ public class CSVHandler {
        =============== QUESTIONS HANDLING ==================
        ===================================================== */
 
-   /* public List<Question> readQuestions() {
+    public List<Question> readQuestions() {
 
         List<Question> list = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        try (InputStream is = getClass()
+                .getClassLoader()
+                .getResourceAsStream("data/questions_data.csv")) {
 
+            if (is == null) {
+                System.out.println("❌ questions_data.csv NOT FOUND in JAR");
+                return list;
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
             String line;
             boolean isHeader = true;
-            int idCounter = 1;
+            int id = 1;
 
             while ((line = br.readLine()) != null) {
 
@@ -39,115 +48,43 @@ public class CSVHandler {
                     continue;
                 }
 
-                String[] p = parseCSVLine(line);
+                if (line.trim().isEmpty()) continue;
 
+                String[] p = line.split(",", -1);
                 if (p.length < 7) continue;
 
-                Question q = new Question(
-                        idCounter++,
-                        p[0],
-                        p[1],
-                        p[2],
-                        p[3],
-                        p[4],
-                        p[5],
-                        p[6]
-                );
-
-                list.add(q);
+                list.add(new Question(
+                        id++,
+                        p[0].trim(),
+                        p[1].trim(),
+                        p[2].trim(),
+                        p[3].trim(),
+                        p[4].trim(),
+                        p[5].trim(),
+                        p[6].trim()
+                ));
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            System.out.println("✅ Loaded questions: " + list.size());
 
-        return list;
-    }*/
-    
-    public List<Question> readQuestions() {
-
-        List<Question> list = new ArrayList<>();
-
-        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
-
-            String[] row;
-            boolean isHeader = true;
-            int idCounter = 1;
-
-            while ((row = reader.readNext()) != null) {
-
-                if (isHeader) {
-                    isHeader = false;
-                    continue;
-                }
-
-                if (row.length < 7) continue;
-
-                Question q = new Question(
-                        idCounter++,
-                        row[0],
-                        row[1],
-                        row[2],
-                        row[3],
-                        row[4],
-                        row[5],
-                        row[6]
-                );
-
-                list.add(q);
-            }
-
-        } catch (IOException | CsvValidationException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
         return list;
     }
-    
-    
+
+
     public void writeQuestions(List<Question> list) {
 
-        try (CSVWriter writer = new CSVWriter(new FileWriter(filePath))) {
+        File file = new File(filePath);
 
-            // Header
-            writer.writeNext(new String[] {
-                "question",
-                "correctAnswer",
-                "wrongAnswer1",
-                "wrongAnswer2",
-                "wrongAnswer3",
-                "difficultyLevel",
-                "gameLevel"
-            });
-
-            for (Question q : list) {
-                writer.writeNext(new String[] {
-                    q.getQuestionText(),
-                    q.getCorrectAnswer(),
-                    q.getWrongAnswer1(),
-                    q.getWrongAnswer2(),
-                    q.getWrongAnswer3(),
-                    q.getDifficultyLevel(),
-                    q.getGameLevel()
-                });
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-
-   /* public void writeQuestions(List<Question> list) {
-
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 
             bw.write("question,correctAnswer,wrongAnswer1,wrongAnswer2,wrongAnswer3,difficultyLevel,gameLevel");
             bw.newLine();
 
             for (Question q : list) {
-
                 String line = String.format(
                         "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"",
                         escape(q.getQuestionText()),
@@ -158,137 +95,108 @@ public class CSVHandler {
                         escape(q.getDifficultyLevel()),
                         escape(q.getGameLevel())
                 );
-
                 bw.write(line);
                 bw.newLine();
             }
 
         } catch (IOException e) {
+            System.out.println("❌ FAILED writing questions!");
             e.printStackTrace();
         }
-    }*/
+    }
 
     /* =====================================================
        ============== GAME HISTORY HANDLING =================
        ===================================================== */
 
     public void appendGameHistory(gameHistory e) {
+
+        ensureGameHistoryExists();   // ⭐ ADD THIS LINE
+
         File file = new File(filePath);
 
-        try {
-            // make sure parent folders exist
-            File parent = file.getParentFile();
-            if (parent != null && !parent.exists()) parent.mkdirs();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
 
-            boolean newFile = !file.exists();
+            String line = String.format(
+                    "%s,%s,%s,%s,%s,%d,%s",
+                    safe(e.getDate()),
+                    safe(e.getPlayerA()),
+                    safe(e.getPlayerB()),
+                    safe(e.getResult()),
+                    safe(e.getDuration()),
+                    e.getScore(),
+                    safe(e.getLevel())
+            );
 
-            System.out.println("✅ Writing game history to: " + file.getAbsolutePath());
-
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
-                if (newFile || file.length() == 0) {
-                    bw.write("date,playerA,playerB,result,time,score,level");
-                    bw.newLine();
-                }
-
-                String line = String.format(
-                        "%s,%s,%s,%s,%s,%d,%s",
-                        safe(e.getDate()),
-                        safe(e.getPlayerA()),
-                        safe(e.getPlayerB()),
-                        safe(e.getResult()),
-                        safe(e.getDuration()),
-                        e.getScore(),
-                        safe(e.getLevel())
-                );
-
-                bw.write(line);
-                bw.newLine();
-            }
-
-            System.out.println("✅ Appended row: " + e.getDate() + " | " + e.getPlayerA() + " vs " + e.getPlayerB());
+            bw.write(line);
+            bw.newLine();
 
         } catch (IOException ex) {
-            System.out.println("❌ FAILED to append game history!");
             ex.printStackTrace();
         }
     }
 
+
     public List<gameHistory> readGameHistory() {
+
+        ensureGameHistoryExists();   // ⭐ ADD THIS LINE
+
         List<gameHistory> list = new ArrayList<>();
         File file = new File(filePath);
 
-        System.out.println("📖 Reading game history from: " + file.getAbsolutePath());
-
-        if (!file.exists()) {
-            System.out.println("⚠ game_history.csv does not exist yet.");
-            return list;
-        }
-
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+
             String line;
             boolean isHeader = true;
 
             while ((line = br.readLine()) != null) {
+
                 if (isHeader) { isHeader = false; continue; }
                 if (line.trim().isEmpty()) continue;
 
-                String[] p = line.split(",", -1); // keep empty fields
+                String[] p = line.split(",", -1);
+                if (p.length < 7) continue;
 
-                if (p.length < 7) {
-                    System.out.println("⚠ Skipping invalid row: " + line);
-                    continue;
-                }
-
-                String date = p[0].trim();
-                String playerA = p[1].trim();
-                String playerB = p[2].trim();
-                String result = p[3].trim();
-                String duration = p[4].trim();
-
-                int score;
-                try {
-                    score = Integer.parseInt(p[5].trim());
-                } catch (NumberFormatException nfe) {
-                    System.out.println("⚠ Bad score, defaulting to 0. Row: " + line);
-                    score = 0;
-                }
-
-                String level = p[6].trim();
-
-                list.add(new gameHistory(date, playerA, playerB, result, duration, score, level));
+                list.add(new gameHistory(
+                        p[0].trim(),
+                        p[1].trim(),
+                        p[2].trim(),
+                        p[3].trim(),
+                        p[4].trim(),
+                        Integer.parseInt(p[5].trim()),
+                        p[6].trim()
+                ));
             }
 
-            System.out.println("✅ Loaded history entries: " + list.size());
-
-        } catch (IOException e) {
-            System.out.println("❌ FAILED to read game history!");
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
         return list;
     }
 
-    private String safe(String s) {
-        if (s == null) return "";
-        // prevent commas breaking CSV
-        return s.replace(",", " ");
-    }
 
     /* ===================================================== */
 
-   /* private String[] parseCSVLine(String line) {
+    private String safe(String s) {
+        return s == null ? "" : s.replace(",", " ");
+    }
+
+    private String escape(String s) {
+        return s == null ? "" : s.replace("\"", "\"\"");
+    }
+
+    private String[] parseCSVLine(String line) {
 
         List<String> result = new ArrayList<>();
         boolean insideQuotes = false;
         StringBuilder sb = new StringBuilder();
 
         for (char c : line.toCharArray()) {
-
             if (c == '"') {
                 insideQuotes = !insideQuotes;
                 continue;
             }
-
             if (c == ',' && !insideQuotes) {
                 result.add(sb.toString().trim());
                 sb.setLength(0);
@@ -299,26 +207,42 @@ public class CSVHandler {
 
         result.add(sb.toString().trim());
         return result.toArray(new String[0]);
-    }*/
-
-    /*private String escape(String s) {
-        return s.replace("\"", "\"\"");
-    }*/
+    }
     
-    public static void main(String[] args) {
-        CSVHandler csv = new CSVHandler("src/data/game_history.csv");
-        csv.appendGameHistory(new gameHistory(
-                "17/12/2025",
-                "testA",
-                "testB",
-                "won",
-                "05:12",
-                123,
-                "EASY"
-        ));
+    private void ensureGameHistoryExists() {
 
-        System.out.println("Now reading back:");
-        System.out.println(csv.readGameHistory().size());
+        try {
+            File file = new File(filePath);
+
+            if (file.exists()) return; // already copied
+
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
+
+            // load template from JAR
+            InputStream is = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("data/game_history.csv");
+
+            if (is == null) {
+                // fallback: create header manually
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                    bw.write("date,playerA,playerB,result,time,score,level");
+                    bw.newLine();
+                }
+                return;
+            }
+
+            // copy resource → disk
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                is.transferTo(fos);
+            }
+
+            System.out.println("✅ game_history.csv copied to disk: " + filePath);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
