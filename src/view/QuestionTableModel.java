@@ -1,20 +1,19 @@
 package view;
 
-import model.Question;
-import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.table.AbstractTableModel;
+
+import model.Question;
+
 public class QuestionTableModel extends AbstractTableModel {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private final String[] columnNames = {
+    private final String[] columnNames = {
             "Delete", "Edit", "Number", "Question",
-            "Correct Answer", "Wrong Answer1", "Wrong Answer2", "Wrong Answer3",
+            "Correct Answer", "Wrong 1", "Wrong 2", "Wrong 3",
             "Question Level", "Game Level"
     };
 
@@ -50,7 +49,7 @@ public class QuestionTableModel extends AbstractTableModel {
         switch (columnIndex) {
             case 0: return "✖";     // Delete
             case 1: return "✎";     // Edit
-            case 2: return q.getQuestionID();
+            case 2: return q.getQuestionID();         // ✅ ID (Number)
             case 3: return q.getQuestionText();
             case 4: return q.getCorrectAnswer();
             case 5: return q.getWrongAnswer1();
@@ -70,23 +69,28 @@ public class QuestionTableModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        // Only allow editing in the selected row, and not delete/edit columns
-        return rowIndex == editableRow && columnIndex >= 2;
+
+        // Delete/Edit columns are clickable (your controller handles the click)
+        if (columnIndex == 0 || columnIndex == 1) return true;
+
+        // ✅ NEVER allow editing the ID column
+        if (columnIndex == 2) return false;
+
+        // Other columns: only if this row is in edit mode
+        return rowIndex == editableRow;
     }
 
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (aValue == null || rowIndex < 0 || rowIndex >= questions.size()) return;
 
+        // ✅ hard block: never change the ID even if someone tries
+        if (columnIndex == 2) return;
+
         Question q = questions.get(rowIndex);
         String value = aValue.toString();
 
         switch (columnIndex) {
-            case 2: // Question Number
-                try {
-                    q.setQuestionID(Integer.parseInt(value));
-                } catch (NumberFormatException ignored) {}
-                break;
             case 3:
                 q.setQuestionText(value);
                 break;

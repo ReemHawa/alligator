@@ -10,7 +10,10 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
 public class gameView extends JFrame {
-
+	
+	private JLabel motivationLabel;
+	private javax.swing.Timer motivationTimer;
+	
     private static final long serialVersionUID = 1L;
 
     private final boardView[] boardViews = new boardView[2];
@@ -71,10 +74,29 @@ public class gameView extends JFrame {
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setOpaque(false);
+        
+        motivationLabel = new JLabel(" ");
+        motivationLabel.setForeground(Color.WHITE);
+        motivationLabel.setFont(new Font("Verdana", Font.BOLD, 18));
+
+        JPanel msgPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        msgPanel.setOpaque(false);
+        msgPanel.add(motivationLabel);
+/*
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setOpaque(false);
+        bottomPanel.add(lifePanel, BorderLayout.CENTER);
+        bottomPanel.add(scoreLabel, BorderLayout.EAST);
+
+        JPanel bottomWrapper = new JPanel(new BorderLayout());
+        bottomWrapper.setOpaque(false);
+        bottomWrapper.add(msgPanel, BorderLayout.NORTH);
+        bottomWrapper.add(bottomPanel, BorderLayout.SOUTH);*/
 
         btnExit = new JButton("Exit to Home");
         topPanel.add(btnExit);
         root.add(topPanel, BorderLayout.NORTH);
+      //  root.add(bottomWrapper, BorderLayout.SOUTH);
 
         btnExit.addActionListener(e -> controller.exitToHome());
 
@@ -129,7 +151,7 @@ public class gameView extends JFrame {
  
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setOpaque(false);
-
+        bottomPanel.add(msgPanel, BorderLayout.NORTH);
         bottomPanel.add(lifePanel, BorderLayout.CENTER);
         bottomPanel.add(scoreLabel, BorderLayout.EAST);
 
@@ -246,6 +268,24 @@ public class gameView extends JFrame {
         );
     }
 
+    //question cell
+    public void revealMineAuto(int boardIndex, int row, int col) {
+        boardViews[boardIndex].revealMineAuto(row, col);
+    }
+    public void revealHintCell(int boardIndex, int row, int col) {
+        boardViews[boardIndex].revealHintCell(row, col);
+    }
+
+    public void revealQuestion(int boardIndex, int row, int col) {
+        boardViews[boardIndex].revealQuestion(row, col);
+    }
+    
+    public void markQuestionUsed(int boardIndex, int row, int col) {
+        boardViews[boardIndex].markQuestionUsed(row, col);
+    }
+
+
+
 
 
 
@@ -355,6 +395,21 @@ JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INF
             super.paintComponent(g);
             if (bg != null) g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
         }
+    }
+    
+    public void showMotivationMessage(String msg) {
+        if (msg == null || msg.isBlank()) return;
+
+        motivationLabel.setText(msg);
+
+        // clear after 2.5 seconds
+        if (motivationTimer != null && motivationTimer.isRunning()) {
+            motivationTimer.stop();
+        }
+
+        motivationTimer = new javax.swing.Timer(2500, e -> motivationLabel.setText(" "));
+        motivationTimer.setRepeats(false);
+        motivationTimer.start();
     }
     
     public String getFormattedElapsedTime() {

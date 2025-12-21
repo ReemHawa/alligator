@@ -1,6 +1,5 @@
 package model;
 
-import model.gameHistory;
 
 import java.io.*;
 import java.util.ArrayList;

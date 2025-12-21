@@ -1,5 +1,9 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class Question {
 
     private int questionID;
@@ -42,4 +46,31 @@ public class Question {
     public void setWrongAnswer3(String s) { this.wrongAnswer3 = s; }
     public void setDifficultyLevel(String s) { this.difficultyLevel = s; }
     public void setGameLevel(String s) { this.gameLevel = s; }
+
+    // ===========================
+    // ✅ ADDED: helpers for gameplay
+    // ===========================
+
+    /** Returns all 4 answers (1 correct + 3 wrong) */
+    public List<String> getAllAnswers() {
+        List<String> answers = new ArrayList<>();
+        answers.add(correctAnswer);
+        answers.add(wrongAnswer1);
+        answers.add(wrongAnswer2);
+        answers.add(wrongAnswer3);
+        return answers;
+    }
+
+    /** Returns answers shuffled - perfect for a multiple-choice dialog */
+    public List<String> getAllAnswersShuffled() {
+        List<String> answers = getAllAnswers();
+        Collections.shuffle(answers);
+        return answers;
+    }
+
+    /** True if given answer equals the correct answer (trim + case sensitive by default) */
+    public boolean isCorrect(String chosen) {
+        if (chosen == null) return false;
+        return chosen.trim().equals(correctAnswer != null ? correctAnswer.trim() : "");
+    }
 }

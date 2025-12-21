@@ -1,12 +1,24 @@
 package view;
 
-import model.Question;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.util.List;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
-import java.awt.*;
-import java.util.List;
+
+import model.Question;
 
 public class QuestionsManagementScreen extends JFrame {
 
@@ -30,32 +42,6 @@ public class QuestionsManagementScreen extends JFrame {
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(new BorderLayout());
         setContentPane(bg);
-        
-     // ===== Speaker icon (bottom-left overlay) =====
-        JLabel speaker = SpeakerIcon.createSpeakerLabel();
-        bg.add(speaker);
-
-        int iconSize = 40;
-        int marginLeft = 10;
-        int marginBottom = 5;
-
-        speaker.setBounds(
-                marginLeft,
-                bg.getHeight() - iconSize - marginBottom,
-                iconSize,
-                iconSize
-        );
-
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                speaker.setLocation(
-                        marginLeft,
-                        bg.getHeight() - iconSize - marginBottom
-                );
-            }
-        });
-
 
         // --- TOP BAR ---
         JPanel topPanel = new JPanel(new BorderLayout());

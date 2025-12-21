@@ -35,11 +35,17 @@ public class boardView extends JPanel {
     
     private static final String SURPRISE = "/images/surprise.png";
     private static final String OPENED_SURPRISE = "/images/openedsurprise.png";
+    
+ // ===== QUESTION ICONS =====
+    private static final String QUESTION = "/images/question.png";
+    private static final String QUESTION_USED = "/images/usedQ.png";
+
 
     private ImageIcon surpriseIcon;
     private ImageIcon openedSurpriseIcon;
-
-
+    
+    private ImageIcon questionIcon;
+    private ImageIcon questionUsedIcon;
 
     private final int rows;
     private final int cols;
@@ -67,13 +73,12 @@ public class boardView extends JPanel {
         mineIcon = loadIcon(MINE, TILE_SIZE, TILE_SIZE);
         
         //Load surprise icon
-        
         surpriseIcon = loadIcon(SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
         openedSurpriseIcon = loadIcon(OPENED_SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
         
-       
-
-
+      //Load question icon
+        questionIcon = loadIcon(QUESTION, TILE_SIZE - 6, TILE_SIZE - 6);
+        questionUsedIcon = loadIcon(QUESTION_USED, TILE_SIZE - 6, TILE_SIZE - 6);
 
 
         // Load flag icon from resources
@@ -265,6 +270,54 @@ public class boardView extends JPanel {
     public void removeFlag(int row, int col) {
         buttons[row][col].setIcon(stoneForCell[row][col]);
     }
+    
+ // ===== QUESTION =====
+
+ // first click (reveal only) - MUST remain clickable
+ public void revealQuestion(int r, int c) {
+     JButton btn = buttons[r][c];
+     btn.setIcon(questionIcon);
+     btn.setText(null);
+     btn.setBorder(null);
+     btn.setContentAreaFilled(false);
+     btn.setFocusPainted(false);
+     // DO NOT remove listeners (needs 2nd click)
+ }
+
+ // after activation - becomes USED (no more clicks)
+ public void markQuestionUsed(int r, int c) {
+     JButton btn = buttons[r][c];
+     btn.setIcon(questionUsedIcon);
+     btn.setText(null);
+     btn.setBorder(null);
+     btn.setContentAreaFilled(false);
+     btn.setFocusPainted(false);
+
+     for (var al : btn.getActionListeners()) {
+         btn.removeActionListener(al);
+     }
+ }
+
+//Show a mine icon WITHOUT losing life and WITHOUT disabling logic
+public void revealMineAuto(int row, int col) {
+  JButton btn = buttons[row][col];
+  btn.setIcon(mineIcon);
+  btn.setText(null);
+  btn.setBorder(null);
+  btn.setContentAreaFilled(false);
+  // do NOT remove listeners
+}
+
+//Show a "hint" reveal in a 3x3 area (visual only)
+public void revealHintCell(int row, int col) {
+ JButton btn = buttons[row][col];
+ btn.setIcon(null);
+ btn.setText("");
+ btn.setBorder(null);
+ btn.setContentAreaFilled(false);
+}
+
+
 
     
     ////////////////////////surprise test//////////////////

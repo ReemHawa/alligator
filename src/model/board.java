@@ -19,6 +19,12 @@ public class board {
     private boolean[][] goodSurprise;
     private boolean[][] surpriseActivated;
     private boolean[][] surpriseRevealed;
+    
+ // ===== QUESTION =====
+    private boolean[][] question;
+    private boolean[][] questionRevealed;
+    private boolean[][] questionUsed;
+
 
 
     /* ======================================================
@@ -53,6 +59,21 @@ public class board {
         assignBaseTypes();
         placeSurprises(surpriseCount);
     }
+    
+    /* ======================================================
+    ✅ NEW CONSTRUCTOR (WITH SURPRISES + QUESTIONS)
+    ====================================================== */
+ public board(int rows, int cols, int minesNum, int surpriseCount, int questionCount) {
+
+     this(rows, cols, minesNum, surpriseCount);
+
+     question = new boolean[rows][cols];
+     questionRevealed = new boolean[rows][cols];
+     questionUsed = new boolean[rows][cols];
+
+     placeQuestions(questionCount);
+ }
+
 
     /* ======================================================
        MINES
@@ -177,6 +198,65 @@ public class board {
     public void removeFlag(int r, int c) {
         flagged[r][c] = false;
     }
+    
+    /* ======================================================
+    QUESTIONS
+    ====================================================== */
+ private void placeQuestions(int count) {
+
+     Random rnd = new Random();
+     int placed = 0;
+     int attempts = 0;
+     int maxAttempts = rows * cols * 50;
+
+     while (placed < count && attempts < maxAttempts) {
+         attempts++;
+
+         int r = rnd.nextInt(rows);
+         int c = rnd.nextInt(cols);
+
+         if (!mines[r][c]
+                 && type[r][c] == cellType.empty
+                 && surroundingMines[r][c] == 0
+                 && !surprise[r][c]) {
+
+             type[r][c] = cellType.question;
+
+             question[r][c] = true;
+             questionRevealed[r][c] = false;
+             questionUsed[r][c] = false;
+
+             placed++;
+         }
+     }
+ }
+ 
+ public boolean isQuestion(int r, int c) {
+	    return type[r][c] == cellType.question;
+	}
+
+	public boolean isQuestionCell(int r, int c) {
+	    return type[r][c] == cellType.question;
+	}
+
+	public boolean isQuestionRevealed(int r, int c) {
+	    return questionRevealed[r][c];
+	}
+
+	public void revealQuestion(int r, int c) {
+	    questionRevealed[r][c] = true;
+	    revealed[r][c] = true;
+	}
+
+	public boolean isQuestionUsed(int r, int c) {
+	    return questionUsed[r][c];
+	}
+
+	public void markQuestionUsed(int r, int c) {
+	    questionUsed[r][c] = true;
+	}
+
+
 
 
     /* ======================================================
