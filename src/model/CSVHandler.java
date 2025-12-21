@@ -4,6 +4,11 @@ package model;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
+import com.opencsv.CSVWriter;
+
+
 
 public class CSVHandler {
 
@@ -17,7 +22,7 @@ public class CSVHandler {
        =============== QUESTIONS HANDLING ==================
        ===================================================== */
 
-    public List<Question> readQuestions() {
+   /* public List<Question> readQuestions() {
 
         List<Question> list = new ArrayList<>();
 
@@ -57,9 +62,84 @@ public class CSVHandler {
         }
 
         return list;
+    }*/
+    
+    public List<Question> readQuestions() {
+
+        List<Question> list = new ArrayList<>();
+
+        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+
+            String[] row;
+            boolean isHeader = true;
+            int idCounter = 1;
+
+            while ((row = reader.readNext()) != null) {
+
+                if (isHeader) {
+                    isHeader = false;
+                    continue;
+                }
+
+                if (row.length < 7) continue;
+
+                Question q = new Question(
+                        idCounter++,
+                        row[0],
+                        row[1],
+                        row[2],
+                        row[3],
+                        row[4],
+                        row[5],
+                        row[6]
+                );
+
+                list.add(q);
+            }
+
+        } catch (IOException | CsvValidationException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
+    
+    public void writeQuestions(List<Question> list) {
+
+        try (CSVWriter writer = new CSVWriter(new FileWriter(filePath))) {
+
+            // Header
+            writer.writeNext(new String[] {
+                "question",
+                "correctAnswer",
+                "wrongAnswer1",
+                "wrongAnswer2",
+                "wrongAnswer3",
+                "difficultyLevel",
+                "gameLevel"
+            });
+
+            for (Question q : list) {
+                writer.writeNext(new String[] {
+                    q.getQuestionText(),
+                    q.getCorrectAnswer(),
+                    q.getWrongAnswer1(),
+                    q.getWrongAnswer2(),
+                    q.getWrongAnswer3(),
+                    q.getDifficultyLevel(),
+                    q.getGameLevel()
+                });
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void writeQuestions(List<Question> list) {
+
+
+   /* public void writeQuestions(List<Question> list) {
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
 
@@ -86,7 +166,7 @@ public class CSVHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     /* =====================================================
        ============== GAME HISTORY HANDLING =================
@@ -196,7 +276,7 @@ public class CSVHandler {
 
     /* ===================================================== */
 
-    private String[] parseCSVLine(String line) {
+   /* private String[] parseCSVLine(String line) {
 
         List<String> result = new ArrayList<>();
         boolean insideQuotes = false;
@@ -219,11 +299,11 @@ public class CSVHandler {
 
         result.add(sb.toString().trim());
         return result.toArray(new String[0]);
-    }
+    }*/
 
-    private String escape(String s) {
+    /*private String escape(String s) {
         return s.replace("\"", "\"\"");
-    }
+    }*/
     
     public static void main(String[] args) {
         CSVHandler csv = new CSVHandler("src/data/game_history.csv");

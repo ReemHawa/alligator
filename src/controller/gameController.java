@@ -1,6 +1,7 @@
 package controller;
 
 import model.DifficultyLevel;
+import model.Question;
 import model.board;
 import model.game;
 import model.QuestionOutcome;
@@ -10,6 +11,10 @@ import model.CSVHandler;
 import model.gameHistory;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.swing.*;
 
 public class gameController {
@@ -21,17 +26,20 @@ public class gameController {
     private final boolean[] flagMode = new boolean[] { false, false };
     
  // Question system
-    private final model.QuestionBank questionBank = new model.QuestionBank();
-
+   // private final model.QuestionBank questionBank = new model.QuestionBank();
+    
+    private List<model.Question> gameQuestions;
 
     public gameController() {
         model = new game();
+        loadQuestionsForGame();
         view = new gameView(this, model);
     }
 
     public gameController(DifficultyLevel level, String p1, String p2, HomeScreen home) {
         this.homeScreen = home;
         model = new game(level, p1, p2);
+        loadQuestionsForGame();
         view = new gameView(this, model);
     }
 
@@ -396,6 +404,25 @@ public class gameController {
         }
     }
     
+    private model.Question getRandomUnusedQuestionForGame() {
+
+        if (gameQuestions == null || gameQuestions.isEmpty()) return null;
+
+        List<model.Question> filtered = new ArrayList<>();
+
+        for (model.Question q : gameQuestions) {
+            if (q.getGameLevel().equalsIgnoreCase(model.getLevel().name())) {
+                filtered.add(q);
+            }
+        }
+
+        if (filtered.isEmpty()) return null;
+
+        Collections.shuffle(filtered);
+        return filtered.get(0);
+    }
+
+    
     public void handleQuestionCell(int boardIndex, int row, int col) {
 
         board b = model.getBoard(boardIndex);
@@ -422,7 +449,9 @@ public class gameController {
         model.addToScore(-activationCost);
 
         // ================= GET UNUSED QUESTION =================
-        model.Question q = model.getUnusedRandomQuestion(questionBank);
+       // model.Question q = model.getUnusedRandomQuestion(questionBank);
+        model.Question q = getRandomUnusedQuestionForGame();
+
         if (q == null) {
             JOptionPane.showMessageDialog(view, "No questions available.");
             return;
@@ -684,6 +713,18 @@ public class gameController {
             view.setActiveBoard(model.getCurrentPlayer());
         }
     }
+    
+    private void loadQuestionsForGame() {
+    	CSVHandler csv = new CSVHandler("src/data/questions_data.csv");
+        gameQuestions = csv.readQuestions();
+
+        System.out.println("GAME LOADED QUESTIONS: " + gameQuestions.size());
+
+        for (Question q : gameQuestions) {
+            System.out.println(" → " + q.getQuestionText());
+        }
+    }
+
 
 
 
