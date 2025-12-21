@@ -1,3 +1,0 @@
-ID,question,correctAnswer,wrongAnswer1,wrongAnswer2,wrongAnswer3,difficultyLevel,gameLevel
-1,"What is the main purpose of the SRS document?","To clearly define the software requirements.","To design the system architecture.","To write the test cases for validation.","To document the project after deployment.","Medium","Medium"
-2,"Which of the following best describes the Agile development model?","An iterative and incremental approach focused on adapting to change.","A linear model where each phase must be completed before the next.","A model used only for hardware development.","A model in which requirements never change.","Medium","Easy"
