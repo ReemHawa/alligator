@@ -4,22 +4,26 @@ import controller.gameController;
 import model.board;
 import model.game;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
 
 public class gameView extends JFrame {
 	
-	private JLabel motivationLabel;
-	private javax.swing.Timer motivationTimer;
 	
     private static final long serialVersionUID = 1L;
+
+    // ===== Motivation Overlay (CENTER, GOLD, BIG) =====
+    private JPanel motivationOverlay;
+    private JLabel motivationLabel;
+    private javax.swing.Timer motivationTimer;
 
     private final boardView[] boardViews = new boardView[2];
     private final JLabel[] heartLabels;
     private JLabel scoreLabel;
-//// timer
+
+    // timer
     private JLabel timerLabel;
     private javax.swing.Timer gameTimer;
     private int elapsedSeconds = 0;
@@ -37,40 +41,42 @@ public class gameView extends JFrame {
 
         fullheart = loadIcon(HEART_FULL, 32, 32);
         emptyheart = loadIcon(HEART_EMPTY, 32, 32);
-        
+
         setTitle("Dual Minesweeper Boards");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
+        // ===== Root background panel =====
         BackgroundPanel root = new BackgroundPanel(BG_PATH);
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-     // ===== Speaker icon (bottom-left) =====
+
+        // ===== Speaker icon (bottom-left) =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        root.setLayout(null); // needed because you use setBounds for speaker
+        // We'll later add a transparent content panel above it
         root.add(speaker);
 
         int iconSize = 40;
         int marginLeft = 10;
         int marginBottom = 5;
 
-        // initial position (after frame is visible)
-        speaker.setBounds(
-                marginLeft,
-                root.getHeight() - iconSize - marginBottom,
-                iconSize,
-                iconSize
-        );
-
         // keep bottom-left on resize
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
-                speaker.setLocation(
+                speaker.setBounds(
                         marginLeft,
-                        root.getHeight() - iconSize - marginBottom
+                        root.getHeight() - iconSize - marginBottom,
+                        iconSize,
+                        iconSize
                 );
+
+                if (motivationOverlay != null) {
+                    motivationOverlay.setBounds(0, 0, getWidth(), getHeight());
+                }
             }
         });
+
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setOpaque(false);
@@ -98,8 +104,19 @@ public class gameView extends JFrame {
         root.add(topPanel, BorderLayout.NORTH);
       //  root.add(bottomWrapper, BorderLayout.SOUTH);
 
-        btnExit.addActionListener(e -> controller.exitToHome());
+        // ===== Main transparent content panel (so BorderLayout still works) =====
+        JPanel content = new JPanel(new BorderLayout());
+        content.setOpaque(false);
+        content.setBounds(0, 0, 1920, 1080); // will be updated after visible
+        root.add(content);
 
+
+        // ===== Exit button (if you actually want it on screen) =====
+        btnExit = new JButton("Exit");
+        btnExit.addActionListener(e -> controller.exitToHome());
+        btnExit.setFocusable(false);
+
+        // ===== Timer =====
         timerLabel = new JLabel("Timer: 00:00");
         timerLabel.setForeground(Color.WHITE);
         timerLabel.setFont(new Font("Verdana", Font.BOLD, 26));
@@ -108,31 +125,28 @@ public class gameView extends JFrame {
         timerPanel.setOpaque(false);
         timerPanel.add(timerLabel);
 
- 
+        // ===== Boards =====
         JPanel boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 100, 0));
         boardsPanel.setOpaque(false);
-        
-        // using the actual player names
 
         boardViews[0] = new boardView(0, model.getPlayer1Name(), controller);
         boardViews[1] = new boardView(1, model.getPlayer2Name(), controller);
-        
-    ////////////////// // 🔴 DEBUG ONLY///////////////////////////
-     //  boardViews[0].debugRevealAllSurprises(model.getBoard(0));
-     //   boardViews[1].debugRevealAllSurprises(model.getBoard(1));
+
+        // DEBUG ONLY (optional)
+        // boardViews[0].debugRevealAllSurprises(model.getBoard(0));
+        // boardViews[1].debugRevealAllSurprises(model.getBoard(1));
 
         boardsPanel.add(boardViews[0]);
         boardsPanel.add(boardViews[1]);
 
-    
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
-
         centerPanel.add(timerPanel, BorderLayout.NORTH);
         centerPanel.add(boardsPanel, BorderLayout.CENTER);
 
-        root.add(centerPanel, BorderLayout.CENTER);
+        content.add(centerPanel, BorderLayout.CENTER);
 
+        // ===== Life panel =====
         JPanel lifePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
         lifePanel.setOpaque(false);
 
@@ -143,25 +157,61 @@ public class gameView extends JFrame {
         }
         updateLives(model.getLivesRemaining());
 
-     
+        // ===== Score =====
         scoreLabel = new JLabel("Score: 0");
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Verdana", Font.BOLD, 22));
 
- 
+        // ===== Bottom panel (lives + score + exit) =====
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setOpaque(false);
+
         bottomPanel.add(msgPanel, BorderLayout.NORTH);
+
         bottomPanel.add(lifePanel, BorderLayout.CENTER);
         bottomPanel.add(scoreLabel, BorderLayout.EAST);
 
-        root.add(bottomPanel, BorderLayout.SOUTH);
+        JPanel leftBottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        leftBottom.setOpaque(false);
+        leftBottom.add(btnExit);
+        bottomPanel.add(leftBottom, BorderLayout.WEST);
 
-                setContentPane(root);
+        content.add(bottomPanel, BorderLayout.SOUTH);
+
+        // ===== Set content pane =====
+        setContentPane(root);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(false);
         setLocationRelativeTo(null);
         setVisible(true);
+
+        // ===== Motivation Overlay (CENTER, GOLD, BIG) =====
+        motivationLabel = new JLabel("", SwingConstants.CENTER);
+        motivationLabel.setForeground(new Color(212, 175, 55)); // GOLD
+        motivationLabel.setFont(new Font("Serif", Font.BOLD, 52));
+        motivationLabel.setVisible(false);
+
+        motivationOverlay = new JPanel(new GridBagLayout());
+        motivationOverlay.setOpaque(false);
+        motivationOverlay.add(motivationLabel);
+        motivationOverlay.setVisible(false);
+
+        // place overlay above everything
+        getLayeredPane().add(motivationOverlay, JLayeredPane.POPUP_LAYER);
+
+        // after frame is visible, fix bounds for speaker/content/overlay
+        SwingUtilities.invokeLater(() -> {
+            content.setBounds(0, 0, root.getWidth(), root.getHeight());
+
+            speaker.setBounds(
+                    marginLeft,
+                    root.getHeight() - iconSize - marginBottom,
+                    iconSize,
+                    iconSize
+            );
+
+            motivationOverlay.setBounds(0, 0, getWidth(), getHeight());
+        });
 
         setActiveBoard(0);
 
@@ -169,7 +219,27 @@ public class gameView extends JFrame {
         startTimer();
     }
 
-    /////////////////////////
+    // ======================= Motivation message (center overlay) =======================
+    public void showMotivationMessage(String msg) {
+        if (msg == null || msg.isBlank()) return;
+
+        motivationLabel.setText(msg);
+        motivationLabel.setVisible(true);
+        motivationOverlay.setVisible(true);
+
+        if (motivationTimer != null && motivationTimer.isRunning()) {
+            motivationTimer.stop();
+        }
+
+        motivationTimer = new javax.swing.Timer(2500, e -> {
+            motivationLabel.setVisible(false);
+            motivationOverlay.setVisible(false);
+        });
+        motivationTimer.setRepeats(false);
+        motivationTimer.start();
+    }
+
+    // ======================= Public API used by controller =======================
     public void revealAllSurprises(int boardIndex, board model) {
         boardViews[boardIndex].revealAllSurprises(model);
     }
@@ -185,7 +255,7 @@ public class gameView extends JFrame {
         });
         gameTimer.start();
     }
-   ///  when the game end
+
     public void stopTimer() {
         if (gameTimer != null) {
             gameTimer.stop();
@@ -198,8 +268,6 @@ public class gameView extends JFrame {
         int seconds = totalSeconds % 60;
         return String.format("%02d:%02d", minutes, seconds);
     }
-
-   
 
     public void setActiveBoard(int playerIndex) {
         boardViews[0].setActive(playerIndex == 0);
@@ -244,29 +312,28 @@ public class gameView extends JFrame {
                 JOptionPane.ERROR_MESSAGE
         );
     }
-    
+
     public void revealSurprise(int boardIndex, int row, int col) {
         boardViews[boardIndex].revealSurprise(row, col);
     }
 
-    
     public void activateSurprise(int boardIndex, int row, int col) {
         boardViews[boardIndex].activateSurprise(row, col);
     }
-    
-    
+
     public void removeFlag(int boardIndex, int row, int col) {
         boardViews[boardIndex].removeFlag(row, col);
     }
 
     public void showRemoveFlagMessage() {
         JOptionPane.showMessageDialog(
-            this,
-            "Remove the flag to reveal the cell",
-            "Flagged Cell",
-            JOptionPane.INFORMATION_MESSAGE
+                this,
+                "Remove the flag to reveal the cell",
+                "Flagged Cell",
+                JOptionPane.INFORMATION_MESSAGE
         );
     }
+
 
     //question cell
     public void revealMineAuto(int boardIndex, int row, int col) {
@@ -283,11 +350,6 @@ public class gameView extends JFrame {
     public void markQuestionUsed(int boardIndex, int row, int col) {
         boardViews[boardIndex].markQuestionUsed(row, col);
     }
-
-
-
-
-
 
     public int showGameOverDialog() {
         stopTimer();
@@ -325,8 +387,6 @@ public class gameView extends JFrame {
         }
     }
 
-
-
     private ImageIcon loadIcon(String path, int w, int h) {
         try {
             var url = getClass().getResource(path);
@@ -340,42 +400,40 @@ public class gameView extends JFrame {
             return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
         }
     }
-    
+
     public void showSurpriseResult(boolean good,
-            int lifeDelta,
-            int rewardPoints,
-            int activationCost,
-            int fullLifePenalty,
-            int netPoints) {
+                                  int lifeDelta,
+                                  int rewardPoints,
+                                  int activationCost,
+                                  int fullLifePenalty,
+                                  int netPoints) {
 
-StringBuilder msg = new StringBuilder();
+        StringBuilder msg = new StringBuilder();
 
-if (good) {
-msg.append("🎉 Lucky you!\nGood surprise!\n");
-msg.append("Reward: +").append(rewardPoints).append(" points\n");
-msg.append("Activation cost: -").append(activationCost).append(" points\n");
+        if (good) {
+            msg.append("🎉 Lucky you!\nGood surprise!\n");
+            msg.append("Reward: +").append(rewardPoints).append(" points\n");
+            msg.append("Activation cost: -").append(activationCost).append(" points\n");
 
-if (lifeDelta == 1) {
-msg.append("Lives: +1 ❤️\n");
-} else {
-// ✅ special condition requested
-msg.append("Lives were full → extra cost: -")
-.append(fullLifePenalty)
-.append(" points (for the extra life)\n");
-}
+            if (lifeDelta == 1) {
+                msg.append("Lives: +1 ❤️\n");
+            } else {
+                msg.append("Lives were full → extra cost: -")
+                        .append(fullLifePenalty)
+                        .append(" points (for the extra life)\n");
+            }
 
-} else {
-msg.append("😬 Oops!\nBad surprise!\n");
-msg.append("Effect: ").append(rewardPoints).append(" points\n");
-msg.append("Activation cost: -").append(activationCost).append(" points\n");
-msg.append("Lives: -1 ❤️\n");
-}
+        } else {
+            msg.append("😬 Oops!\nBad surprise!\n");
+            msg.append("Effect: ").append(rewardPoints).append(" points\n");
+            msg.append("Activation cost: -").append(activationCost).append(" points\n");
+            msg.append("Lives: -1 ❤️\n");
+        }
 
-msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints).append(" points");
+        msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints).append(" points");
 
-JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
-}
-
+        JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
+    }
 
     private static class BackgroundPanel extends JPanel {
         private static final long serialVersionUID = 1L;
@@ -396,7 +454,8 @@ JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INF
             if (bg != null) g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
         }
     }
-    
+
+   /* 
     public void showMotivationMessage(String msg) {
         if (msg == null || msg.isBlank()) return;
 
@@ -410,10 +469,9 @@ JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INF
         motivationTimer = new javax.swing.Timer(2500, e -> motivationLabel.setText(" "));
         motivationTimer.setRepeats(false);
         motivationTimer.start();
-    }
+    }*/
     
     public String getFormattedElapsedTime() {
         return formatTime(elapsedSeconds);
     }
-
 }

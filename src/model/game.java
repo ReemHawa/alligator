@@ -28,7 +28,6 @@ public class game {
     
     private Set<Integer> usedQuestionIds = new HashSet<>();
 
-
     public game() {
         // default is easy 9x9 board with 10 mines
         this.level = DifficultyLevel.EASY;
@@ -398,6 +397,7 @@ public class game {
         board b = boards[boardIndex];
         return b.getRevealedOrFlaggedMinesCount() == b.getMinesNum();
     }
+
     
     public MotivationManager getMotivationManager() {
         return motivationManager;
@@ -432,6 +432,11 @@ public class game {
         return penalty;
     }
 
+
+
+   // public MotivationManager getMotivationManager() {
+       //return motivationManager;
+   // }
 
 
 }

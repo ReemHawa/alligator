@@ -43,4 +43,7 @@ public class LivesTest {
         assertEquals(0, g.getLivesRemaining());
         assertTrue(g.isGameOver());
     }
+
 }
+
+
