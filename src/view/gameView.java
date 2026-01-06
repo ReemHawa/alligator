@@ -145,12 +145,24 @@ public class gameView extends JFrame {
         timerPanel.add(timerLabel);
 
         // ===== Boards =====
-        JPanel boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 100, 0));
+        JPanel boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
         boardsPanel.setOpaque(false);
 
-        boardViews[0] = new boardView(0, model.getPlayer1Name(), controller);
-        boardViews[1] = new boardView(1, model.getPlayer2Name(), controller);
+        int tileSize = computeTileSizeForBoards();
 
+        boardViews[0] = new boardView(
+                0,
+                model.getPlayer1Name(),
+                controller,
+                tileSize
+        );
+
+        boardViews[1] = new boardView(
+                1,
+                model.getPlayer2Name(),
+                controller,
+                tileSize
+        );
         // DEBUG ONLY (optional)
         // boardViews[0].debugRevealAllSurprises(model.getBoard(0));
         // boardViews[1].debugRevealAllSurprises(model.getBoard(1));
@@ -726,6 +738,40 @@ public class gameView extends JFrame {
         motivationTimer.setRepeats(false);
         motivationTimer.start();
     }*/
+    
+    private int computeTileSizeForBoards() {
+
+        Dimension window = getContentPane().getSize();
+
+        // Safety fallback (first paint)
+        if (window.width == 0 || window.height == 0) {
+            window = Toolkit.getDefaultToolkit().getScreenSize();
+        }
+
+        int reservedWidth = 260;   // margins + spacing + borders
+        int reservedHeight = 320;  // timer + hearts + score + title
+
+        int rows = model.getBoard(0).getRows();
+        int cols = model.getBoard(0).getCols();
+
+        int maxBoardWidth = (window.width - reservedWidth) / 2;
+        int maxBoardHeight = window.height - reservedHeight;
+
+        int tileByWidth = maxBoardWidth / cols;
+        int tileByHeight = maxBoardHeight / rows;
+
+        int tile = Math.min(tileByWidth, tileByHeight);
+
+        // clamp
+        tile = Math.max(tile, 22);
+        tile = Math.min(tile, 46);
+
+        System.out.println("✔ TILE_SIZE = " + tile +
+                " | window=" + window.width + "x" + window.height);
+
+        return tile;
+    }
+
     
     public String getFormattedElapsedTime() {
         return formatTime(elapsedSeconds);

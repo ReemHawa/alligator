@@ -29,8 +29,13 @@ public class gameController {
 
     private final boolean[] flagMode = new boolean[] { false, false };
     
+    private boolean historySaved = false;
+    
+    private boolean[][] floodVisited;
+
+
+    
  // Question system
-   // private final model.QuestionBank questionBank = new model.QuestionBank();
     
     private List<model.Question> gameQuestions;
 
@@ -86,6 +91,8 @@ public class gameController {
         String p1 = model.getPlayer1Name();
         String p2 = model.getPlayer2Name();
         HomeScreen home = this.homeScreen;
+        historySaved = false;
+
 
         if (view != null) {
             view.dispose();
@@ -98,8 +105,8 @@ public class gameController {
 
     public void handleCellClick(int boardIndex, int row, int col) {
 
-        if (model.isGameOver()) return;
-        
+       // if (model.isGameOver()) return;
+    	
         // Only current player can play, and only on their own board
         if (boardIndex != model.getCurrentPlayer()) {
             view.showNotYourTurnMessage();
@@ -130,12 +137,20 @@ public class gameController {
 
         // ===== ALREADY REVEALED =====
 
-      // if (b.isRevealed(row, col)) return;
+        if (b.isRevealed(row, col) && !b.isQuestion(row, col) && !b.isSurprise(row, col)) {
+            showAlreadyRevealedCellMessage();
+            return;
+        }
         
      // ================= QUESTION CELL =================
         if (b.isQuestion(row, col)) {
 
-            // -------- FIRST CLICK → REVEAL QUESTION --------
+            if (b.isQuestionUsed(row, col)) {
+                showAlreadyUsedSpecialCellMessage("question");
+                return;
+            }
+
+            // first click => reveal only
             if (!b.isQuestionRevealed(row, col)) {
                 b.revealQuestion(row, col);
                 view.revealQuestion(boardIndex, row, col);
@@ -145,12 +160,8 @@ public class gameController {
                 return;
             }
 
-            // -------- SECOND CLICK → ACTIVATE QUESTION --------
-            if (!b.isQuestionUsed(row, col)) {
-                handleQuestionCell(boardIndex, row, col);
-                return;
-            }
-
+            // second click => activate
+            handleQuestionCell(boardIndex, row, col);
             return;
         }
 
@@ -161,16 +172,21 @@ public class gameController {
         // =====================================================
         if (b.isSurprise(row, col)) {
 
-            // -------- FIRST CLICK → REVEAL SURPRISE ONLY --------
+            if (b.isSurpriseActivated(row, col)) {
+                showAlreadyUsedSpecialCellMessage("surprise");
+                return;
+            }
+
+            // first click => reveal only
             if (!b.isSurpriseRevealed(row, col)) {
                 b.revealSurprise(row, col);
                 view.revealSurprise(boardIndex, row, col);
 
-                // turn switches immediately
                 model.switchTurn();
                 view.setActiveBoard(model.getCurrentPlayer());
                 return;
             }
+
 
             // -------- SECOND CLICK → ACTIVATE SURPRISE --------
             if (!b.isSurpriseActivated(row, col)) {
@@ -216,7 +232,6 @@ public class gameController {
 
                 int netPoints = rewardPoints - cost - fullLifePenalty;
 
-                // ✅ updated message (see view change below)
                 view.showSurpriseResult(good, lifeDelta, rewardPoints, cost, fullLifePenalty, netPoints);
 
                 view.updateScore(model.getScore());
@@ -283,7 +298,15 @@ public class gameController {
 
 
             if (count == 0)
+            {
+            	
+            	floodVisited = new boolean[
+            	                           model.getBoard(boardIndex).getRows()
+            	                   ][
+            	                           model.getBoard(boardIndex).getCols()
+            	                   ];
                 floodReveal(boardIndex, row, col);
+            }
         }
 
         // ===== SWITCH TURN =====
@@ -295,64 +318,92 @@ public class gameController {
 
 
     private void floodReveal(int boardIndex, int row, int col) {
+
         board b = model.getBoard(boardIndex);
+
+        // ===== STOP if already processed by flood =====
+        if (floodVisited[row][col]) return;
+        floodVisited[row][col] = true;
+
         int rows = b.getRows();
         int cols = b.getCols();
 
-        for (int di = -1; di <= 1; di++) {
-            for (int dj = -1; dj <= 1; dj++) {
+        for (int dr = -1; dr <= 1; dr++) {
+            for (int dc = -1; dc <= 1; dc++) {
 
-                int nr = row + di;
-                int nc = col + dj;
+                if (dr == 0 && dc == 0) continue;
 
-                if (di == 0 && dj == 0) continue;
+                int nr = row + dr;
+                int nc = col + dc;
+
                 if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
-
-                // already revealed → skip
-                if (b.isRevealed(nr, nc)) continue;
-
-                // mines are never revealed by cascade
                 if (b.isMine(nr, nc)) continue;
 
-                // ================= SURPRISE CELL =================
-                if (b.isSurprise(nr, nc)) {
-
-                    // reveal surprise visually, but DO NOT activate
-                    if (!b.isSurpriseRevealed(nr, nc)) {
-                        b.revealSurprise(nr, nc);
-                        view.revealSurprise(boardIndex, nr, nc);
-                    }
-
-                    // cascade continues through surprise
-                    continue;
-                }
-                
-             // ================= QUESTION CELL =================
+                // ===== QUESTION CELL =====
                 if (b.isQuestionCell(nr, nc)) {
 
+                    // reveal icon only once
                     if (!b.isQuestionRevealed(nr, nc)) {
                         b.revealQuestion(nr, nc);
                         view.revealQuestion(boardIndex, nr, nc);
                     }
 
-                    continue; // DO NOT activate
+                    floodReveal(boardIndex, nr, nc);
+                    continue;
                 }
 
+                // ===== SURPRISE CELL =====
+                if (b.isSurprise(nr, nc)) {
 
-                // ================= NORMAL SAFE CELL =================
-                b.setRevealed(nr, nc);
-                int count = b.getSurroundingMines(nr, nc);
-                view.revealSafeCell(boardIndex, nr, nc, count);
+                    if (!b.isSurpriseRevealed(nr, nc)) {
+                        b.revealSurprise(nr, nc);
+                        view.revealSurprise(boardIndex, nr, nc);
+                    }
 
-                model.addToScore(+1);
-                view.updateScore(model.getScore());
-
-                if (count == 0) {
                     floodReveal(boardIndex, nr, nc);
+                    continue;
+                }
+
+                // ===== NORMAL CELL =====
+                if (!b.isRevealed(nr, nc)) {
+
+                    b.setRevealed(nr, nc);
+
+                    int count = b.getSurroundingMines(nr, nc);
+                    view.revealSafeCell(boardIndex, nr, nc, count);
+
+                    model.addToScore(1);
+                    view.updateScore(model.getScore());
+
+                    // continue flood only if empty
+                    if (count == 0) {
+                        floodReveal(boardIndex, nr, nc);
+                    }
                 }
             }
         }
     }
+
+
+    
+    private void showAlreadyRevealedCellMessage() {
+        JOptionPane.showMessageDialog(
+                view,
+                "This cell is already revealed!",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    private void showAlreadyUsedSpecialCellMessage(String what) {
+        JOptionPane.showMessageDialog(
+                view,
+                "This " + what + " was already used!",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
 
     public void handleFlagClick(int boardIndex, int row, int col) {
 
@@ -395,9 +446,11 @@ public class gameController {
 
     private void checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
-            model.setGameOver(true);
+            //model.setGameOver(true);
             
-            saveGameHistory("won");
+          //  saveGameHistory("won");
+        	onGameEnd("won");
+
             // gameView will stop timer inside showWinForBoth
             view.showWinForBoth(model.getScore());
         }
@@ -665,32 +718,44 @@ public class gameController {
     }
 
 
+    private void onGameEnd(String result) {
+
+        if (model.isGameOver()) return;   // protect from double calls
+
+        model.setGameOver(true);
+        saveGameHistory(result);
+
+        if (view != null) {
+            view.stopTimer();
+
+            for (int i = 0; i < 2; i++) {
+                view.revealAllMines(i, model.getBoard(i));
+                view.revealAllSurprises(i, model.getBoard(i));
+            }
+        }
+    }
 
 
 
     
     private void saveGameHistory(String result) {
 
-        // 1. Date
+    	if (historySaved) return;
+        historySaved = true;
+
         String date = LocalDate.now()
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-        // 2. Players
         String playerA = model.getPlayer1Name();
         String playerB = model.getPlayer2Name();
 
-        // 3. Duration (from view timer)
         String duration = view != null
                 ? view.getFormattedElapsedTime()
                 : "00:00";
 
-        // 4. Score
         int score = model.getScore();
-
-        // 5. Level
         String level = model.getLevel().name();
 
-        // 6. Create history object
         gameHistory entry = new gameHistory(
                 date,
                 playerA,
@@ -700,10 +765,14 @@ public class gameController {
                 score,
                 level
         );
-
-        // 7. Append to CSV
-        CSVHandler csv = new CSVHandler("src/data/game_history.csv");
+        //  Append to CSV
+        CSVHandler csv = new CSVHandler(getGameHistoryPath());
         csv.appendGameHistory(entry);
+        System.out.println("📝 Game history saved: " + result);
+
+
+        System.out.println(" Game history saved to: " + getGameHistoryPath());
+
     }
     
     public void handleRightClick(int boardIndex, int row, int col) {
@@ -722,6 +791,24 @@ public class gameController {
             view.setActiveBoard(model.getCurrentPlayer());
         }
     }
+    
+    private String getGameHistoryPath() {
+
+        String baseDir =
+                System.getProperty("user.home")
+                + File.separator
+                + "DualMinesweeper"
+                + File.separator
+                + "data";
+
+        File dir = new File(baseDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        return baseDir + File.separator + "game_history.csv";
+    }
+
     
     private void loadQuestionsForGame() {
 

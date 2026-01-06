@@ -8,46 +8,76 @@ public class CSVHandler {
 
     private final String filePath;
     
-    public static final String GAME_HISTORY_PATH =
+    private static final String HISTORY_PATH =
             System.getProperty("user.home")
             + File.separator
             + ".minesweeper"
             + File.separator
             + "game_history.csv";
 
+
     public CSVHandler(String filePath) {
         this.filePath = filePath;
     }
+    
+    private static File getWritableQuestionsFile() {
+        String baseDir = System.getProperty("user.home")
+                + File.separator
+                + "DualMinesweeper"
+                + File.separator
+                + "data";
+
+        File dir = new File(baseDir);
+        if (!dir.exists()) dir.mkdirs();
+
+        return new File(dir, "questions_data.csv");
+    }
+
 
     /* =====================================================
        =============== QUESTIONS HANDLING ==================
        ===================================================== */
+    
+    private static void ensureQuestionsFileExists() {
+        File outFile = getWritableQuestionsFile();
+        if (outFile.exists()) return;
 
-    public List<Question> readQuestions() {
-
-        List<Question> list = new ArrayList<>();
-
-        try (InputStream is = getClass()
+        try (InputStream is = CSVHandler.class
                 .getClassLoader()
                 .getResourceAsStream("data/questions_data.csv")) {
 
             if (is == null) {
-                System.out.println("❌ questions_data.csv NOT FOUND in JAR");
-                return list;
+                System.out.println("❌ questions_data.csv missing in JAR");
+                return;
             }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                is.transferTo(fos);
+            }
+
+            System.out.println("✅ questions_data.csv copied to writable location");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public List<Question> readQuestions() {
+
+        ensureQuestionsFileExists();
+
+        List<Question> list = new ArrayList<>();
+        File file = getWritableQuestionsFile();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+
             String line;
             boolean isHeader = true;
             int id = 1;
 
             while ((line = br.readLine()) != null) {
-
-                if (isHeader) {
-                    isHeader = false;
-                    continue;
-                }
-
+                if (isHeader) { isHeader = false; continue; }
                 if (line.trim().isEmpty()) continue;
 
                 String[] p = line.split(",", -1);
@@ -65,7 +95,7 @@ public class CSVHandler {
                 ));
             }
 
-            System.out.println("✅ Loaded questions: " + list.size());
+            System.out.println("✅ Loaded questions from writable file");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -75,9 +105,10 @@ public class CSVHandler {
     }
 
 
+
     public void writeQuestions(List<Question> list) {
 
-        File file = new File(filePath);
+        File file = getWritableQuestionsFile();
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 
@@ -99,11 +130,13 @@ public class CSVHandler {
                 bw.newLine();
             }
 
+            System.out.println("✅ questions_data.csv SAVED");
+
         } catch (IOException e) {
-            System.out.println("❌ FAILED writing questions!");
             e.printStackTrace();
         }
     }
+
 
     /* =====================================================
        ============== GAME HISTORY HANDLING =================
@@ -175,6 +208,8 @@ public class CSVHandler {
         return list;
     }
 
+    
+
 
     /* ===================================================== */
 
@@ -244,5 +279,6 @@ public class CSVHandler {
             e.printStackTrace();
         }
     }
+
 
 }

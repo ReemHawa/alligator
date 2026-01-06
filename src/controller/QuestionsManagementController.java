@@ -13,6 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.io.File;
+import java.io.FileOutputStream;
+
 
 import javax.swing.JOptionPane;
 
@@ -39,6 +42,20 @@ public class QuestionsManagementController {
     // ===========================
     private static List<Question> cachedQuestionsForGame = null;
     private static final Random RNG = new Random();
+    
+    private static File getWritableQuestionsFile() {
+        String baseDir = System.getProperty("user.home")
+                + File.separator
+                + "DualMinesweeper"
+                + File.separator
+                + "data";
+
+        File dir = new File(baseDir);
+        if (!dir.exists()) dir.mkdirs();
+
+        return new File(dir, "questions_data.csv");
+    }
+
 
     // ------------ MAIN CONSTRUCTOR USED BY HomeScreen ------------
     public QuestionsManagementController(HomeScreen homeScreen) {
@@ -62,62 +79,45 @@ public class QuestionsManagementController {
 
     // ------------ LOAD FROM CSV (like gameHistoryController) ------------
     private List<Question> loadQuestionsFromCSV() {
+
+        ensureQuestionsFileExists();
+
         List<Question> list = new ArrayList<>();
+        File file = getWritableQuestionsFile();
 
-        try (InputStream is = getClass().getResourceAsStream(CSV_RESOURCE_PATH)) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        new java.io.FileInputStream(file),
+                        StandardCharsets.UTF_8))) {
 
-            if (is == null) {
-                System.out.println("⚠ questions_data.csv not found at " + CSV_RESOURCE_PATH);
-                return list;
+            String line;
+            boolean firstLine = true;
+            int idCounter = 1;
+
+            while ((line = reader.readLine()) != null) {
+
+                if (firstLine) { firstLine = false; continue; }
+                if (line.trim().isEmpty()) continue;
+
+                String[] parts = line.split(",", -1);
+                if (parts.length < 7) continue;
+
+                list.add(new Question(
+                        idCounter++,
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim(),
+                        parts[3].trim(),
+                        parts[4].trim(),
+                        parts[5].trim(),
+                        parts[6].trim()
+                ));
             }
 
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
-
-                String line;
-                boolean firstLine = true;
-                int idCounter = 1;
-
-                while ((line = reader.readLine()) != null) {
-
-                    // שורה ראשונה – כותרת
-                    if (firstLine) {
-                        firstLine = false;
-                        continue;
-                    }
-
-                    // פיצול לפי פסיק
-                    String[] parts = line.split(",");
-
-                    // חייבים 7 עמודות
-                    if (parts.length < 7) continue;
-
-                    String questionText = parts[0].trim();
-                    String correct      = parts[1].trim();
-                    String wrong1       = parts[2].trim();
-                    String wrong2       = parts[3].trim();
-                    String wrong3       = parts[4].trim();
-                    String difficulty   = parts[5].trim();
-                    String gameLevel    = parts[6].trim();
-
-                    Question q = new Question(
-                            idCounter++,
-                            questionText,
-                            correct,
-                            wrong1,
-                            wrong2,
-                            wrong3,
-                            difficulty,
-                            gameLevel
-                    );
-
-                    list.add(q);
-                }
-            }
+            System.out.println("✅ Questions loaded from writable file");
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("⚠ Failed to load questions from CSV.");
         }
 
         return list;
@@ -184,9 +184,13 @@ public class QuestionsManagementController {
 
     // ------------ SAVE TO CSV (plain FileWriter) ------------
     private void saveToCSV() {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(CSV_WRITE_PATH))) {
 
-            // Header
+        ensureQuestionsFileExists();
+        File file = getWritableQuestionsFile();
+
+        try (BufferedWriter bw = new BufferedWriter(
+                new FileWriter(file, false))) {
+
             bw.write("question,correctAnswer,wrongAnswer1,wrongAnswer2,wrongAnswer3,difficultyLevel,gameLevel");
             bw.newLine();
 
@@ -206,13 +210,16 @@ public class QuestionsManagementController {
                 bw.newLine();
             }
 
-            System.out.println("✅ Saved " + list.size() + " questions to " + CSV_WRITE_PATH);
+            // 🔥 VERY IMPORTANT
+            cachedQuestionsForGame = null;
+
+            System.out.println("✅ Questions SAVED and cache cleared");
 
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("⚠ Failed to save questions CSV.");
         }
     }
+
 
     // כדי שלא ישברו פסיקים – הכי פשוט: מחליפים פסיקים ברווח
     private String escape(String value) {
@@ -226,48 +233,45 @@ public class QuestionsManagementController {
 
     /** Load questions for gameplay once (from resources). */
     public static List<Question> loadQuestionsForGame() {
-        if (cachedQuestionsForGame != null) return cachedQuestionsForGame;
+
+        if (cachedQuestionsForGame != null)
+            return cachedQuestionsForGame;
+
+        ensureQuestionsFileExists();
+        File file = getWritableQuestionsFile();
 
         List<Question> list = new ArrayList<>();
 
-        try (InputStream is = QuestionsManagementController.class.getResourceAsStream(CSV_RESOURCE_PATH)) {
-            if (is == null) {
-                System.out.println("⚠ questions_data.csv not found at " + CSV_RESOURCE_PATH);
-                cachedQuestionsForGame = list;
-                return list;
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        new java.io.FileInputStream(file),
+                        StandardCharsets.UTF_8))) {
+
+            String line;
+            boolean firstLine = true;
+            int idCounter = 1;
+
+            while ((line = reader.readLine()) != null) {
+
+                if (firstLine) { firstLine = false; continue; }
+                if (line.trim().isEmpty()) continue;
+
+                String[] parts = line.split(",", -1);
+                if (parts.length < 7) continue;
+
+                list.add(new Question(
+                        idCounter++,
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim(),
+                        parts[3].trim(),
+                        parts[4].trim(),
+                        parts[5].trim(),
+                        parts[6].trim()
+                ));
             }
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                String line;
-                boolean firstLine = true;
-                int idCounter = 1;
-
-                while ((line = reader.readLine()) != null) {
-                    if (firstLine) { firstLine = false; continue; }
-
-                    String[] parts = line.split(",");
-                    if (parts.length < 7) continue;
-
-                    String questionText = parts[0].trim();
-                    String correct      = parts[1].trim();
-                    String wrong1       = parts[2].trim();
-                    String wrong2       = parts[3].trim();
-                    String wrong3       = parts[4].trim();
-                    String difficulty   = parts[5].trim();
-                    String gameLevel    = parts[6].trim();
-
-                    list.add(new Question(
-                            idCounter++,
-                            questionText,
-                            correct,
-                            wrong1,
-                            wrong2,
-                            wrong3,
-                            difficulty,
-                            gameLevel
-                    ));
-                }
-            }
+            System.out.println("✅ Gameplay questions loaded from disk");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -276,6 +280,7 @@ public class QuestionsManagementController {
         cachedQuestionsForGame = list;
         return list;
     }
+
 
     /** Convert DifficultyLevel to CSV string you store (e.g., EASY/MEDIUM/HARD). */
     private static String toCsvGameLevel(DifficultyLevel level) {
@@ -325,6 +330,33 @@ public class QuestionsManagementController {
         }
         return getRandomQuestionForLevel(gameLevel);
     }
+    
+    
+    private static void ensureQuestionsFileExists() {
+
+        File file = getWritableQuestionsFile();
+        if (file.exists()) return;
+
+        try (InputStream is =
+                QuestionsManagementController.class
+                        .getResourceAsStream(CSV_RESOURCE_PATH)) {
+
+            if (is == null) {
+                System.out.println("❌ questions_data.csv missing in JAR");
+                return;
+            }
+
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                is.transferTo(fos);
+            }
+
+            System.out.println("✅ questions_data.csv copied to writable folder");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * Show a multiple-choice question dialog.

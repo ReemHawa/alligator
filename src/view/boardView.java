@@ -49,19 +49,22 @@ public class boardView extends JPanel {
 
     private final int rows;
     private final int cols;
+    
 
-    public boardView(int boardIndex, String title, gameController controller) {
+    public boardView(int boardIndex, String title, gameController controller , int tileSize) {
 
         board model = controller.getModel().getBoard(boardIndex);
         this.rows = model.getRows();
         this.cols = model.getCols();
+        TILE_SIZE = tileSize;
         
-        if (this.rows == 9 && cols == 9) {   //   Easy level
+
+       /* if (this.rows == 9 && cols == 9) {   //   Easy level
             TILE_SIZE= 45;                
         }
         if (this.rows == 16 && cols == 16) {   // Hard level
             TILE_SIZE= 32;                
-        }
+        }*/
         //med level
 
         buttons = new JButton[rows][cols];
@@ -421,6 +424,9 @@ public void revealHintCell(int row, int col) {
             }
         }
     }
+    
+    
+
 
 
     private Color getNumberColor(int n) {
