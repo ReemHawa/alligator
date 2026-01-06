@@ -87,7 +87,7 @@ public class gameView extends JFrame {
 
 
         // ===== TOP PANEL (Exit button) =====
-        btnExit = new JButton("Exit");
+        btnExit = new JButton("exit");
         btnExit.setFocusable(false);
         btnExit.addActionListener(e -> controller.exitToHome());
 
