@@ -351,6 +351,17 @@ public class gameController {
 
         board b = model.getBoard(boardIndex);
 
+
+
+       /* if (!b.isQuestionRevealed(row, col)) {
+            b.revealQuestion(row, col);
+            view.revealQuestion(boardIndex, row, col);
+
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+            return;
+        }*/
+
         if (b.isQuestionUsed(row, col)) {
             JOptionPane.showMessageDialog(view, "This question is already USED.");
             return;
@@ -571,6 +582,8 @@ public class gameController {
 
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
+      /*  model.switchTurn();
+        view.setActiveBoard(model.getCurrentPlayer());*/
     }
 
     public void toggleFlagMode(int boardIndex) {
