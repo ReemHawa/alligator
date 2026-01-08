@@ -413,7 +413,7 @@ public void revealHintCell(int row, int col) {
     }
     
     ///////////////////////////////////////////////////////////////////
- // //////////DEBUG ONLY – reveal all surprise cells at game start//////////////
+ // //////////DEBUG ONLY – reveal all surprise cells at game start/////
     ///////////////////////////////
     public void debugRevealAllSurprises(board model) {
         for (int r = 0; r < rows; r++) {
