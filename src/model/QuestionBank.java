@@ -7,8 +7,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class QuestionBank {
+
+    private static final Logger LOG = Logger.getLogger(QuestionBank.class.getName());
 
     private static final String CSV_RESOURCE_PATH = "/data/questions_data.csv";
     private final List<Question> questions = new ArrayList<>();
@@ -21,11 +25,13 @@ public class QuestionBank {
     private void load() {
         try (InputStream is = getClass().getResourceAsStream(CSV_RESOURCE_PATH)) {
             if (is == null) {
-                System.out.println("⚠ questions_data.csv not found at " + CSV_RESOURCE_PATH);
+                LOG.severe("questions_data.csv not found at " + CSV_RESOURCE_PATH);
                 return;
             }
 
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
+
                 String line;
                 boolean first = true;
                 int id = 1;
@@ -49,7 +55,7 @@ public class QuestionBank {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed loading questions from QuestionBank", e);
         }
     }
 
@@ -60,7 +66,8 @@ public class QuestionBank {
 
         List<Question> filtered = new ArrayList<>();
         for (Question q : questions) {
-            if (q.getGameLevel() != null && q.getGameLevel().trim().equalsIgnoreCase(lvl)) {
+            if (q.getGameLevel() != null
+                    && q.getGameLevel().trim().equalsIgnoreCase(lvl)) {
                 filtered.add(q);
             }
         }

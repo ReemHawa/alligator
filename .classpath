@@ -7,6 +7,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
-	<classpathentry kind="lib" path="C:/Users/reemh/Downloads/opencsv-5.9.jar"/>
+
+	<classpathentry exported="true" kind="lib" path="lib/opencv-490.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
