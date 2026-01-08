@@ -16,7 +16,6 @@ import java.util.Random;
 import java.io.File;
 import java.io.FileOutputStream;
 
-
 import javax.swing.JOptionPane;
 
 import model.DifficultyLevel;
@@ -25,7 +24,12 @@ import view.HomeScreen;
 import view.QuestionTableModel;
 import view.QuestionsManagementScreen;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class QuestionsManagementController {
+
+    private static final Logger LOG = Logger.getLogger(QuestionsManagementController.class.getName());
 
     private QuestionsManagementScreen screen;
     private HomeScreen homeScreen;
@@ -33,7 +37,7 @@ public class QuestionsManagementController {
 
     // קריאה מה־classpath (כמו game_history.csv)
     private static final String CSV_RESOURCE_PATH = "/data/questions_data.csv";
-    
+
     // כתיבה חזרה לקובץ בפרויקט (שיהיה בתיקייה src/data)
     private static final String CSV_WRITE_PATH   = "src/data/questions_data.csv";
 
@@ -42,7 +46,7 @@ public class QuestionsManagementController {
     // ===========================
     private static List<Question> cachedQuestionsForGame = null;
     private static final Random RNG = new Random();
-    
+
     private static File getWritableQuestionsFile() {
         String baseDir = System.getProperty("user.home")
                 + File.separator
@@ -63,7 +67,7 @@ public class QuestionsManagementController {
 
         // Read questions from CSV (כמו במסך היסטוריה)
         questions = loadQuestionsFromCSV();
-        System.out.println("Questions loaded: " + questions.size());
+        LOG.fine("Questions loaded: " + questions.size());
 
         // Open UI screen
         screen = new QuestionsManagementScreen(questions);
@@ -74,8 +78,8 @@ public class QuestionsManagementController {
         screen.setVisible(true);
         homeScreen.setVisible(false);
     }
-    
-    
+
+
 
     // ------------ LOAD FROM CSV (like gameHistoryController) ------------
     private List<Question> loadQuestionsFromCSV() {
@@ -114,10 +118,10 @@ public class QuestionsManagementController {
                 ));
             }
 
-            System.out.println("✅ Questions loaded from writable file");
+            LOG.fine("Questions loaded from writable file");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to load questions from CSV", e);
         }
 
         return list;
@@ -213,10 +217,10 @@ public class QuestionsManagementController {
             // 🔥 VERY IMPORTANT
             cachedQuestionsForGame = null;
 
-            System.out.println("✅ Questions SAVED and cache cleared");
+            LOG.fine("Questions SAVED and cache cleared");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to save questions to CSV", e);
         }
     }
 
@@ -271,10 +275,10 @@ public class QuestionsManagementController {
                 ));
             }
 
-            System.out.println("✅ Gameplay questions loaded from disk");
+            LOG.fine("Gameplay questions loaded from disk");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to load gameplay questions from disk", e);
         }
 
         cachedQuestionsForGame = list;
@@ -330,8 +334,8 @@ public class QuestionsManagementController {
         }
         return getRandomQuestionForLevel(gameLevel);
     }
-    
-    
+
+
     private static void ensureQuestionsFileExists() {
 
         File file = getWritableQuestionsFile();
@@ -342,7 +346,7 @@ public class QuestionsManagementController {
                         .getResourceAsStream(CSV_RESOURCE_PATH)) {
 
             if (is == null) {
-                System.out.println("❌ questions_data.csv missing in JAR");
+                LOG.severe("questions_data.csv missing in JAR");
                 return;
             }
 
@@ -350,10 +354,10 @@ public class QuestionsManagementController {
                 is.transferTo(fos);
             }
 
-            System.out.println("✅ questions_data.csv copied to writable folder");
+            LOG.fine("questions_data.csv copied to writable folder");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to ensure questions file exists", e);
         }
     }
 

@@ -1,13 +1,18 @@
+
 package model;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CSVHandler {
 
+    private static final Logger LOG = Logger.getLogger(CSVHandler.class.getName());
+
     private final String filePath;
-    
+
     private static final String HISTORY_PATH =
             System.getProperty("user.home")
             + File.separator
@@ -19,7 +24,7 @@ public class CSVHandler {
     public CSVHandler(String filePath) {
         this.filePath = filePath;
     }
-    
+
     private static File getWritableQuestionsFile() {
         String baseDir = System.getProperty("user.home")
                 + File.separator
@@ -37,7 +42,7 @@ public class CSVHandler {
     /* =====================================================
        =============== QUESTIONS HANDLING ==================
        ===================================================== */
-    
+
     private static void ensureQuestionsFileExists() {
         File outFile = getWritableQuestionsFile();
         if (outFile.exists()) return;
@@ -47,7 +52,7 @@ public class CSVHandler {
                 .getResourceAsStream("data/questions_data.csv")) {
 
             if (is == null) {
-                System.out.println("❌ questions_data.csv missing in JAR");
+                LOG.severe("questions_data.csv missing in JAR");
                 return;
             }
 
@@ -55,10 +60,10 @@ public class CSVHandler {
                 is.transferTo(fos);
             }
 
-            System.out.println("✅ questions_data.csv copied to writable location");
+            LOG.fine("questions_data.csv copied to writable location");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to ensure questions file exists", e);
         }
     }
 
@@ -95,10 +100,10 @@ public class CSVHandler {
                 ));
             }
 
-            System.out.println("✅ Loaded questions from writable file");
+            LOG.fine("Loaded questions from writable file");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to read questions", e);
         }
 
         return list;
@@ -130,10 +135,10 @@ public class CSVHandler {
                 bw.newLine();
             }
 
-            System.out.println("✅ questions_data.csv SAVED");
+            LOG.fine("questions_data.csv SAVED");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to write questions", e);
         }
     }
 
@@ -165,7 +170,7 @@ public class CSVHandler {
             bw.newLine();
 
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to append game history", ex);
         }
     }
 
@@ -202,13 +207,13 @@ public class CSVHandler {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to read game history", e);
         }
 
         return list;
     }
 
-    
+
 
 
     /* ===================================================== */
@@ -243,7 +248,7 @@ public class CSVHandler {
         result.add(sb.toString().trim());
         return result.toArray(new String[0]);
     }
-    
+
     private void ensureGameHistoryExists() {
 
         try {
@@ -273,12 +278,13 @@ public class CSVHandler {
                 is.transferTo(fos);
             }
 
-            System.out.println("✅ game_history.csv copied to disk: " + filePath);
+            LOG.fine("game_history.csv copied to disk: " + filePath);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to ensure game history exists", e);
         }
     }
 
 
 }
+

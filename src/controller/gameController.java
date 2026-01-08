@@ -1,3 +1,4 @@
+
 package controller;
 
 import model.DifficultyLevel;
@@ -21,7 +22,12 @@ import java.util.List;
 
 import javax.swing.*;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class gameController {
+
+    private static final Logger LOG = Logger.getLogger(gameController.class.getName());
 
     private game model;
     private gameView view;
@@ -61,6 +67,26 @@ public class gameController {
         if (view != null) {
             view.setVisible(true);
             // timer is already started in gameView constructor
+
+
+        /* // ===== DEBUG: count & reveal question cells =====
+            for (int bi = 0; bi < 2; bi++) {
+
+                board b = model.getBoard(bi);
+
+                for (int r = 0; r < b.getRows(); r++) {
+                    for (int c = 0; c < b.getCols(); c++) {
+
+                        if (b.isQuestionCell(r, c)) {
+
+                            // optional visual debug
+                            b.revealQuestion(r, c);
+                            view.revealQuestion(bi, r, c);
+                        }
+                    }
+                }
+            }
+            // ===============================================*/
         }
     }
 
@@ -111,7 +137,6 @@ public class gameController {
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
     }
-
     public void handleCellClick(int boardIndex, int row, int col) {
 
         if (boardIndex != model.getCurrentPlayer()) {
@@ -184,7 +209,6 @@ public class gameController {
                     model.addToScore(-cost);
                     model.addToScore(rewardPoints);
                     model.addToScore(-fullLifePenalty);
-
                     int lifeDelta;
                     if (good) {
                         if (!livesFull) {
@@ -689,7 +713,6 @@ public class gameController {
 
         CSVHandler csv = new CSVHandler(getGameHistoryPath());
         csv.appendGameHistory(entry);
-        System.out.println("📝 Game history saved: " + result);
         System.out.println(" Game history saved to: " + getGameHistoryPath());
     }
 
@@ -718,7 +741,7 @@ public class gameController {
                     .getResourceAsStream("data/questions_data.csv");
 
             if (is == null) {
-                System.out.println("❌ questions_data.csv NOT FOUND in JAR!");
+                LOG.severe("questions_data.csv NOT FOUND in JAR!");
                 gameQuestions = new ArrayList<>();
                 return;
             }
@@ -736,12 +759,11 @@ public class gameController {
             System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
 
             for (Question q : gameQuestions) {
-                System.out.println(" → " + q.getQuestionText());
+                LOG.fine("→ " + q.getQuestionText());
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Failed loading questions!");
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed loading questions!", e);
             gameQuestions = new ArrayList<>();
         }
     }

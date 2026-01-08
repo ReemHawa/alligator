@@ -8,11 +8,15 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class gameView extends JFrame {
 	
 	
     private static final long serialVersionUID = 1L;
+
+    private static final Logger LOG = Logger.getLogger(gameView.class.getName());
 
     // ===== Motivation Overlay (CENTER, GOLD, BIG) =====
     private JPanel motivationOverlay;
@@ -652,9 +656,6 @@ public class gameView extends JFrame {
     }*/
     
     
-    
-    
-
     private ImageIcon loadIcon(String path, int w, int h) {
         try {
             var url = getClass().getResource(path);
@@ -766,8 +767,7 @@ public class gameView extends JFrame {
         tile = Math.max(tile, 22);
         tile = Math.min(tile, 46);
 
-        System.out.println("✔ TILE_SIZE = " + tile +
-                " | window=" + window.width + "x" + window.height);
+        LOG.fine("TILE_SIZE = " + tile + " | window=" + window.width + "x" + window.height);
 
         return tile;
     }

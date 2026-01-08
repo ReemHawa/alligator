@@ -2,8 +2,12 @@ package music;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class bcMusic {
+
+    private static final Logger LOG = Logger.getLogger(bcMusic.class.getName());
 
     private static Clip clip;
     private static boolean isMuted = false;
@@ -37,7 +41,7 @@ public class bcMusic {
         } catch (UnsupportedAudioFileException |
                  IOException |
                  LineUnavailableException e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to play music resource: " + resourcePath, e);
         }
     }
 
