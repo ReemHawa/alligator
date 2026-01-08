@@ -46,6 +46,11 @@ public class gameController {
         model = new game();
         loadQuestionsForGame();
         view = new gameView(this, model);
+        
+        // register observer
+        for (int i = 0; i < 2; i++) {
+            model.getBoard(i).addObserver(view.getBoardView(i)); 
+        }
     }
 
     public gameController(DifficultyLevel level, String p1, String p2, HomeScreen home) {
@@ -53,6 +58,13 @@ public class gameController {
         model = new game(level, p1, p2);
         loadQuestionsForGame();
         view = new gameView(this, model);
+        
+     // register observer
+        for (int i = 0; i < 2; i++) {
+            model.getBoard(i).addObserver(view.getBoardView(i)); 
+        }
+        
+     
     }
 
     public game getModel() {
@@ -67,8 +79,6 @@ public class gameController {
         if (view != null) {
             view.setVisible(true);
             // timer is already started in gameView constructor
-
-
         /* // ===== DEBUG: count & reveal question cells =====
             for (int bi = 0; bi < 2; bi++) {
 
@@ -89,6 +99,8 @@ public class gameController {
             // ===============================================*/
         }
     }
+    
+    
 
     public void restartSameGame() {
         DifficultyLevel level = model.getLevel();
@@ -241,7 +253,7 @@ public class gameController {
         }
 
         // ================= NORMAL CELL =================
-        b.setRevealed(row, col);
+        //b.setRevealed(row, col);
 
         // ===== MINE =====
         if (b.isMine(row, col)) {
@@ -278,26 +290,28 @@ public class gameController {
         }
         // ===== SAFE CELL =====
         else {
-            int count = b.getSurroundingMines(row, col);
-            view.revealSafeCell(boardIndex, row, col, count);
-
+        	//////--before observer pattern--//////
+            // int count = b.getSurroundingMines(row, col);
+            // view.revealSafeCell(boardIndex, row, col, count);
+        	
+        	//////--after observer pattern--//////
+        	b.openSafeCell(boardIndex, row, col); // model notifies boardView
+        	int count = b.getSurroundingMines(row, col);
             model.addToScore(+1);
             view.updateScore(model.getScore());
-
             String msg = model.getMotivationManager()
                               .onGoodMove(model.getCurrentPlayer());
             view.showMotivationMessage(msg);
-
+           /* if (count == 0) {
+                floodVisited = new boolean[model.getBoard(boardIndex).getRows() ]
+                [model.getBoard(boardIndex).getCols() ];
+                floodReveal(boardIndex, row, col);
+            }*/
             if (count == 0) {
-                floodVisited = new boolean[
-                    model.getBoard(boardIndex).getRows()
-                ][
-                    model.getBoard(boardIndex).getCols()
-                ];
+                floodVisited = new boolean[b.getRows()][b.getCols()];
                 floodReveal(boardIndex, row, col);
             }
         }
-
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
     }

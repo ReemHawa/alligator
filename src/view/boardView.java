@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import javax.imageio.ImageIO;
 
-public class boardView extends JPanel {
+public class boardView extends JPanel implements model.BoardObserver {
 
     private static final long serialVersionUID = 1L;
 
@@ -50,6 +50,9 @@ public class boardView extends JPanel {
     private final int rows;
     private final int cols;
     
+    private final int myBoardIndex;
+
+    
 
     public boardView(int boardIndex, String title, gameController controller , int tileSize) {
 
@@ -58,14 +61,8 @@ public class boardView extends JPanel {
         this.cols = model.getCols();
         TILE_SIZE = tileSize;
         
+        this.myBoardIndex = boardIndex;
 
-       /* if (this.rows == 9 && cols == 9) {   //   Easy level
-            TILE_SIZE= 45;                
-        }
-        if (this.rows == 16 && cols == 16) {   // Hard level
-            TILE_SIZE= 32;                
-        }*/
-        //med level
 
         buttons = new JButton[rows][cols];
         stoneForCell = new ImageIcon[rows][cols];
@@ -193,7 +190,16 @@ public class boardView extends JPanel {
             btn.removeActionListener(al);
         }
     }
+    
+    //========observer pattern=========
+    
+    @Override
+    public void cellOpened(int boardIndex, int row, int col, int count) {
+    	 if (boardIndex != myBoardIndex) return; 
+    	    revealSafeCell(row, col, count);
+    }
 
+   //=====================================
 
     public void revealSafeCell(int row, int col, int count) {
         JButton btn = buttons[row][col];
@@ -427,8 +433,7 @@ public void revealHintCell(int row, int col) {
     
     
 
-
-
+  
     private Color getNumberColor(int n) {
         switch (n) {
             case 1: return new Color(52, 152, 219);   // Blue
