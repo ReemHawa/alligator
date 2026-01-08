@@ -24,6 +24,32 @@ public class board {
     private boolean[][] question;
     private boolean[][] questionRevealed;
     private boolean[][] questionUsed;
+    
+    // =====  OBSERVER PATTERN =====
+    private java.util.List<BoardObserver> observers = new java.util.ArrayList<>();
+
+    public void addObserver(BoardObserver o) {
+        observers.add(o);
+    }
+    
+    private void notifyCellOpened(int boardIndex, int r, int c, int count) {
+        for (BoardObserver o : observers) {
+            o.cellOpened(boardIndex, r, c, count);
+        }
+    }
+    
+    public void openSafeCell(int boardIndex, int r, int c) {
+        if (revealed[r][c]) return;
+
+        revealed[r][c] = true;
+        int count = getSurroundingMines(r, c);
+
+        notifyCellOpened(boardIndex, r, c, count);
+    }
+//========================================================
+
+
+
 
 
 
