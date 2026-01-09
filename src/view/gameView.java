@@ -777,6 +777,11 @@ public class gameView extends JFrame {
 
         return tile;
     }
+    
+    public boardView getBoardView(int i) {
+        return boardViews[i];
+    }
+
 
     
     public String getFormattedElapsedTime() {
