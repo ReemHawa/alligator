@@ -15,7 +15,7 @@ public class gameHistoryView extends JFrame {
 
     public gameHistoryView(gameHistoryController controller) {
 
-        setTitle("MineSweeper- History");
+        setTitle("MineSweeper - History");
         setSize(900, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
