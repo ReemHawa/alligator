@@ -64,9 +64,6 @@ public class gameView extends JFrame {
 
         // ===== Speaker icon (bottom-left) =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
-        root.setLayout(null); // needed because you use setBounds for speaker
-        // We'll later add a transparent content panel above it
-        root.add(speaker);
 
         int iconSize = 40;
         int marginLeft = 10;
@@ -78,7 +75,7 @@ public class gameView extends JFrame {
             public void componentResized(java.awt.event.ComponentEvent e) {
                 speaker.setBounds(
                         marginLeft,
-                        root.getHeight() - iconSize - marginBottom,
+                        getHeight() - iconSize - marginBottom,
                         iconSize,
                         iconSize
                 );
@@ -98,8 +95,6 @@ public class gameView extends JFrame {
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         topPanel.setOpaque(false);
         topPanel.add(btnExit);
-        topPanel.setBounds(0, 0, 300, 60);
-        root.add(topPanel);
         
         motivationLabel = new JLabel(" ");
         motivationLabel.setForeground(Color.WHITE);
@@ -123,9 +118,8 @@ public class gameView extends JFrame {
         // ===== Main transparent content panel (so BorderLayout still works) =====
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
-        content.setBounds(0, 0, 1920, 1080); // will be updated after visible
-        root.add(content);
 
+        content.add(topPanel, BorderLayout.NORTH);
 
      /*   // ===== Exit button (if you actually want it on screen) =====
         btnExit = new JButton("Exit");
@@ -213,12 +207,13 @@ public class gameView extends JFrame {
 
         content.add(bottomPanel, BorderLayout.SOUTH);
 
+        root.add(content, BorderLayout.CENTER);
+
         // ===== Set content pane =====
         setContentPane(root);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(false);
         setLocationRelativeTo(null);
-        setVisible(true);
 
         // ===== Motivation Overlay (CENTER, GOLD, BIG) =====
         motivationLabel = new JLabel("", SwingConstants.CENTER);
@@ -234,13 +229,14 @@ public class gameView extends JFrame {
         // place overlay above everything
         getLayeredPane().add(motivationOverlay, JLayeredPane.POPUP_LAYER);
 
-        // after frame is visible, fix bounds for speaker/content/overlay
-        SwingUtilities.invokeLater(() -> {
-            content.setBounds(0, 0, root.getWidth(), root.getHeight());
+        getLayeredPane().add(speaker, JLayeredPane.PALETTE_LAYER);
 
+        setVisible(true);
+
+        SwingUtilities.invokeLater(() -> {
             speaker.setBounds(
                     marginLeft,
-                    root.getHeight() - iconSize - marginBottom,
+                    getHeight() - iconSize - marginBottom,
                     iconSize,
                     iconSize
             );
@@ -618,6 +614,40 @@ public class gameView extends JFrame {
         }
     }
 
+    public void showSurpriseResult(boolean good,
+                                  int lifeDelta,
+                                  int rewardPoints,
+                                  int activationCost,
+                                  int fullLifePenalty,
+                                  int netPoints) {
+
+        StringBuilder msg = new StringBuilder();
+
+        if (good) {
+            msg.append("🎉 Lucky you!\nGood surprise!\n");
+            msg.append("Reward: +").append(rewardPoints).append(" points\n");
+            msg.append("Activation cost: -").append(activationCost).append(" points\n");
+
+            if (lifeDelta == 1) {
+                msg.append("Lives: +1 ❤️\n");
+            } else {
+                msg.append("Lives were full → extra cost: -")
+                        .append(fullLifePenalty)
+                        .append(" points (for the extra life)\n");
+            }
+
+        } else {
+            msg.append("😬 Oops!\nBad surprise!\n");
+            msg.append("Effect: ").append(rewardPoints).append(" points\n");
+            msg.append("Activation cost: -").append(activationCost).append(" points\n");
+            msg.append("Lives: -1 ❤️\n");
+        }
+
+        msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints).append(" points");
+
+        JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
+    }
+
    /* public int showGameOverDialog() {
         stopTimer();
         return JOptionPane.showOptionDialog(
@@ -675,33 +705,9 @@ public class gameView extends JFrame {
                                   int rewardPoints,
                                   int activationCost,
                                   int fullLifePenalty,
-                                  int netPoints) {
-
-        StringBuilder msg = new StringBuilder();
-
-        if (good) {
-            msg.append("🎉 Lucky you!\nGood surprise!\n");
-            msg.append("Reward: +").append(rewardPoints).append(" points\n");
-            msg.append("Activation cost: -").append(activationCost).append(" points\n");
-
-            if (lifeDelta == 1) {
-                msg.append("Lives: +1 ❤️\n");
-            } else {
-                msg.append("Lives were full → extra cost: -")
-                        .append(fullLifePenalty)
-                        .append(" points (for the extra life)\n");
-            }
-
-        } else {
-            msg.append("😬 Oops!\nBad surprise!\n");
-            msg.append("Effect: ").append(rewardPoints).append(" points\n");
-            msg.append("Activation cost: -").append(activationCost).append(" points\n");
-            msg.append("Lives: -1 ❤️\n");
-        }
-
-        msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints).append(" points");
-
-        JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
+                                  int netPoints,
+                                  int dummy) {
+        showSurpriseResult(good, lifeDelta, rewardPoints, activationCost, fullLifePenalty, netPoints);
     }
 
     private static class BackgroundPanel extends JPanel {
