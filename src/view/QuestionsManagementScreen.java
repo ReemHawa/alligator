@@ -53,7 +53,7 @@ public class QuestionsManagementScreen extends JFrame {
 
     public QuestionsManagementScreen(List<Question> questions) {
         setTitle("Questions Management");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setSize(1200, 700);
         setLocationRelativeTo(null);
         setResizable(false);

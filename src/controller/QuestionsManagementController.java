@@ -42,7 +42,7 @@ public class QuestionsManagementController {
     private static final String CSV_WRITE_PATH   = "src/data/questions_data.csv";
 
     // ===========================
-    // ✅ ADDED: cache for gameplay
+    //  ADDED: cache for gameplay
     // ===========================
     private static List<Question> cachedQuestionsForGame = null;
     private static final Random RNG = new Random();
@@ -130,18 +130,15 @@ public class QuestionsManagementController {
     // ------------ EVENT LISTENERS ------------
     private void initListeners() {
 
-        // BACK BUTTON
-        screen.getBackButton().addActionListener(e -> {
-            saveToCSV();
-            screen.dispose();
-            homeScreen.setVisible(true);
-        });
 
-        // SAVE on close (click X)
+        // BACK BUTTON
+        screen.getBackButton().addActionListener(e -> goBackHome());
+
+        // X button (window close)
         screen.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                saveToCSV();
+                goBackHome();
             }
         });
 
@@ -214,7 +211,7 @@ public class QuestionsManagementController {
                 bw.newLine();
             }
 
-            // 🔥 VERY IMPORTANT
+            //  VERY IMPORTANT
             cachedQuestionsForGame = null;
 
             LOG.fine("Questions SAVED and cache cleared");
@@ -232,7 +229,7 @@ public class QuestionsManagementController {
     }
 
     // =========================================================
-    // ✅ ADDED: GAMEPLAY API (static) - no UI dependency
+    //  ADDED: GAMEPLAY API (static) - no UI dependency
     // =========================================================
 
     /** Load questions for gameplay once (from resources). */
@@ -386,4 +383,21 @@ public class QuestionsManagementController {
         if (chosen == null) return false; // canceled
         return q.isCorrect(chosen.toString());
     }
+    private void goBackHome() {
+        saveToCSV();
+
+        if (screen != null) {
+            screen.dispose();
+        }
+
+        if (homeScreen != null) {
+            homeScreen.setVisible(true);
+            homeScreen.toFront();
+            homeScreen.requestFocus();
+        } else {
+            new HomeScreen().setVisible(true);
+        }
+    }
+
+    
 }
