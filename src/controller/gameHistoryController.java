@@ -2,30 +2,26 @@ package controller;
 
 import model.CSVHandler;
 import model.gameHistory;
-import view.gameHistoryView;
 
 import javax.swing.*;
-
-import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class gameHistoryController {
 
-    private final List<gameHistory> historyEntries;
+    private List<gameHistory> historyEntries = new ArrayList<>();
 
     public gameHistoryController() {
-        CSVHandler csv = new CSVHandler(
-        	    System.getProperty("user.home")
-        	    + File.separator
-        	    + ".minesweeper"
-        	    + File.separator
-        	    + "game_history.csv"
-        	);
-
-        historyEntries = csv.readGameHistory();
+        reload(); // always load latest
     }
 
-    // return one game by index
+    /** Reread CSV from disk so the table is always up to date */
+    public final void reload() {
+    	CSVHandler csv = new CSVHandler(gameController.getGameHistoryPath());
+    	historyEntries = csv.readGameHistory();
+
+    }
+
     public gameHistory getEntry(int index) {
         return historyEntries.get(index);
     }
@@ -34,15 +30,13 @@ public class gameHistoryController {
         return historyEntries.size();
     }
 
-    // show history screen
+    // show history screen (always fresh)
     public void showHistoryCard() {
-        new gameHistoryView(this);
+        reload();
+        SwingUtilities.invokeLater(() -> new view.gameHistoryView(this));
     }
 
-    // small main to test
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new gameHistoryController().showHistoryCard();
-        });
+        SwingUtilities.invokeLater(() -> new gameHistoryController().showHistoryCard());
     }
 }

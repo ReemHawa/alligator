@@ -770,12 +770,12 @@ public class gameController {
         System.out.println(" Game history saved to: " + getGameHistoryPath());
     }
 
-    private String getGameHistoryPath() {
+    public static String getGameHistoryPath() {
 
         String baseDir =
                 System.getProperty("user.home")
                 + File.separator
-                + "DualMinesweeper"
+                + ".minesweeper"
                 + File.separator
                 + "data";
 

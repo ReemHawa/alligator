@@ -5,6 +5,7 @@ import model.gameHistory;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 
@@ -124,27 +125,35 @@ public class gameHistoryView extends JFrame {
 
         String[] columnNames = {"Date", "Player A", "Player B", "Result", "Time", "Score", "Level"};
 
-        int rows = controller.getNumberOfEntries();
-        Object[][] data = new Object[rows][columnNames.length];
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // history is read-only
+            }
+        };
 
-        for (int i = 0; i < rows; i++) {
+        // fill rows
+        for (int i = 0; i < controller.getNumberOfEntries(); i++) {
             gameHistory entry = controller.getEntry(i);
-            data[i][0] = entry.getDate();
-            data[i][1] = entry.getPlayerA();
-            data[i][2] = entry.getPlayerB();
-            data[i][3] = entry.getResult();
-            data[i][4] = entry.getDuration();
-            data[i][5] = entry.getScore();
-            data[i][6] = entry.getLevel();
+            tableModel.addRow(new Object[]{
+                    entry.getDate(),
+                    entry.getPlayerA(),
+                    entry.getPlayerB(),
+                    entry.getResult(),
+                    entry.getDuration(),
+                    entry.getScore(),
+                    entry.getLevel()
+            });
         }
 
-        JTable historyTable = new JTable(data, columnNames);
+        JTable historyTable = new JTable(tableModel);
         historyTable.setFont(new Font("Serif", Font.PLAIN, 18));
         historyTable.setRowHeight(34);
         historyTable.setGridColor(new Color(225, 225, 225));
         historyTable.setBackground(Color.WHITE);
         historyTable.setForeground(Color.BLACK);
         historyTable.setFillsViewportHeight(true);
+
 
         JTableHeader header = historyTable.getTableHeader();
         header.setFont(new Font("Serif", Font.BOLD, 18));
