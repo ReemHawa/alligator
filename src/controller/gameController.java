@@ -824,6 +824,7 @@ public class gameController {
             gameQuestions = new ArrayList<>();
         }
     }
+    //////////////////
 
     public void handleRightClick(int boardIndex, int row, int col) {
 
