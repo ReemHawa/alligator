@@ -213,6 +213,9 @@ public class gameController {
 
         // ===== MINE =====
         if (b.isMine(row, col)) {
+        	
+        	b.setRevealed(row, col);
+
 
             model.loseLife();
 

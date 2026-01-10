@@ -185,10 +185,10 @@ public class boardView extends JPanel implements model.BoardObserver {
         btn.setIcon(flagIcon);
         btn.setText(null);
 
-        // Prevent further clicks without disabling
+        /*/ Prevent further clicks without disabling
         for (java.awt.event.ActionListener al : btn.getActionListeners()) {
             btn.removeActionListener(al);
-        }
+        }*/
     }
     
     //========observer pattern=========
@@ -211,9 +211,9 @@ public class boardView extends JPanel implements model.BoardObserver {
         btn.setIcon(null);
 
         // Disable further clicks WITHOUT disabling the button
-        for (java.awt.event.ActionListener al : btn.getActionListeners()) {
-            btn.removeActionListener(al);
-        }
+       // for (java.awt.event.ActionListener al : btn.getActionListeners()) {
+          //  btn.removeActionListener(al);
+       // }
 
         btn.setBorder(null);
         btn.setContentAreaFilled(false);
@@ -242,10 +242,6 @@ public class boardView extends JPanel implements model.BoardObserver {
         btn.setContentAreaFilled(false);
         btn.setFocusPainted(false);
 
-        // 🔒 REMOVE ALL MOUSE LISTENERS (CRITICAL)
-        for (var ml : btn.getMouseListeners()) {
-            btn.removeMouseListener(ml);
-        }
     }
 
 
@@ -274,9 +270,9 @@ public class boardView extends JPanel implements model.BoardObserver {
                 JButton btn = buttons[r][c];
 
                 
-                for (java.awt.event.ActionListener al : btn.getActionListeners()) {
+               /* for (java.awt.event.ActionListener al : btn.getActionListeners()) {
                     btn.removeActionListener(al);
-                }
+                }*/
 
                 if (model.isMine(r, c)) {
                     btn.setIcon(mineIcon);
@@ -315,10 +311,7 @@ public class boardView extends JPanel implements model.BoardObserver {
         btn.setContentAreaFilled(false);
         btn.setFocusPainted(false);
 
-        // 🔒 disable further interaction
-        for (var ml : btn.getMouseListeners()) {
-            btn.removeMouseListener(ml);
-        }
+        
     }
 
 

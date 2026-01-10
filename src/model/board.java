@@ -54,14 +54,14 @@ public class board {
 
 
     /* ======================================================
-       ✅ OLD CONSTRUCTOR (REQUIRED BY game.java)
+        OLD CONSTRUCTOR (REQUIRED BY game.java)
        ====================================================== */
     public board(int rows, int cols, int minesNum) {
         this(rows, cols, minesNum, 0);   // delegate
     }
 
     /* ======================================================
-       ✅ NEW CONSTRUCTOR (WITH SURPRISES)
+        NEW CONSTRUCTOR (WITH SURPRISES)
        ====================================================== */
     public board(int rows, int cols, int minesNum, int surpriseCount) {
         this.rows = rows;
@@ -79,7 +79,7 @@ public class board {
         surpriseActivated = new boolean[rows][cols];
         surpriseRevealed = new boolean[rows][cols];
 
-        // ✅ ADD THESE
+        
         question = new boolean[rows][cols];
         questionRevealed = new boolean[rows][cols];
         questionUsed = new boolean[rows][cols];
@@ -91,7 +91,7 @@ public class board {
     }
 
     /* ======================================================
-    ✅ NEW CONSTRUCTOR (WITH SURPRISES + QUESTIONS)
+     NEW CONSTRUCTOR (WITH SURPRISES + QUESTIONS)
     ====================================================== */
  public board(int rows, int cols, int minesNum, int surpriseCount, int questionCount) {
 
