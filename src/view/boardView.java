@@ -51,6 +51,9 @@ public class boardView extends JPanel implements model.BoardObserver {
     private final int cols;
     
     private final int myBoardIndex;
+    
+    private Cursor flagCursor;
+
 
     
 
@@ -84,7 +87,12 @@ public class boardView extends JPanel implements model.BoardObserver {
         // Load flag icon from resources
         flagIcon = loadIcon(FLAG, 32, 32);
         flagButton = new JLabel(flagIcon);
-        flagButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        //flagButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        Image cursorImg = flagIcon.getImage();
+        
+        Point hotSpot = new Point(1, 1);
+        flagCursor = tk.createCustomCursor(cursorImg, hotSpot, "flagCursor");
 
         JLabel label = new JLabel(title, SwingConstants.CENTER);
         label.setForeground(Color.WHITE);
@@ -177,6 +185,16 @@ public class boardView extends JPanel implements model.BoardObserver {
 
     public void setFlagMode(boolean enabled) {
         this.flagMode = enabled;
+        
+        Cursor c = enabled ? flagCursor : Cursor.getDefaultCursor();
+
+        // set cursor on board + all cells (so it stays while moving on buttons)
+        setCursor(c);
+        for (int r = 0; r < rows; r++) {
+            for (int col = 0; col < cols; col++) {
+                buttons[r][col].setCursor(c);
+            }
+        }
     }
 
     public void setFlagAtCell(int row, int col) {
