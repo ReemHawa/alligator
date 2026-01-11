@@ -3,7 +3,6 @@ package view;
 import controller.gameController;
 import model.board;
 import model.game;
-import model.DifficultyLevel;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -16,8 +15,9 @@ public class gameView extends JFrame {
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = Logger.getLogger(gameView.class.getName());
 
+    // ===== Motivation Overlay (CENTER, GOLD, BIG) =====
     private JPanel motivationOverlay;
-    private JLabel motivationLabel;
+    private JLabel motivationOverlayLabel;
     private javax.swing.Timer motivationTimer;
 
     private final boardView[] boardViews = new boardView[2];
@@ -61,6 +61,7 @@ public class gameView extends JFrame {
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        // ===== speaker icon =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
 
         int iconSize = 40;
@@ -83,7 +84,8 @@ public class gameView extends JFrame {
             }
         });
 
-        btnExit = new JButton("exit");
+        // ===== top left exit =====
+        btnExit = new JButton("Exit");
         btnExit.setFocusable(false);
         btnExit.addActionListener(e -> controller.exitToHome());
 
@@ -92,13 +94,13 @@ public class gameView extends JFrame {
         topPanel.add(btnExit);
 
         // ===== message area (bottom) =====
-        motivationLabel = new JLabel(" ");
-        motivationLabel.setForeground(Color.WHITE);
-        motivationLabel.setFont(new Font("Verdana", Font.BOLD, 18));
+        JLabel msgLabel = new JLabel(" ");
+        msgLabel.setForeground(Color.WHITE);
+        msgLabel.setFont(new Font("Verdana", Font.BOLD, 18));
 
         JPanel msgPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         msgPanel.setOpaque(false);
-        msgPanel.add(motivationLabel);
+        msgPanel.add(msgLabel);
 
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
@@ -110,13 +112,12 @@ public class gameView extends JFrame {
         timerLabel.setFont(new Font("Verdana", Font.BOLD, 26));
         timerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // ===== turn timer label (NOW under timer) =====
+        // ===== turn timer label (under main timer) =====
         turnTimerLabel = new JLabel("Time left for your turn: --");
         turnTimerLabel.setForeground(Color.WHITE);
         turnTimerLabel.setFont(new Font("Verdana", Font.BOLD, 18));
         turnTimerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Put both labels in one vertical box
         JPanel timerPanel = new JPanel();
         timerPanel.setOpaque(false);
         timerPanel.setLayout(new BoxLayout(timerPanel, BoxLayout.Y_AXIS));
@@ -142,6 +143,7 @@ public class gameView extends JFrame {
 
         content.add(centerPanel, BorderLayout.CENTER);
 
+        // ===== hearts =====
         JPanel lifePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
         lifePanel.setOpaque(false);
 
@@ -152,23 +154,23 @@ public class gameView extends JFrame {
         }
         updateLives(model.getLivesRemaining());
 
+        // ===== score =====
         scoreLabel = new JLabel("Score: 0");
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Verdana", Font.BOLD, 22));
 
-        // RIGHT SIDE: score only
-        JPanel scoreAndTurnPanel = new JPanel();
-        scoreAndTurnPanel.setOpaque(false);
-        scoreAndTurnPanel.setLayout(new BoxLayout(scoreAndTurnPanel, BoxLayout.Y_AXIS));
+        JPanel scorePanel = new JPanel();
+        scorePanel.setOpaque(false);
+        scorePanel.setLayout(new BoxLayout(scorePanel, BoxLayout.Y_AXIS));
         scoreLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        scoreAndTurnPanel.add(scoreLabel);
+        scorePanel.add(scoreLabel);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setOpaque(false);
 
         bottomPanel.add(msgPanel, BorderLayout.NORTH);
         bottomPanel.add(lifePanel, BorderLayout.CENTER);
-        bottomPanel.add(scoreAndTurnPanel, BorderLayout.EAST);
+        bottomPanel.add(scorePanel, BorderLayout.EAST);
 
         content.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -179,15 +181,15 @@ public class gameView extends JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
 
-        // ===== big motivation overlay label =====
-        motivationLabel = new JLabel("", SwingConstants.CENTER);
-        motivationLabel.setForeground(new Color(212, 175, 55));
-        motivationLabel.setFont(new Font("Serif", Font.BOLD, 52));
-        motivationLabel.setVisible(false);
+        // ===== big motivation overlay label (CENTER) =====
+        motivationOverlayLabel = new JLabel("", SwingConstants.CENTER);
+        motivationOverlayLabel.setForeground(new Color(212, 175, 55));
+        motivationOverlayLabel.setFont(new Font("Serif", Font.BOLD, 52));
+        motivationOverlayLabel.setVisible(false);
 
         motivationOverlay = new JPanel(new GridBagLayout());
         motivationOverlay.setOpaque(false);
-        motivationOverlay.add(motivationLabel);
+        motivationOverlay.add(motivationOverlayLabel);
         motivationOverlay.setVisible(false);
 
         getLayeredPane().add(motivationOverlay, JLayeredPane.POPUP_LAYER);
@@ -207,16 +209,25 @@ public class gameView extends JFrame {
         });
 
         setActiveBoard(0);
-
         startTimer();
+
+        // keep old API call working (controller uses it)
+        this.motivationLabel = msgLabel;
     }
+
+    // this keeps compatibility with your old code that calls motivationLabel (bottom line)
+    private JLabel motivationLabel;
 
     // ===================== Motivation overlay =====================
     public void showMotivationMessage(String msg) {
         if (msg == null || msg.isBlank()) return;
 
-        motivationLabel.setText(msg);
-        motivationLabel.setVisible(true);
+        // show in bottom message line too (optional but useful)
+        if (motivationLabel != null) motivationLabel.setText(msg);
+
+        // show big overlay
+        motivationOverlayLabel.setText(msg);
+        motivationOverlayLabel.setVisible(true);
         motivationOverlay.setVisible(true);
 
         if (motivationTimer != null && motivationTimer.isRunning()) {
@@ -224,7 +235,7 @@ public class gameView extends JFrame {
         }
 
         motivationTimer = new javax.swing.Timer(2500, e -> {
-            motivationLabel.setVisible(false);
+            motivationOverlayLabel.setVisible(false);
             motivationOverlay.setVisible(false);
         });
         motivationTimer.setRepeats(false);
@@ -401,20 +412,160 @@ public class gameView extends JFrame {
 
     // ===================== dialogs =====================
     public int showGameOverDialog() {
-        stopTimer();
-        stopTurnTimer();
-        return JOptionPane.showConfirmDialog(
-                this,
-                "Game Over!",
-                "Game Over",
-                JOptionPane.YES_NO_OPTION
-        );
+
+        final int[] choice = { JOptionPane.NO_OPTION };
+
+        String p1 = model.getPlayer1Name();
+        String p2 = model.getPlayer2Name();
+        String level = capitalize(model.getLevel().name().toLowerCase());
+        int score = model.getScore();
+        String time = getFormattedElapsedTime();
+        int lives = model.getLivesRemaining();
+
+        // ===== FULL-SCREEN OVER THE GAME WINDOW =====
+        final JDialog dialog = new JDialog(this, true);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0));
+
+        // Make dialog cover the whole gameView window
+        dialog.setSize(this.getSize());
+        try {
+            dialog.setLocation(this.getLocationOnScreen());
+        } catch (Exception ex) {
+            dialog.setLocationRelativeTo(this);
+        }
+
+        // ===== overlay panel (dims entire window) =====
+        JPanel overlay = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // full dim background
+                g2.setColor(new Color(0, 0, 0, 140));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        overlay.setOpaque(false);
+
+        // ===== white center card (rounded) =====
+        JPanel card = new JPanel();
+        card.setOpaque(false);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(BorderFactory.createEmptyBorder(20, 24, 18, 24));
+
+        JPanel cardWrapper = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                g2.setColor(new Color(255, 255, 255, 235));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+                g2.setColor(new Color(255, 255, 255, 200));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+
+                g2.dispose();
+            }
+        };
+        cardWrapper.setOpaque(false);
+        cardWrapper.add(card, BorderLayout.CENTER);
+
+        // Force the card size like your screenshot
+        cardWrapper.setPreferredSize(new Dimension(520, 320));
+
+        Font titleFont = new Font("Serif", Font.BOLD, 34);
+        Font mainFont  = new Font("Serif", Font.PLAIN, 16);
+        Font smallFont = new Font("Serif", Font.PLAIN, 14);
+
+        JLabel title = new JLabel("Game Over!", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setFont(titleFont);
+        title.setForeground(new Color(60, 60, 60));
+
+        JLabel names = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
+        names.setAlignmentX(Component.CENTER_ALIGNMENT);
+        names.setFont(mainFont);
+        names.setForeground(new Color(70, 70, 70));
+
+        JLabel lvl = new JLabel("Level: " + level, SwingConstants.CENTER);
+        lvl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lvl.setFont(smallFont);
+        lvl.setForeground(new Color(90, 90, 90));
+
+        JLabel result = new JLabel("You lost ☹ Give it another shot!", SwingConstants.CENTER);
+        result.setAlignmentX(Component.CENTER_ALIGNMENT);
+        result.setFont(smallFont);
+        result.setForeground(new Color(90, 90, 90));
+
+        JLabel stats = new JLabel("Score: " + score + "  Time: " + time, SwingConstants.CENTER);
+        stats.setAlignmentX(Component.CENTER_ALIGNMENT);
+        stats.setFont(smallFont);
+        stats.setForeground(new Color(90, 90, 90));
+
+        JLabel livesLbl = new JLabel("Remaining lives: " + lives, SwingConstants.CENTER);
+        livesLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        livesLbl.setFont(smallFont);
+        livesLbl.setForeground(new Color(90, 90, 90));
+
+        JButton tryAgain = new JButton("Try Again");
+        JButton exit = new JButton("Exit");
+
+        Dimension btnSize = new Dimension(110, 26);
+        tryAgain.setPreferredSize(btnSize);
+        exit.setPreferredSize(btnSize);
+
+        JPanel btns = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
+        btns.setOpaque(false);
+        btns.add(tryAgain);
+        btns.add(exit);
+
+        card.add(title);
+        card.add(Box.createVerticalStrut(8));
+        card.add(names);
+        card.add(Box.createVerticalStrut(10));
+        card.add(lvl);
+        card.add(Box.createVerticalStrut(6));
+        card.add(result);
+        card.add(Box.createVerticalStrut(12));
+        card.add(stats);
+        card.add(Box.createVerticalStrut(6));
+        card.add(livesLbl);
+        card.add(Box.createVerticalStrut(18));
+        card.add(btns);
+
+        tryAgain.addActionListener(e -> {
+            choice[0] = JOptionPane.YES_OPTION;
+            dialog.dispose();
+        });
+
+        exit.addActionListener(e -> {
+            choice[0] = JOptionPane.NO_OPTION;
+            dialog.dispose();
+        });
+
+        overlay.add(cardWrapper, new GridBagConstraints());
+        dialog.setContentPane(overlay);
+
+        // IMPORTANT: re-pack after preferred sizes are set
+        dialog.validate();
+        dialog.repaint();
+
+        dialog.setVisible(true);
+        return choice[0];
     }
+
 
     public void showWinForBoth(int finalScore) {
         stopTimer();
         stopTurnTimer();
-        JOptionPane.showMessageDialog(this, "You win! Final Score: " + finalScore, "Victory", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "You win! Final Score: " + finalScore, "Victory",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     // ===================== util =====================
@@ -426,6 +577,11 @@ public class gameView extends JFrame {
 
     public String getFormattedElapsedTime() {
         return formatTime(elapsedSeconds);
+    }
+
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private ImageIcon loadIcon(String path, int w, int h) {
