@@ -865,7 +865,10 @@ public class gameController {
         }
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> branch 'master' of https://github.com/ReemHawa/alligator.git
 
     public void handleRightClick(int boardIndex, int row, int col) {
 
