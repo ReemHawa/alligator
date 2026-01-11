@@ -30,11 +30,7 @@ public class gameView extends JFrame {
     private javax.swing.Timer gameTimer;
     private int elapsedSeconds = 0;
 
-    // ===== TURN TIMER =====
-    private JLabel turnTimerLabel;
-    private javax.swing.Timer turnTimer;
-    private int turnSecondsLeft = 0;
-
+    
     private final ImageIcon fullheart;
     private final ImageIcon emptyheart;
 
@@ -97,12 +93,12 @@ public class gameView extends JFrame {
             }
         });
 
-        // ===== top left exit =====
+       
+     // ===== top left exit =====
         btnExit = new JButton("Exit");
-        // ===== TOP PANEL (Exit button) =====
-        btnExit = new JButton("exit");
         btnExit.setFocusable(false);
         btnExit.addActionListener(e -> controller.exitToHome());
+
         // NEW: pause button
         btnPause = new JButton(pauseIcon);
         btnPause.setFocusable(false);
@@ -140,18 +136,12 @@ public class gameView extends JFrame {
         timerLabel.setFont(new Font("Verdana", Font.BOLD, 26));
         timerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // ===== turn timer label (under main timer) =====
-        turnTimerLabel = new JLabel("Time left for your turn: --");
-        turnTimerLabel.setForeground(Color.WHITE);
-        turnTimerLabel.setFont(new Font("Verdana", Font.BOLD, 18));
-        turnTimerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
+       
         JPanel timerPanel = new JPanel();
         timerPanel.setOpaque(false);
         timerPanel.setLayout(new BoxLayout(timerPanel, BoxLayout.Y_AXIS));
         timerPanel.add(timerLabel);
         timerPanel.add(Box.createVerticalStrut(6));
-        timerPanel.add(turnTimerLabel);
 
         JPanel boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
         boardsPanel.setOpaque(false);
@@ -254,10 +244,10 @@ public class gameView extends JFrame {
     public void showMotivationMessage(String msg) {
         if (msg == null || msg.isBlank()) return;
 
-        // show in bottom message line too (optional but useful)
-        if (motivationLabel != null) motivationLabel.setText(msg);
+        // ❌ לא מציגים למטה כדי שלא יהיה כפול
+        // if (motivationLabel != null) motivationLabel.setText(msg);
 
-        // show big overlay
+        // ✅ מציגים רק overlay הגדול
         motivationOverlayLabel.setText(msg);
         motivationOverlayLabel.setVisible(true);
         motivationOverlay.setVisible(true);
@@ -273,6 +263,7 @@ public class gameView extends JFrame {
         motivationTimer.setRepeats(false);
         motivationTimer.start();
     }
+
 
     // ===================== elapsed timer =====================
     public void startTimer() {
@@ -294,30 +285,7 @@ public class gameView extends JFrame {
         }
     }
 
-    // ===================== TURN TIMER =====================
-    public void startTurnTimer(int seconds, Runnable onTimeout) {
-        stopTurnTimer();
-        turnSecondsLeft = seconds;
-        turnTimerLabel.setText("Time left for your turn: " + turnSecondsLeft + "s");
-
-        turnTimer = new javax.swing.Timer(1000, e -> {
-            turnSecondsLeft--;
-            turnTimerLabel.setText("Time left for your turn: " + turnSecondsLeft + "s");
-
-            if (turnSecondsLeft <= 0) {
-                stopTurnTimer();
-                onTimeout.run();
-            }
-        });
-        turnTimer.start();
-    }
-
-    public void stopTurnTimer() {
-        if (turnTimer != null) {
-            turnTimer.stop();
-            turnTimer = null;
-        }
-    }
+    
 
     // ===================== API used by controller =====================
     public void setActiveBoard(int playerIndex) {
@@ -387,8 +355,8 @@ public class gameView extends JFrame {
     public void showRemoveFlagMessage() {
         JOptionPane.showMessageDialog(
                 this,
-                "Remove the flag to reveal the cell",
-                "Flagged Cell",
+                "The selected cell is currently flagged.\nPlease remove the flag using a right-click before revealing it.",
+                "Invalid Action",
                 JOptionPane.INFORMATION_MESSAGE
         );
     }
@@ -425,11 +393,11 @@ public class gameView extends JFrame {
 
             if (lifeDelta == 1) {
                 msg.append("Lives: +1 ❤️\n");
-            } else {
-                msg.append("Lives were full → extra cost: -")
-                        .append(fullLifePenalty)
-                        .append(" points (for the extra life)\n");
-            }
+            }  else {
+                msg.append("Lives were full → extra cost: +")
+                .append(fullLifePenalty)
+                .append(" points (for the extra life)\n");
+    }
         } else {
             msg.append("😬 Oops!\nBad surprise!\n");
             msg.append("Effect: ").append(rewardPoints).append(" points\n");
@@ -595,7 +563,6 @@ public class gameView extends JFrame {
 
     public void showWinForBoth(int finalScore) {
         stopTimer();
-        stopTurnTimer();
         JOptionPane.showMessageDialog(this, "You win! Final Score: " + finalScore, "Victory",
                 JOptionPane.INFORMATION_MESSAGE);
     }

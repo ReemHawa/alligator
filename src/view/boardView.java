@@ -10,7 +10,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 import javax.imageio.ImageIO;
-
+//new changes
 public class boardView extends JPanel implements model.BoardObserver {
 
     private static final long serialVersionUID = 1L;

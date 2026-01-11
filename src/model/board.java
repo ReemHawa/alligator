@@ -13,7 +13,7 @@ public class board {
     private final boolean[][] flagged;
     private final int[][] surroundingMines;
     private final cellType[][] type;
-
+///// new changes
     // ===== SURPRISE =====
     private boolean[][] surprise;
     private boolean[][] goodSurprise;

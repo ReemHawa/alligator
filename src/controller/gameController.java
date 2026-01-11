@@ -84,49 +84,12 @@ public class gameController {
         }
     }
 
-    private void restartTurnTimer() {
-        if (view == null) return;
-
-        view.startTurnTimer(getTurnSeconds(), () -> {
-
-            if (model.isGameOver()) return;
-
-            model.loseLife();
-            view.updateLives(model.getLivesRemaining());
-
-            if (model.isGameOver()) {
-
-                saveGameHistory("lost");
-
-                for (int i = 0; i < 2; i++) {
-                    view.revealAllMines(i, model.getBoard(i));
-                    view.revealAllSurprises(i, model.getBoard(i));
-                }
-
-                view.stopTimer();
-                view.stopTurnTimer();
-
-                int choice = view.showGameOverDialog();
-                if (choice == JOptionPane.YES_OPTION) {
-                    view.dispose();
-                    restartSameGame();
-                } else {
-                    System.exit(0);
-                }
-                return;
-            }
-
-            model.switchTurn();
-            view.setActiveBoard(model.getCurrentPlayer());
-            restartTurnTimer();
-        });
-    }
+    
     // ====================================================
 
     public void startGame() {
         if (view != null) {
             view.setVisible(true);
-            restartTurnTimer(); // ✅ start turn timer when game starts
         }
     }
 
@@ -170,7 +133,6 @@ public class gameController {
             if (model.isGameOver()) return;
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
-            restartTurnTimer(); 
             return;
         }
 
@@ -179,7 +141,6 @@ public class gameController {
 
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
-        restartTurnTimer(); // reset timer (each turn)
     }
 
     public void handleCellClick(int boardIndex, int row, int col) {
@@ -244,82 +205,75 @@ public class gameController {
             return;
         }
 
-        // ===== MINE =====
-        if (b.isMine(row, col)) {
+     // ================= NORMAL / MINE CELL =================
 
-        // ================= NORMAL CELL =================
+     // block clicking already revealed cells
+     if (b.isRevealed(row, col)) {
+         showAlreadyRevealedCellMessage();
+         return;
+     }
 
-        // ✅ block clicking already revealed mine/safe cells
-        // (question & surprise כבר נתפסו למעלה)
-        if (b.isRevealed(row, col)) {
-            showAlreadyRevealedCellMessage();
-            return; // ❗ לא מחליפים תור
-        }
-        // ===== MINE =====
-        if (b.isMine(row, col)) {
+     // ===== MINE =====
+     if (b.isMine(row, col)) {
 
-        	  // ✅ חשוב מאוד: לסמן את המוקש כפתוח
->>>>>>> 5f87fc1 (I updated the logic to these requirements Implemented pause interaction)
-            b.setRevealed(row, col);
+         b.setRevealed(row, col);
+         model.loseLife();
 
-            model.loseLife();
+         String msg = model.getMotivationManager()
+                 .onBadMove(model.getCurrentPlayer());
+         view.showMotivationMessage(msg);
 
-            String msg = model.getMotivationManager()
-                    .onBadMove(model.getCurrentPlayer());
-  view.showMotivationMessage(msg);
+         view.revealMineHit(boardIndex, row, col);
+         view.updateLives(model.getLivesRemaining());
 
-          
+         if (checkWinForBoard(boardIndex)) return;
 
-            view.revealMineHit(boardIndex, row, col);
-            view.updateLives(model.getLivesRemaining());
+         if (model.isGameOver()) {
 
-            if (checkWinForBoard(boardIndex)) return;
+             saveGameHistory("lost");
 
-            if (model.isGameOver()) {
+             for (int i = 0; i < 2; i++) {
+                 view.revealAllMines(i, model.getBoard(i));
+                 view.revealAllSurprises(i, model.getBoard(i));
+             }
 
-                saveGameHistory("lost");
+             view.stopTimer();
 
-                for (int i = 0; i < 2; i++) {
-                    view.revealAllMines(i, model.getBoard(i));
-                    view.revealAllSurprises(i, model.getBoard(i));
-                }
+             int choice = view.showGameOverDialog();
+             if (choice == JOptionPane.YES_OPTION) {
+                 view.dispose();
+                 restartSameGame();
+             } else {
+                 System.exit(0);
+             }
+             return;
+         }
+     }
+     // ===== SAFE CELL =====
+     else {
 
-                view.stopTimer();
-                view.stopTurnTimer();
+         b.openSafeCell(boardIndex, row, col);
+         int count = b.getSurroundingMines(row, col);
 
-                int choice = view.showGameOverDialog();
-                if (choice == JOptionPane.YES_OPTION) {
-                    view.dispose();
-                    restartSameGame();
-                } else {
-                    System.exit(0);
-                }
-                return;
-            }
-        }
-        // ===== SAFE CELL =====
-        else {
-            b.openSafeCell(boardIndex, row, col);
-            int count = b.getSurroundingMines(row, col);
+         model.addToScore(+1);
+         view.updateScore(model.getScore());
 
-            model.addToScore(+1);
-            view.updateScore(model.getScore());
+         String msg = model.getMotivationManager()
+                 .onGoodMove(model.getCurrentPlayer());
+         view.showMotivationMessage(msg);
 
-            String msg = model.getMotivationManager()
-                              .onGoodMove(model.getCurrentPlayer());
-            view.showMotivationMessage(msg);
+         if (count == 0) {
+             floodVisited = new boolean[b.getRows()][b.getCols()];
+             floodReveal(boardIndex, row, col);
+         }
+     }
 
-            if (count == 0) {
-                floodVisited = new boolean[b.getRows()][b.getCols()];
-                floodReveal(boardIndex, row, col);
-            }
-        }
+     if (model.isGameOver()) return;
 
-        if (model.isGameOver()) return;
+     model.switchTurn();
+     view.setActiveBoard(model.getCurrentPlayer());
 
-        model.switchTurn();
-        view.setActiveBoard(model.getCurrentPlayer());
-        restartTurnTimer(); // ✅ reset turn timer after switch
+       
     }
 
     private void activateSurpriseCell(int boardIndex, int row, int col) {
@@ -379,7 +333,6 @@ public class gameController {
             }
 
             view.stopTimer();
-            view.stopTurnTimer();
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -495,7 +448,7 @@ public class gameController {
             JOptionPane.showMessageDialog(
                     view,
                     "You already have 10 lives (MAX).\n"
-                            + "Score reduced by -" + overflowPenalty
+                            + "Score reduced by +" + overflowPenalty
                             + " due to life reward overflow.",
                     "Max Lives Reached",
                     JOptionPane.WARNING_MESSAGE
@@ -515,7 +468,6 @@ public class gameController {
             }
 
             view.stopTimer();
-            view.stopTurnTimer();
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -682,7 +634,6 @@ public class gameController {
         // Actual needed behavior:
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
-        restartTurnTimer(); // ✅ reset turn timer
     
     }
 
@@ -695,7 +646,6 @@ public class gameController {
     private boolean checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             onGameEnd("won");
-            view.stopTurnTimer();
             view.showWinForBoth(model.getScore());
             return true;
         }
@@ -914,7 +864,6 @@ public class gameController {
 
         if (view != null) {
             view.stopTimer();
-            view.stopTurnTimer();
 
             for (int i = 0; i < 2; i++) {
                 view.revealAllMines(i, model.getBoard(i));
@@ -1001,18 +950,20 @@ public class gameController {
 
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
-            restartTurnTimer(); // ✅ reset turn timer
         }
     }
 
     public void exitToHome() {
         if (view != null) {
             view.stopTimer();
-            view.stopTurnTimer();
+            view.dispose();
         }
 
-        view.dispose();
-        if (homeScreen != null) homeScreen.setVisible(true);
-        else new HomeScreen().setVisible(true);
+        if (homeScreen != null) {
+            homeScreen.setVisible(true);
+        } else {
+            new HomeScreen().setVisible(true);
+        }
     }
 }
+    
