@@ -85,38 +85,8 @@ public class gameView extends JFrame {
         });
 
         // ===== top left exit =====
-        btnExit = new JButton("Exit") {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int arc = 18;
-
-                // background
-                g2.setColor(new Color(255, 255, 255, 235));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
-
-                // border
-                g2.setColor(new Color(200, 200, 200, 220));
-                g2.setStroke(new BasicStroke(2f));
-                g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
-
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-
+        btnExit = new JButton("Exit");
         btnExit.setFocusable(false);
-        btnExit.setFocusPainted(false);
-        btnExit.setBorderPainted(false);
-        btnExit.setContentAreaFilled(false);
-        btnExit.setOpaque(false);
-        btnExit.setForeground(Color.BLACK); // text color like your Go Back button
-        btnExit.setFont(new Font("Serif", Font.BOLD, 14)); // optional, change if you want
-
         btnExit.addActionListener(e -> controller.exitToHome());
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));

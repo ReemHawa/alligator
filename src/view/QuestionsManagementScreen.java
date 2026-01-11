@@ -5,10 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.RenderingHints;
-import java.awt.BasicStroke;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -21,7 +18,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.RowFilter;
 import javax.swing.SwingConstants;
@@ -31,6 +27,9 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
+import javax.swing.table.DefaultTableCellRenderer;
+import java.awt.Component;
+
 
 import model.Question;
 
@@ -59,7 +58,7 @@ public class QuestionsManagementScreen extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Background panel (UNCHANGED)
+        //// Background panel (UNCHANGED)
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(new BorderLayout());
         setContentPane(bg);
@@ -68,11 +67,10 @@ public class QuestionsManagementScreen extends JFrame {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setOpaque(false);
 
-        // ✅ SAME STYLE AS YOUR ORIGINAL "GO BACK" BUTTON
-        backButton = new GlassButton("← Go Back");
+        backButton = new JButton("← Go Back");
         backButton.setFont(new Font("Arial", Font.BOLD, 16));
 
-        addQuestionButton = new GlassButton("+ Add Question");
+        addQuestionButton = new JButton("+ Add Question");
         addQuestionButton.setFont(new Font("Arial", Font.BOLD, 14));
 
         JLabel titleLabel = new JLabel("Questions Management", SwingConstants.CENTER);
@@ -127,10 +125,8 @@ public class QuestionsManagementScreen extends JFrame {
         leftTools.add(gLevelLbl);
         leftTools.add(gameLevelFilter);
 
-        // ✅ SAME STYLE HERE TOO
-        resetFiltersButton = new GlassButton("Reset");
+        resetFiltersButton = new JButton("Reset");
         resetFiltersButton.setFont(new Font("Arial", Font.BOLD, 13));
-
         leftTools.add(Box.createHorizontalStrut(10));
         leftTools.add(resetFiltersButton);
 
@@ -154,7 +150,14 @@ public class QuestionsManagementScreen extends JFrame {
         tableModel = new QuestionTableModel(questions);
         questionsTable = new JTable(tableModel);
         questionsTable.setRowHeight(34);
-        questionsTable.setAutoCreateRowSorter(true);
+        questionsTable.setAutoCreateRowSorter(true); // enable sorting by header click
+        
+        //edit color
+     // ===== Color rows by Question Difficulty =====
+        questionsTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer());
+
+          
+
 
         // Sorter (for filters + search)
         sorter = new TableRowSorter<>(tableModel);
@@ -174,7 +177,10 @@ public class QuestionsManagementScreen extends JFrame {
         questionsTable.getColumnModel().getColumn(1).setCellRenderer(center);
         questionsTable.getColumnModel().getColumn(2).setCellRenderer(center);
 
-        // Table borders
+        // Striping + tooltips for all cells
+       // questionsTable.setDefaultRenderer(Object.class, new StripedTooltipRenderer());
+
+        // Slight borders for table
         questionsTable.setShowHorizontalLines(true);
         questionsTable.setShowVerticalLines(true);
         questionsTable.setGridColor(new Color(255, 255, 255, 50));
@@ -199,10 +205,15 @@ public class QuestionsManagementScreen extends JFrame {
                     tableModel
             );
             dialog.setVisible(true);
+
+            // After adding -> update counter & filters
             applyFilters();
         });
 
+        // Filters/Search wiring
         wireSearchAndFilters();
+
+        // Initial counter
         updateCounter();
     }
 
@@ -224,6 +235,7 @@ public class QuestionsManagementScreen extends JFrame {
 
     private void wireSearchAndFilters() {
 
+        // live search
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
             @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
@@ -246,6 +258,8 @@ public class QuestionsManagementScreen extends JFrame {
         final String qLevel = String.valueOf(questionLevelFilter.getSelectedItem());
         final String gLevel = String.valueOf(gameLevelFilter.getSelectedItem());
 
+        // Column indexes based on your table:
+        // 8 = Question Level, 9 = Game Level
         final int QUESTION_LEVEL_COL = 8;
         final int GAME_LEVEL_COL = 9;
 
@@ -253,6 +267,7 @@ public class QuestionsManagementScreen extends JFrame {
             @Override
             public boolean include(Entry<? extends QuestionTableModel, ? extends Integer> entry) {
 
+                // Search text across all columns
                 if (!text.isEmpty()) {
                     boolean found = false;
                     for (int i = 0; i < entry.getValueCount(); i++) {
@@ -265,11 +280,13 @@ public class QuestionsManagementScreen extends JFrame {
                     if (!found) return false;
                 }
 
+                // Question level filter
                 if (!"All".equalsIgnoreCase(qLevel)) {
                     Object v = entry.getValue(QUESTION_LEVEL_COL);
                     if (v == null || !v.toString().equalsIgnoreCase(qLevel)) return false;
                 }
 
+                // Game level filter
                 if (!"All".equalsIgnoreCase(gLevel)) {
                     Object v = entry.getValue(GAME_LEVEL_COL);
                     if (v == null || !v.toString().equalsIgnoreCase(gLevel)) return false;
@@ -285,7 +302,7 @@ public class QuestionsManagementScreen extends JFrame {
 
     private void updateCounter() {
         int total = tableModel.getRowCount();
-        int shown = questionsTable.getRowCount();
+        int shown = questionsTable.getRowCount(); // after filter
         counterLabel.setText("Showing: " + shown + " / " + total);
     }
 
@@ -302,44 +319,82 @@ public class QuestionsManagementScreen extends JFrame {
             setBackground(new Color(0, 0, 0, 140));
         }
     }
-
-    // ==========================================================
-    // ✅ EXACT SAME STYLE AS YOUR ORIGINAL "GO BACK" BUTTON
-    // ==========================================================
-    private static class GlassButton extends JButton {
+    /*
+    private static class StripedTooltipRenderer extends DefaultTableCellRenderer {
         private static final long serialVersionUID = 1L;
 
-        public GlassButton(String text) {
-            super(text);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setOpaque(false);
-            setForeground(Color.BLACK);
-            setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-            setRolloverEnabled(true);
-        }
-
         @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        public Component getTableCellRendererComponent(
+                JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
 
-            int arc = 18;
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
 
-            // background
-            g2.setColor(new Color(255, 255, 255, 235));
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+            // tooltip for long text
+            if (value != null) {
+                String s = value.toString();
+                setToolTipText(s.length() > 30 ? s : null);
+            } else {
+                setToolTipText(null);
+            }
 
-            // border
-            g2.setColor(new Color(200, 200, 200, 220));
-            g2.setStroke(new BasicStroke(2f));
-            g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
+            // keep selection color
+            if (isSelected) {
+                c.setBackground(new Color(180, 200, 230));
+                c.setForeground(Color.BLACK);
+            } else {
 
-            g2.dispose();
-            super.paintComponent(g);
+                // IMPORTANT: row is VIEW row (because of sorter). Convert to MODEL row.
+                int modelRow = table.convertRowIndexToModel(row);
+
+                // Difficulty column index = 8 in MODEL
+                Object diffObj = table.getModel().getValueAt(modelRow, 8);
+                String difficulty = diffObj != null ? diffObj.toString().trim() : "";
+
+                Color baseColor;
+                switch (difficulty.toLowerCase()) {
+                    case "easy":
+                        baseColor = new Color(220, 245, 220); // light green
+                        break;
+                    case "medium":
+                        baseColor = new Color(220, 235, 250); // light blue
+                        break;
+                    case "hard":
+                        baseColor = new Color(255, 235, 205); // light orange
+                        break;
+                    case "expert":
+                        baseColor = new Color(255, 220, 220); // light red
+                        break;
+                    default:
+                        baseColor = (row % 2 == 0)
+                                ? new Color(255, 255, 255, 215)
+                                : new Color(245, 245, 245, 215);
+                }
+
+                // Optional: zebra effect on top of base color (very subtle)
+                if (row % 2 == 1) {
+                    // slightly darken for odd rows
+                    baseColor = new Color(
+                            Math.max(0, baseColor.getRed() - 8),
+                            Math.max(0, baseColor.getGreen() - 8),
+                            Math.max(0, baseColor.getBlue() - 8)
+                    );
+                }
+
+                c.setBackground(baseColor);
+                c.setForeground(Color.BLACK);
+            }
+
+            // alignment
+            if (col == 0 || col == 1 || col == 2) {
+                setHorizontalAlignment(SwingConstants.CENTER);
+            } else {
+                setHorizontalAlignment(SwingConstants.LEFT);
+            }
+
+            return c;
         }
     }
+*/
 
     // ======== Background Panel (UNCHANGED) ========
 

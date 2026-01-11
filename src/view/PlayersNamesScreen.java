@@ -9,17 +9,15 @@ public class PlayersNamesScreen extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    private JTextField txtPlayerA;
+    private  JTextField txtPlayerA;
     private JTextField txtPlayerB;
     private JButton btnPlay;
     private JButton btnBack;
-
     private String level;
     private chooseLevelView levelScreen;
     private HomeScreen homeScreen;
     private PlayersNamesController controller;
-
-    private static final String PH_A = "Enter first player name";
+    private static final String PH_A = "Enter first player name";     
     private static final String PH_B = "Enter second player name";
 
     public PlayersNamesScreen(String level, chooseLevelView levelScreen, HomeScreen homeScreen) {
@@ -35,8 +33,8 @@ public class PlayersNamesScreen extends JFrame {
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(null);
         setContentPane(bg);
-
-        // ===== Speaker icon (bottom-left) =====
+        
+     // ===== Speaker icon (bottom-left) =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
         bg.add(speaker);
 
@@ -61,6 +59,7 @@ public class PlayersNamesScreen extends JFrame {
             }
         });
 
+
         JLabel lblTitle = new JLabel("Enter your names:");
         lblTitle.setFont(new Font("Serif", Font.BOLD, 26));
         lblTitle.setForeground(Color.WHITE);
@@ -74,7 +73,7 @@ public class PlayersNamesScreen extends JFrame {
         lblSub.setHorizontalAlignment(SwingConstants.CENTER);
         lblSub.setBounds(160, 155, 480, 30);
         bg.add(lblSub);
-
+        
         txtPlayerA = new JTextField(PH_A);
         txtPlayerA.setFont(new Font("Arial", Font.PLAIN, 18));
         txtPlayerA.setForeground(new Color(180, 180, 180));
@@ -89,7 +88,6 @@ public class PlayersNamesScreen extends JFrame {
                     txtPlayerA.setForeground(Color.BLACK);
                 }
             }
-
             @Override
             public void focusLost(FocusEvent e) {
                 if (txtPlayerA.getText().trim().isEmpty()) {
@@ -114,7 +112,6 @@ public class PlayersNamesScreen extends JFrame {
                     txtPlayerB.setForeground(Color.BLACK);
                 }
             }
-
             @Override
             public void focusLost(FocusEvent e) {
                 if (txtPlayerB.getText().trim().isEmpty()) {
@@ -124,16 +121,16 @@ public class PlayersNamesScreen extends JFrame {
                 if (controller != null) controller.onInputChanged();
             }
         });
-
-        // ✅ Styled like Home page (white glass) - SAME SIZE & PLACE
-        btnPlay = new HomeGlassButton("Let's Play");
+        // it always starts placeholder
+        btnPlay = new JButton("Let's Play");
         btnPlay.setBounds(300, 350, 200, 45);
         btnPlay.setEnabled(false);
+        btnPlay.setBackground(new Color(200, 200, 200));
         bg.add(btnPlay);
 
-        // ✅ Styled like Home page (white glass) - SAME SIZE & PLACE
-        btnBack = new HomeGlassButton("← Go Back");
+        btnBack = new JButton("← Go Back");
         btnBack.setBounds(640, 20, 110, 30);
+      //  btnBack.setFont(new Font("Serif", Font.BOLD, 16));
         bg.add(btnBack);
 
         btnBack.addActionListener(e -> {
@@ -160,7 +157,7 @@ public class PlayersNamesScreen extends JFrame {
         setVisible(true);
     }
 
-    // ================= Controller Methods =================
+ /// using the methods of the controller
 
     public String getLevel() {
         return level;
@@ -184,9 +181,7 @@ public class PlayersNamesScreen extends JFrame {
 
     public void setPlayEnabled(boolean enabled) {
         btnPlay.setEnabled(enabled);
-        // keep the same glass style; just make text slightly transparent when disabled
-        btnPlay.setForeground(enabled ? Color.BLACK : new Color(0, 0, 0, 120));
-        btnPlay.repaint();
+        btnPlay.setBackground(enabled ? new JButton().getBackground() : new Color(200, 200, 200));
     }
 
     public void showError(String msg) {
@@ -197,54 +192,7 @@ public class PlayersNamesScreen extends JFrame {
         return homeScreen;
     }
 
-    // ==========================================================
-    // SAME STYLE AS YOUR ORIGINAL WHITE "GO BACK" BUTTON
-    // ==========================================================
-    private static class HomeGlassButton extends JButton {
-        private static final long serialVersionUID = 1L;
 
-        public HomeGlassButton(String text) {
-            super(text);
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setOpaque(false);
-            setForeground(Color.BLACK);
-            setFont(new Font("Serif", Font.BOLD, 16));
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setRolloverEnabled(true);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int arc = 18;
-
-            // background
-            g2.setColor(new Color(255, 255, 255, 235));
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
-
-            // border
-            g2.setColor(new Color(200, 200, 200, 220));
-            g2.setStroke(new BasicStroke(2f));
-            g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
-
-            // small hover overlay
-            if (getModel().isRollover() && isEnabled()) {
-                g2.setColor(new Color(255, 255, 255, 35));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
-            }
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    }
-
-    // ==========================================================
-    // Background
-    // ==========================================================
     private static class BackgroundPanel extends JPanel {
         private static final long serialVersionUID = 1L;
         private Image bg;
