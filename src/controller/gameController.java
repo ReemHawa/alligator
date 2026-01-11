@@ -537,6 +537,25 @@ public class gameController {
                 JOptionPane.WARNING_MESSAGE
         );
     }
+    
+    private void showCannotFlagRevealedCellMessage() {
+        JOptionPane.showMessageDialog(
+                view,
+                "You can't place a flag on a revealed cell!",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    private void showAlreadyFlaggedCellMessage() {
+        JOptionPane.showMessageDialog(
+                view,
+                "This cell is already flagged!",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
 
     public void handleFlagClick(int boardIndex, int row, int col) {
 
@@ -551,12 +570,30 @@ public class gameController {
 
         board b = model.getBoard(boardIndex);
 
-        if (b.isRevealed(row, col) || b.isFlagged(row, col)) {
+        //  If already flagged -> warning
+        if (b.isFlagged(row, col)) {
+            showAlreadyFlaggedCellMessage();
             flagMode[boardIndex] = false;
             view.setFlagMode(boardIndex, false);
             return;
         }
 
+        //  If revealed (ANY type) -> warning
+        boolean revealedAny =
+                b.isRevealed(row, col)
+                || b.isQuestionRevealed(row, col)
+                || b.isSurpriseRevealed(row, col)
+                || b.isQuestionUsed(row, col)
+                || b.isSurpriseActivated(row, col);
+
+        if (revealedAny) {
+            showCannotFlagRevealedCellMessage();
+            flagMode[boardIndex] = false;
+            view.setFlagMode(boardIndex, false);
+            return;
+        }
+
+        //  Place flag normally
         b.placeFlag(row, col);
         view.updateTileFlag(boardIndex, row, col);
 
@@ -572,6 +609,7 @@ public class gameController {
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
     }
+
 
     public void toggleFlagMode(int boardIndex) {
         flagMode[boardIndex] = !flagMode[boardIndex];
