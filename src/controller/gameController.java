@@ -75,28 +75,58 @@ public class gameController {
         return view;
     }
 
+    // ================= TURN TIMER (NEW) =================
+    private int getTurnSeconds() {
+        switch (model.getLevel()) {
+            case EASY:   return 40;
+            case MEDIUM: return 30;
+            default:     return 20;
+        }
+    }
+
+    private void restartTurnTimer() {
+        if (view == null) return;
+
+        view.startTurnTimer(getTurnSeconds(), () -> {
+
+            if (model.isGameOver()) return;
+
+            model.loseLife();
+            view.updateLives(model.getLivesRemaining());
+
+            if (model.isGameOver()) {
+
+                saveGameHistory("lost");
+
+                for (int i = 0; i < 2; i++) {
+                    view.revealAllMines(i, model.getBoard(i));
+                    view.revealAllSurprises(i, model.getBoard(i));
+                }
+
+                view.stopTimer();
+                view.stopTurnTimer();
+
+                int choice = view.showGameOverDialog();
+                if (choice == JOptionPane.YES_OPTION) {
+                    view.dispose();
+                    restartSameGame();
+                } else {
+                    System.exit(0);
+                }
+                return;
+            }
+
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+            restartTurnTimer();
+        });
+    }
+    // ====================================================
+
     public void startGame() {
         if (view != null) {
             view.setVisible(true);
-            // timer is already started in gameView constructor
-        /* // ===== DEBUG: count & reveal question cells =====
-            for (int bi = 0; bi < 2; bi++) {
-
-                board b = model.getBoard(bi);
-
-                for (int r = 0; r < b.getRows(); r++) {
-                    for (int c = 0; c < b.getCols(); c++) {
-
-                        if (b.isQuestionCell(r, c)) {
-
-                            // optional visual debug
-                            b.revealQuestion(r, c);
-                            view.revealQuestion(bi, r, c);
-                        }
-                    }
-                }
-            }
-            // ===============================================*/
+            restartTurnTimer(); // ✅ start turn timer when game starts
         }
     }
 
@@ -114,10 +144,11 @@ public class gameController {
         gameController newController = new gameController(level, p1, p2, home);
         newController.startGame();
     }
-
+    
     // this is template method pattern. i took the common logic that both que and surprise cells follow ( first click, used check,..)
     // and pit it in one fixed method. the parts that change ( how cells reveled and activated ) . this method uses the same logic for diff special
     // by passing the changing steps as parameters.
+
 
     private void handleSpecialCellTemplate(
             int boardIndex,
@@ -139,6 +170,7 @@ public class gameController {
             if (model.isGameOver()) return;
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
+            restartTurnTimer(); 
             return;
         }
 
@@ -147,6 +179,7 @@ public class gameController {
 
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
+        restartTurnTimer(); // reset timer (each turn)
     }
 
     public void handleCellClick(int boardIndex, int row, int col) {
@@ -211,14 +244,10 @@ public class gameController {
             return;
         }
 
-        // ================= NORMAL CELL =================
-        //b.setRevealed(row, col);
-
         // ===== MINE =====
         if (b.isMine(row, col)) {
-        	
-        	b.setRevealed(row, col);
 
+            b.setRevealed(row, col);
 
             model.loseLife();
 
@@ -241,6 +270,7 @@ public class gameController {
                 }
 
                 view.stopTimer();
+                view.stopTurnTimer();
 
                 int choice = view.showGameOverDialog();
                 if (choice == JOptionPane.YES_OPTION) {
@@ -254,23 +284,16 @@ public class gameController {
         }
         // ===== SAFE CELL =====
         else {
-            //////--before observer pattern--//////
-            // int count = b.getSurroundingMines(row, col);
-            // view.revealSafeCell(boardIndex, row, col, count);
-
-            //////--after observer pattern--//////
-            b.openSafeCell(boardIndex, row, col); // model notifies boardView
+            b.openSafeCell(boardIndex, row, col);
             int count = b.getSurroundingMines(row, col);
+
             model.addToScore(+1);
             view.updateScore(model.getScore());
+
             String msg = model.getMotivationManager()
                               .onGoodMove(model.getCurrentPlayer());
             view.showMotivationMessage(msg);
-           /* if (count == 0) {
-                floodVisited = new boolean[model.getBoard(boardIndex).getRows() ]
-                [model.getBoard(boardIndex).getCols() ];
-                floodReveal(boardIndex, row, col);
-            }*/
+
             if (count == 0) {
                 floodVisited = new boolean[b.getRows()][b.getCols()];
                 floodReveal(boardIndex, row, col);
@@ -281,6 +304,7 @@ public class gameController {
 
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
+        restartTurnTimer(); // ✅ reset turn timer after switch
     }
 
     private void activateSurpriseCell(int boardIndex, int row, int col) {
@@ -303,6 +327,7 @@ public class gameController {
         model.addToScore(-cost);
         model.addToScore(rewardPoints);
         model.addToScore(-fullLifePenalty);
+
         int lifeDelta;
         if (good) {
             if (!livesFull) {
@@ -339,6 +364,7 @@ public class gameController {
             }
 
             view.stopTimer();
+            view.stopTurnTimer();
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -450,6 +476,7 @@ public class gameController {
             }
 
             view.stopTimer();
+            view.stopTurnTimer();
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -611,6 +638,7 @@ public class gameController {
 
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
+        restartTurnTimer(); // ✅ reset turn timer
     }
 
 
@@ -622,6 +650,7 @@ public class gameController {
     private boolean checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             onGameEnd("won");
+            view.stopTurnTimer();
             view.showWinForBoth(model.getScore());
             return true;
         }
@@ -764,6 +793,7 @@ public class gameController {
 
         if (view != null) {
             view.stopTimer();
+            view.stopTurnTimer();
 
             for (int i = 0; i < 2; i++) {
                 view.revealAllMines(i, model.getBoard(i));
@@ -855,6 +885,7 @@ public class gameController {
             LOG.log(Level.SEVERE, "Failed loading questions!", e);
             gameQuestions = new ArrayList<>();
         }
+<<<<<<< HEAD
     }*/
     
     
@@ -873,6 +904,9 @@ public class gameController {
         }
     }
 
+=======
+    }
+>>>>>>> branch 'master' of https://github.com/ReemHawa/alligator.git
 
     public void handleRightClick(int boardIndex, int row, int col) {
 
@@ -886,11 +920,15 @@ public class gameController {
 
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
+            restartTurnTimer(); // ✅ reset turn timer
         }
     }
 
     public void exitToHome() {
-        if (view != null) view.stopTimer();
+        if (view != null) {
+            view.stopTimer();
+            view.stopTurnTimer();
+        }
 
         view.dispose();
         if (homeScreen != null) homeScreen.setVisible(true);
