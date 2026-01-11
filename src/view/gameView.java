@@ -411,6 +411,7 @@ public class gameView extends JFrame {
     }
 
     // ===================== dialogs =====================
+    // EXACT style as screenshot: dim overlay + centered rounded white card + Try Again / Exit
     public int showGameOverDialog() {
 
         final int[] choice = { JOptionPane.NO_OPTION };
@@ -422,20 +423,12 @@ public class gameView extends JFrame {
         String time = getFormattedElapsedTime();
         int lives = model.getLivesRemaining();
 
-        // ===== FULL-SCREEN OVER THE GAME WINDOW =====
         final JDialog dialog = new JDialog(this, true);
         dialog.setUndecorated(true);
+        dialog.setSize(520, 320);
+        dialog.setLocationRelativeTo(this);
         dialog.setBackground(new Color(0, 0, 0, 0));
 
-        // Make dialog cover the whole gameView window
-        dialog.setSize(this.getSize());
-        try {
-            dialog.setLocation(this.getLocationOnScreen());
-        } catch (Exception ex) {
-            dialog.setLocationRelativeTo(this);
-        }
-
-        // ===== overlay panel (dims entire window) =====
         JPanel overlay = new JPanel(new GridBagLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -443,7 +436,6 @@ public class gameView extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // full dim background
                 g2.setColor(new Color(0, 0, 0, 140));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
@@ -451,7 +443,6 @@ public class gameView extends JFrame {
         };
         overlay.setOpaque(false);
 
-        // ===== white center card (rounded) =====
         JPanel card = new JPanel();
         card.setOpaque(false);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -475,9 +466,6 @@ public class gameView extends JFrame {
         };
         cardWrapper.setOpaque(false);
         cardWrapper.add(card, BorderLayout.CENTER);
-
-        // Force the card size like your screenshot
-        cardWrapper.setPreferredSize(new Dimension(520, 320));
 
         Font titleFont = new Font("Serif", Font.BOLD, 34);
         Font mainFont  = new Font("Serif", Font.PLAIN, 16);
@@ -552,14 +540,9 @@ public class gameView extends JFrame {
         overlay.add(cardWrapper, new GridBagConstraints());
         dialog.setContentPane(overlay);
 
-        // IMPORTANT: re-pack after preferred sizes are set
-        dialog.validate();
-        dialog.repaint();
-
         dialog.setVisible(true);
         return choice[0];
     }
-
 
     public void showWinForBoth(int finalScore) {
         stopTimer();
