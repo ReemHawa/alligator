@@ -7,6 +7,9 @@ import java.util.Random;
 import java.util.HashSet;
 import java.util.Set;
 
+import model.factory.BoardFactory;
+import model.factory.BoardFactoryProvider;
+
 public class game {
 
     private board[] boards;
@@ -35,16 +38,17 @@ public class game {
         this.player1Name = "Player A";
         this.player2Name = "Player B";
 
-        int rows = 9, cols = 9, mines = 10, surprises = 2;
-        livesRemaining = maxLives;
+        // ✅ Factory Method usage
+        BoardFactory factory = BoardFactoryProvider.getFactory(this.level);
 
-        int questions = getQuestionCount(level);
+        // Lives come from difficulty config
+        livesRemaining = factory.getStartingLives();
 
         boards = new board[2];
 
-        // ✅ IMPORTANT: always use the constructor with QUESTIONS
-        boards[0] = new board(rows, cols, mines, surprises, questions);
-        boards[1] = new board(rows, cols, mines, surprises, questions);
+        // ✅ IMPORTANT: always use the constructor with QUESTIONS (handled inside factory)
+        boards[0] = factory.createBoard();
+        boards[1] = factory.createBoard();
 
         // keep surprises balanced
         assignGlobalGoodBadForAllSurprises();
@@ -58,34 +62,17 @@ public class game {
         this.player1Name = p1;
         this.player2Name = p2;
 
-        int rows = 0, cols = 0, mines = 0, surprises = 0;
+        // ✅ Factory Method usage
+        BoardFactory factory = BoardFactoryProvider.getFactory(this.level);
 
-        switch (level) {
-            case EASY:
-                rows = 9; cols = 9; mines = 10; surprises = 2;
-                livesRemaining = 10;
-                break;
-            case MEDIUM:
-                rows = 13; cols = 13; mines = 26; surprises = 3;
-                livesRemaining = 8;
-                break;
-            case HARD:
-                rows = 16; cols = 16; mines = 44; surprises = 4;
-                livesRemaining = 6;
-                break;
-            default:
-                rows = 9; cols = 9; mines = 10; surprises = 2;
-                livesRemaining = 10;
-                break;
-        }
-
-        int questions = getQuestionCount(level);
+        // Lives come from difficulty config
+        livesRemaining = factory.getStartingLives();
 
         boards = new board[2];
 
-        // ✅ IMPORTANT: always use the constructor with QUESTIONS
-        boards[0] = new board(rows, cols, mines, surprises, questions);
-        boards[1] = new board(rows, cols, mines, surprises, questions);
+        // ✅ IMPORTANT: always use the constructor with QUESTIONS (handled inside factory)
+        boards[0] = factory.createBoard();
+        boards[1] = factory.createBoard();
 
         // ✅ IMPORTANT: enforce GLOBAL 50:50 across BOTH boards combined
         assignGlobalGoodBadForAllSurprises();
@@ -93,6 +80,7 @@ public class game {
 
     // ==========================================================
     // QUESTIONS COUNT BY GAME LEVEL
+    // (kept for compatibility; not used anymore because factory holds it)
     // ==========================================================
     private int getQuestionCount(DifficultyLevel level) {
         switch (level) {
@@ -134,9 +122,9 @@ public class game {
                         case "medium":
                             return fiftyFifty
                                     ? new QuestionOutcome(+6, 0, false, false,
-                                        "Correct! +6 points")
+                                            "Correct! +6 points")
                                     : new QuestionOutcome(0, 0, true, false,
-                                        "Correct! A mine was revealed");
+                                            "Correct! A mine was revealed");
                         case "hard":
                             return new QuestionOutcome(+10, 0, false, true,
                                     "Correct! +10 points and 3x3 revealed");
@@ -188,18 +176,18 @@ public class game {
                         case "medium":
                             return fiftyFifty
                                     ? new QuestionOutcome(-10, -1, false, false,
-                                        "Wrong! -10 points, -1 life")
+                                            "Wrong! -10 points, -1 life")
                                     : new QuestionOutcome(0, 0, false, false,
-                                        "Wrong! No effect");
+                                            "Wrong! No effect");
                         case "hard":
                             return new QuestionOutcome(-15, -1, false, false,
                                     "Wrong! -15 points, -1 life");
                         case "expert":
                             return fiftyFifty
                                     ? new QuestionOutcome(-20, -1, false, false,
-                                        "Wrong! -20 points, -1 life")
+                                            "Wrong! -20 points, -1 life")
                                     : new QuestionOutcome(-20, -2, false, false,
-                                        "Wrong! -20 points, -2 lives");
+                                            "Wrong! -20 points, -2 lives");
                     }
                 }
                 break;
@@ -213,9 +201,9 @@ public class game {
                         case "medium":
                             return fiftyFifty
                                     ? new QuestionOutcome(+15, +1, false, false,
-                                        "Correct! +15 points, +1 life")
+                                            "Correct! +15 points, +1 life")
                                     : new QuestionOutcome(+15, +2, false, false,
-                                        "Correct! +15 points, +2 lives");
+                                            "Correct! +15 points, +2 lives");
                         case "hard":
                             return new QuestionOutcome(+20, +2, false, false,
                                     "Correct! +20 points, +2 lives");
@@ -231,9 +219,9 @@ public class game {
                         case "medium":
                             return fiftyFifty
                                     ? new QuestionOutcome(-15, -1, false, false,
-                                        "Wrong! -15 points, -1 life")
+                                            "Wrong! -15 points, -1 life")
                                     : new QuestionOutcome(-15, -2, false, false,
-                                        "Wrong! -15 points, -2 lives");
+                                            "Wrong! -15 points, -2 lives");
                         case "hard":
                             return new QuestionOutcome(-20, -2, false, false,
                                     "Wrong! -20 points, -2 lives");
@@ -332,8 +320,9 @@ public class game {
     }
 
     public boolean isGameOver() { return gameOver; }
-    public void setGameOver(boolean gameOver) { 
-    	this.gameOver = gameOver; }
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+    }
 
     // ==========================================================
     // WIN CHECK
