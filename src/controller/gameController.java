@@ -852,45 +852,6 @@ public class gameController {
         return baseDir + File.separator + "game_history.csv";
     }
 
-   /* private void loadQuestionsForGame() {
-
-        try {
-            InputStream is = getClass()
-                    .getClassLoader()
-                    .getResourceAsStream("data/questions_data.csv");
-
-            if (is == null) {
-                LOG.severe("questions_data.csv NOT FOUND in JAR!");
-                gameQuestions = new ArrayList<>();
-                return;
-            }
-
-            File tempFile = File.createTempFile("questions_data", ".csv");
-            tempFile.deleteOnExit();
-
-            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                is.transferTo(fos);
-            }
-
-            CSVHandler csv = new CSVHandler(tempFile.getAbsolutePath());
-            gameQuestions = csv.readQuestions();
-
-            System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
-
-            for (Question q : gameQuestions) {
-                LOG.fine("→ " + q.getQuestionText());
-            }
-
-        } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Failed loading questions!", e);
-            gameQuestions = new ArrayList<>();
-        }
-<<<<<<< HEAD
-    }*/
-    
-    
-    //////////////////
-    
     
     private void loadQuestionsForGame() {
         try {
@@ -904,9 +865,7 @@ public class gameController {
         }
     }
 
-=======
-    }
->>>>>>> branch 'master' of https://github.com/ReemHawa/alligator.git
+
 
     public void handleRightClick(int boardIndex, int row, int col) {
 
