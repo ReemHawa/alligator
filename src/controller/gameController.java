@@ -247,13 +247,28 @@ public class gameController {
         // ===== MINE =====
         if (b.isMine(row, col)) {
 
+        // ================= NORMAL CELL =================
+
+        // ✅ block clicking already revealed mine/safe cells
+        // (question & surprise כבר נתפסו למעלה)
+        if (b.isRevealed(row, col)) {
+            showAlreadyRevealedCellMessage();
+            return; // ❗ לא מחליפים תור
+        }
+        // ===== MINE =====
+        if (b.isMine(row, col)) {
+
+        	  // ✅ חשוב מאוד: לסמן את המוקש כפתוח
+>>>>>>> 5f87fc1 (I updated the logic to these requirements Implemented pause interaction)
             b.setRevealed(row, col);
 
             model.loseLife();
 
             String msg = model.getMotivationManager()
-                              .onBadMove(model.getCurrentPlayer());
-            view.showMotivationMessage(msg);
+                    .onBadMove(model.getCurrentPlayer());
+  view.showMotivationMessage(msg);
+
+          
 
             view.revealMineHit(boardIndex, row, col);
             view.updateLives(model.getLivesRemaining());
@@ -380,6 +395,18 @@ public class gameController {
 
         board b = model.getBoard(boardIndex);
 
+
+
+        // ===== Partner's old logic (kept as comment, not used now) =====
+       /* if (!b.isQuestionRevealed(row, col)) {
+            b.revealQuestion(row, col);
+            view.revealQuestion(boardIndex, row, col);
+
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+            return;
+        }*/
+
         if (b.isQuestionUsed(row, col)) {
             JOptionPane.showMessageDialog(view, "This question is already USED.");
             return;
@@ -419,8 +446,18 @@ public class gameController {
         resultMsg.append("Result:\n")
                 .append(outcome.message);
 
-        model.addToScore(outcome.pointsDelta);
+     // ✅ prevent double points when 3x3 bonus is handled manually
+        int pointsDelta = outcome.pointsDelta;
 
+        if (outcome.reveal3x3Random && correct) {
+            pointsDelta = 0;            // כי את ה+10 אנחנו מוסיפים ידנית למטה
+
+        }
+
+            
+        
+
+        model.addToScore(pointsDelta);
         int overflowPenalty = 0;
 
         if (outcome.livesDelta > 0) {
@@ -435,7 +472,8 @@ public class gameController {
             revealOneMineAuto(boardIndex);
         }
         if (outcome.reveal3x3Random) {
-            revealRandom3x3(boardIndex);
+            revealBonus3x3(boardIndex);     // NEW
+            model.addToScore(10);           // NEW: תמיד +10
         }
 
         b.markQuestionUsed(row, col);
@@ -452,7 +490,7 @@ public class gameController {
         );
 
         if (overflowPenalty > 0) {
-            model.addToScore(-overflowPenalty);
+            model.addToScore(+overflowPenalty);
 
             JOptionPane.showMessageDialog(
                     view,
@@ -465,6 +503,7 @@ public class gameController {
 
             view.updateScore(model.getScore());
         }
+        // ===== Important: question can cause losing lives -> check game over here =====
 
         if (model.isGameOver()) {
 
@@ -486,6 +525,9 @@ public class gameController {
                 System.exit(0);
             }
         }
+        // ===== Partner's removed turn switch (kept as comment) =====
+        /* model.switchTurn();
+           view.setActiveBoard(model.getCurrentPlayer()); */
     }
 
 
@@ -635,10 +677,13 @@ public class gameController {
         view.setFlagMode(boardIndex, false);
 
         if (checkWinForBoard(boardIndex)) return;
-
+        // ===== Partner comment (kept) =====
+       
+        // Actual needed behavior:
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
         restartTurnTimer(); // ✅ reset turn timer
+    
     }
 
 
@@ -696,6 +741,8 @@ public class gameController {
 
         for (int r = 0; r < b.getRows(); r++) {
             for (int c = 0; c < b.getCols(); c++) {
+                // בוחרים מוקש שעדיין לא נחשף ולא מסומן בדגל
+
                 if (b.isMine(r, c) && !b.isRevealed(r, c) && !b.isFlagged(r, c)) {
                     mines.add(new int[]{r, c});
                 }
@@ -707,10 +754,16 @@ public class gameController {
         java.util.Collections.shuffle(mines);
         int[] chosen = mines.get(0);
 
-        view.revealMineAuto(boardIndex, chosen[0], chosen[1]);
-    }
+        int r = chosen[0];
+        int c = chosen[1];
 
-    private void revealRandom3x3(int boardIndex) {
+        // ✅ חשוב: לסמן במודל שזה נחשף (ככה לא יפיל חיים בלחיצה עתידית)
+        b.setRevealed(r, c);
+
+        // ✅ להציג ב-View מוקש "חינם" בלי חיים
+        view.revealMineAuto(boardIndex, r, c);    }
+
+  /*  private void revealRandom3x3(int boardIndex) {
         board b = model.getBoard(boardIndex);
         java.util.Random rnd = new java.util.Random();
 
@@ -723,6 +776,74 @@ public class gameController {
         for (int r = sr; r < sr + 3; r++) {
             for (int c = sc; c < sc + 3; c++) {
                 view.revealHintCell(boardIndex, r, c);
+            }
+        }
+    }
+    */
+    //bouns
+    private void revealBonus3x3(int boardIndex) {
+
+        board b = model.getBoard(boardIndex);
+
+        int bestSr = 0, bestSc = 0;
+        int bestRevealedMines = Integer.MAX_VALUE;
+        int bestRevealedCells = Integer.MAX_VALUE;
+
+        // מחפשים את ה-3x3 עם הכי פחות "מוקשים שכבר נחשפו"
+        // ואם יש תיקו - הכי פחות תאים שכבר נחשפו בכלל
+        for (int sr = 0; sr <= b.getRows() - 3; sr++) {
+            for (int sc = 0; sc <= b.getCols() - 3; sc++) {
+
+                int[] stats = b.get3x3RevealStats(sr, sc);
+                int revealedCells = stats[0];
+                int revealedMines = stats[1];
+
+                if (revealedMines < bestRevealedMines ||
+                   (revealedMines == bestRevealedMines && revealedCells < bestRevealedCells)) {
+
+                    bestRevealedMines = revealedMines;
+                    bestRevealedCells = revealedCells;
+                    bestSr = sr;
+                    bestSc = sc;
+                }
+            }
+        }
+
+        // עכשיו חושפים באמת את התוכן של ה-3x3 (בלי קנסות)
+        for (int r = bestSr; r < bestSr + 3; r++) {
+            for (int c = bestSc; c < bestSc + 3; c++) {
+
+                if (b.isRevealed(r, c)) continue;
+
+                // אם זה Question - רק לחשוף (לא להפעיל)
+                if (b.isQuestionCell(r, c)) {
+                    if (!b.isQuestionRevealed(r, c)) {
+                        b.revealQuestion(r, c);
+                        view.revealQuestion(boardIndex, r, c);
+                    }
+                    continue;
+                }
+
+                // אם זה Surprise - רק לחשוף (לא להפעיל)
+                if (b.isSurprise(r, c)) {
+                    if (!b.isSurpriseRevealed(r, c)) {
+                        b.revealSurprise(r, c);
+                        view.revealSurprise(boardIndex, r, c);
+                    }
+                    continue;
+                }
+
+                // תא רגיל: מסמנים כ-revealed במודל
+                b.setRevealed(r, c);
+
+                // מציגים תוכן אמיתי
+                if (b.isMine(r, c)) {
+                    // בלי קנס חיים/נקודות
+                    view.revealMineAuto(boardIndex, r, c);
+                } else {
+                    int count = b.getSurroundingMines(r, c);
+                    view.revealSafeCell(boardIndex, r, c, count);
+                }
             }
         }
     }
@@ -840,6 +961,7 @@ public class gameController {
         String baseDir =
                 System.getProperty("user.home")
                 + File.separator
+                + "DualMinesweeper"
                 + ".minesweeper"
                 + File.separator
                 + "data";

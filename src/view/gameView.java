@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 
 public class gameView extends JFrame {
 
+
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = Logger.getLogger(gameView.class.getName());
 
@@ -39,12 +40,22 @@ public class gameView extends JFrame {
 
     private JButton btnExit;
 
+    private JButton btnPause;
+
+    private final ImageIcon pauseIcon;
+    private final ImageIcon resumeIcon;
+
+    private boolean paused = false;
+ // references for restart & dialogs
     private final gameController controller;
     private final game model;
 
     private static final String BG_PATH = "/images/background.jpeg";
     private static final String HEART_FULL = "/images/live.png";
     private static final String HEART_EMPTY = "/images/Llive.png";
+    private static final String PAUSE_ICON  = "/images/Pause.png";
+    private static final String RESUME_ICON = "/images/Resume.png";
+
 
     public gameView(gameController controller, game model) {
 
@@ -53,6 +64,8 @@ public class gameView extends JFrame {
 
         fullheart = loadIcon(HEART_FULL, 32, 32);
         emptyheart = loadIcon(HEART_EMPTY, 32, 32);
+        pauseIcon  = loadIcon(PAUSE_ICON, 40, 40);
+        resumeIcon = loadIcon(RESUME_ICON, 40, 40);
 
         setTitle("Dual Minesweeper Boards");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -60,10 +73,10 @@ public class gameView extends JFrame {
         BackgroundPanel root = new BackgroundPanel(BG_PATH);
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
+     
         // ===== speaker icon =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
-
+        
         int iconSize = 40;
         int marginLeft = 10;
         int marginBottom = 5;
@@ -71,24 +84,32 @@ public class gameView extends JFrame {
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
-                speaker.setBounds(
-                        marginLeft,
-                        getHeight() - iconSize - marginBottom,
-                        iconSize,
-                        iconSize
-                );
-
-                if (motivationOverlay != null) {
-                    motivationOverlay.setBounds(0, 0, getWidth(), getHeight());
-                }
+               	JLayeredPane lp = getLayeredPane();
+            	speaker.setBounds(
+            	        marginLeft,
+            	        lp.getHeight() - iconSize - marginBottom,
+            	        iconSize,
+            	        iconSize
+            	);
+            	if (motivationOverlay != null) {
+            	    motivationOverlay.setBounds(0, 0, lp.getWidth(), lp.getHeight());
+            	}
             }
         });
 
         // ===== top left exit =====
         btnExit = new JButton("Exit");
+        // ===== TOP PANEL (Exit button) =====
+        btnExit = new JButton("exit");
         btnExit.setFocusable(false);
         btnExit.addActionListener(e -> controller.exitToHome());
-
+        // NEW: pause button
+        btnPause = new JButton(pauseIcon);
+        btnPause.setFocusable(false);
+        btnPause.setBorderPainted(false);
+        btnPause.setContentAreaFilled(false);
+        btnPause.setOpaque(false);
+        btnPause.addActionListener(e -> togglePause());
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         topPanel.setOpaque(false);
         topPanel.add(btnExit);
@@ -97,10 +118,17 @@ public class gameView extends JFrame {
         JLabel msgLabel = new JLabel(" ");
         msgLabel.setForeground(Color.WHITE);
         msgLabel.setFont(new Font("Verdana", Font.BOLD, 18));
+        topPanel.add(btnPause);   // NEW
+
+        
+        motivationLabel = new JLabel(" ");
+        motivationLabel.setForeground(Color.WHITE);
+        motivationLabel.setFont(new Font("Verdana", Font.BOLD, 18));
 
         JPanel msgPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         msgPanel.setOpaque(false);
         msgPanel.add(msgLabel);
+       // msgPanel.add(motivationLabel);
 
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
@@ -177,6 +205,7 @@ public class gameView extends JFrame {
         root.add(content, BorderLayout.CENTER);
 
         setContentPane(root);
+        getLayeredPane().setLayout(null);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -186,7 +215,10 @@ public class gameView extends JFrame {
         motivationOverlayLabel.setForeground(new Color(212, 175, 55));
         motivationOverlayLabel.setFont(new Font("Serif", Font.BOLD, 52));
         motivationOverlayLabel.setVisible(false);
-
+       /* // ===== Set content pane =====
+        setContentPane(root);
+        getLayeredPane().setLayout(null);*/
+   
         motivationOverlay = new JPanel(new GridBagLayout());
         motivationOverlay.setOpaque(false);
         motivationOverlay.add(motivationOverlayLabel);
@@ -578,7 +610,7 @@ public class gameView extends JFrame {
     public String getFormattedElapsedTime() {
         return formatTime(elapsedSeconds);
     }
-
+    
     private String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
@@ -649,4 +681,50 @@ public class gameView extends JFrame {
     public boardView getBoardView(int i) {
         return boardViews[i];
     }
+
+
+    
+   
+    
+    //Pasue
+    private void togglePause() {
+        if (!paused) {
+            pauseGame();
+        } else {
+            resumeGame();
+        }
+    }
+    private void pauseGame() {
+        paused = true;
+        btnPause.setIcon(resumeIcon);
+
+        // 1) pause timer (בלי לאפס זמן)
+        if (gameTimer != null) gameTimer.stop();
+
+        // 2) לחסום לחיצות על הלוחות
+        setBoardsEnabled(false);
+        btnPause.setEnabled(true); // שלא “ייכבה” בטעות
+        btnExit.setEnabled(true);  // שגם Exit יעבוד
+
+    }
+    private void resumeGame() {
+        paused = false;
+        btnPause.setIcon(pauseIcon);
+
+        // 1) resume timer
+        if (gameTimer != null) gameTimer.start();
+
+        // 2) להחזיר לחיצות ללוחות
+        setBoardsEnabled(true);
+    }
+    private void setBoardsEnabled(boolean enabled) {
+        for (int i = 0; i < boardViews.length; i++) {
+            if (boardViews[i] != null) {
+               // boardViews[i].setInteractionEnabled(enabled);
+            	boardViews[i].setPaused(!enabled);
+            }
+        }
+    }
+
+
 }

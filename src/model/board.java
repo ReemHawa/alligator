@@ -286,6 +286,25 @@ public class board {
 	    questionUsed[r][c] = true;
 	}
 
+	//Q BOUNOS:
+	// BONUS reveal: mark as revealed without any game logic (no score/life changes)
+	public void revealBonusCell(int r, int c) {
+	    if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+	    if (revealed[r][c]) return;
+
+	    // optional: if it was flagged, remove flag so it won't look inconsistent
+	    flagged[r][c] = false;
+
+	    revealed[r][c] = true;
+
+	    // if it's a question/surprise - keep their specific revealed flags consistent
+	    if (isQuestionCell(r, c)) {
+	        questionRevealed[r][c] = true;
+	    }
+	    if (isSurprise(r, c)) {
+	        surpriseRevealed[r][c] = true;
+	    }
+	}
 
 
 
@@ -297,6 +316,28 @@ public class board {
     public void setRevealed(int r, int c) { revealed[r][c] = true; }
     public int getSurroundingMines(int r, int c) { return surroundingMines[r][c]; }
     public cellType getType(int r, int c) { return type[r][c]; }
+    
+    //HOW MANY SQ
+ // returns int[]{revealedCells, revealedMines} in a 3x3 starting at (sr, sc)
+    public int[] get3x3RevealStats(int sr, int sc) {
+        int revealedCells = 0;
+        int revealedMines = 0;
+
+        for (int r = sr; r < sr + 3; r++) {
+            for (int c = sc; c < sc + 3; c++) {
+                if (revealed[r][c]) {
+                    revealedCells++;
+                    if (mines[r][c]) revealedMines++;
+                }
+            }
+        }
+        return new int[]{revealedCells, revealedMines};
+    }
+
+
+
+
+  
 
     /* ======================================================
        REQUIRED BY game.java
