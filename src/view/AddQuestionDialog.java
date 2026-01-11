@@ -1,27 +1,24 @@
 package view;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Frame;
-import java.awt.GridLayout;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
 import model.Question;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class AddQuestionDialog extends JDialog {
 
     private static final long serialVersionUID = 1L;
 
-    private JTextField idField, qField, cField, w1Field, w2Field, w3Field;
-    private JComboBox<String> diffBox, gameBox;
+    private JTextField idField;
+    private JTextField questionField;
+
+    private JTextField aField;
+    private JTextField bField;
+    private JTextField cField;
+    private JTextField dField;
+
+    private JComboBox<String> difficultyBox;   // Easy/Medium/Hard/Expert
+    private JComboBox<String> correctBox;      // A/B/C/D
 
     private final QuestionTableModel model;
 
@@ -29,82 +26,104 @@ public class AddQuestionDialog extends JDialog {
         super(owner, "Add Question", true);
         this.model = model;
 
-        setSize(520, 430);
+        setSize(520, 420);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
 
-        JPanel form = new JPanel(new GridLayout(8, 2, 8, 8));
-        form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        // ===== FORM =====
+        JPanel form = new JPanel(new GridLayout(8, 2, 10, 10));
+        form.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // ID (auto)
         idField = new JTextField(String.valueOf(model.getNextId()));
         idField.setEditable(false);
 
-        qField = new JTextField();
+        questionField = new JTextField();
+
+        difficultyBox = new JComboBox<>(new String[]{"Easy", "Medium", "Hard", "Expert"});
+        correctBox = new JComboBox<>(new String[]{"A", "B", "C", "D"});
+
+        aField = new JTextField();
+        bField = new JTextField();
         cField = new JTextField();
-        w1Field = new JTextField();
-        w2Field = new JTextField();
-        w3Field = new JTextField();
+        dField = new JTextField();
 
-        // dropdowns to prevent typos
-        diffBox = new JComboBox<>(new String[] {"Easy", "Medium", "Hard", "Expert"});
-        gameBox = new JComboBox<>(new String[] {"Easy", "Medium", "Hard"});
+        form.add(new JLabel("ID:"));
+        form.add(idField);
 
-        form.add(new JLabel("ID:"));               form.add(idField);
-        form.add(new JLabel("Question:"));         form.add(qField);
-        form.add(new JLabel("Correct Answer:"));   form.add(cField);
-        form.add(new JLabel("Wrong 1:"));          form.add(w1Field);
-        form.add(new JLabel("Wrong 2:"));          form.add(w2Field);
-        form.add(new JLabel("Wrong 3:"));          form.add(w3Field);
-        form.add(new JLabel("Question Level:"));   form.add(diffBox);
-        form.add(new JLabel("Game Level:"));       form.add(gameBox);
+        form.add(new JLabel("Question:"));
+        form.add(questionField);
+
+        form.add(new JLabel("Difficulty:"));
+        form.add(difficultyBox);
+
+        form.add(new JLabel("Option A:"));
+        form.add(aField);
+
+        form.add(new JLabel("Option B:"));
+        form.add(bField);
+
+        form.add(new JLabel("Option C:"));
+        form.add(cField);
+
+        form.add(new JLabel("Option D:"));
+        form.add(dField);
+
+        form.add(new JLabel("Correct Answer (A/B/C/D):"));
+        form.add(correctBox);
 
         add(form, BorderLayout.CENTER);
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // ===== BUTTONS =====
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         JButton save = new JButton("Save");
         JButton cancel = new JButton("Cancel");
-        bottom.add(save);
-        bottom.add(cancel);
-        add(bottom, BorderLayout.SOUTH);
+
+        buttons.add(save);
+        buttons.add(cancel);
+
+        add(buttons, BorderLayout.SOUTH);
 
         cancel.addActionListener(e -> dispose());
 
-        save.addActionListener(e -> {
-            // validation
-            String question = qField.getText().trim();
-            String correct  = cField.getText().trim();
-            String w1       = w1Field.getText().trim();
-            String w2       = w2Field.getText().trim();
-            String w3       = w3Field.getText().trim();
+        save.addActionListener(e -> onSave());
+    }
 
-            if (question.isEmpty() || correct.isEmpty() || w1.isEmpty() || w2.isEmpty() || w3.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill all fields.", "Invalid input", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+    private void onSave() {
 
-            // prevent duplicates between answers
-            if (correct.equalsIgnoreCase(w1) || correct.equalsIgnoreCase(w2) || correct.equalsIgnoreCase(w3)
-                    || w1.equalsIgnoreCase(w2) || w1.equalsIgnoreCase(w3) || w2.equalsIgnoreCase(w3)) {
-                JOptionPane.showMessageDialog(this, "Answers must be different from each other.", "Invalid input", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+        // basic validation
+        if (questionField.getText().trim().isEmpty()
+                || aField.getText().trim().isEmpty()
+                || bField.getText().trim().isEmpty()
+                || cField.getText().trim().isEmpty()
+                || dField.getText().trim().isEmpty()) {
 
-            int id = Integer.parseInt(idField.getText());
-
-            Question q = new Question(
-                    id,
-                    question,
-                    correct,
-                    w1,
-                    w2,
-                    w3,
-                    diffBox.getSelectedItem().toString(),
-                    gameBox.getSelectedItem().toString()
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill Question and all options (A, B, C, D).",
+                    "Missing Data",
+                    JOptionPane.WARNING_MESSAGE
             );
+            return;
+        }
 
-            model.addQuestion(q);
-            dispose();
-        });
+        int id = Integer.parseInt(idField.getText().trim());
+        String question = questionField.getText().trim();
+        String difficulty = String.valueOf(difficultyBox.getSelectedItem());
+
+        String a = aField.getText().trim();
+        String b = bField.getText().trim();
+        String c = cField.getText().trim();
+        String d = dField.getText().trim();
+
+        String correctLetter = String.valueOf(correctBox.getSelectedItem());
+
+        // Create question with NEW constructor:
+        // (id, text, difficulty, A, B, C, D, correctLetter)
+        Question q = new Question(id, question, difficulty, a, b, c, d, correctLetter);
+
+        model.addQuestion(q);
+
+        JOptionPane.showMessageDialog(this, "Question added successfully!");
+        dispose();
     }
 }
