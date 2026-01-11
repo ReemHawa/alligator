@@ -58,7 +58,7 @@ public class QuestionsManagementScreen extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Background panel (UNCHANGED)
+        //// Background panel (UNCHANGED)
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(new BorderLayout());
         setContentPane(bg);
