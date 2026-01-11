@@ -1,0 +1,6 @@
+﻿ID,Question,Difficulty,A,B,C,D,Correct Answer
+1,What is a key characteristic of the Agile methodology?,medium,Complete system design before development,Short development cycles with continuous feedback,No customer involvement,Heavy documentation over working software,B
+2,What is a functional requirement?,easy,A performance constraint,A security constraint,A function or behavior the system must perform,A maintenance guideline,C
+3,What is an advantage of layered architecture?,hard,Fewer software components,Easier maintenance and scalability,Always better performance,Less need for testing,B
+4,Which phase usually takes the most time in the software life cycle?,easy,Development,Testing,Design,Maintenance,D
+5,Which situation is LEAST suitable for using the Waterfall model?,expert,Stable and well-defined requirements,Strong regulatory constraints,High uncertainty with frequent requirement changes,Projects with fixed scope and budget,C

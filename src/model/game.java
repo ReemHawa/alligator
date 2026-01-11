@@ -236,13 +236,12 @@ public class game {
         return new QuestionOutcome(0, 0, false, false, "No effect");
     }
 
-    // Optional (only if you still use QuestionBank anywhere)
     public Question getUnusedRandomQuestion(QuestionBank bank) {
         Question q;
         int safety = 0;
 
         do {
-            q = bank.getRandomQuestionForGameLevel(level);
+            q = bank.getRandomQuestion();   // ✅ updated
             safety++;
         } while (q != null && usedQuestionIds.contains(q.getQuestionID()) && safety < 100);
 

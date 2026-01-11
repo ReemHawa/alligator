@@ -1,4 +1,3 @@
-
 package model;
 
 import java.io.*;
@@ -13,31 +12,23 @@ public class CSVHandler {
 
     private final String filePath;
 
-    private static final String HISTORY_PATH =
-            System.getProperty("user.home")
-            + File.separator
-            + ".minesweeper"
-            + File.separator
-            + "game_history.csv";
-
-
     public CSVHandler(String filePath) {
         this.filePath = filePath;
     }
 
+    // ===== Writable questions file (same location you already use) =====
     private static File getWritableQuestionsFile() {
         String baseDir = System.getProperty("user.home")
                 + File.separator
-                + "DualMinesweeper"
+                + ".minesweeper"
                 + File.separator
                 + "data";
 
         File dir = new File(baseDir);
         if (!dir.exists()) dir.mkdirs();
 
-        return new File(dir, "questions_data.csv");
+        return new File(dir, "Questions.csv");
     }
-
 
     /* =====================================================
        =============== QUESTIONS HANDLING ==================
@@ -49,10 +40,10 @@ public class CSVHandler {
 
         try (InputStream is = CSVHandler.class
                 .getClassLoader()
-                .getResourceAsStream("data/questions_data.csv")) {
+                .getResourceAsStream("data/Questions.csv")) {
 
             if (is == null) {
-                LOG.severe("questions_data.csv missing in JAR");
+                LOG.severe("Questions.csv missing in JAR");
                 return;
             }
 
@@ -60,14 +51,18 @@ public class CSVHandler {
                 is.transferTo(fos);
             }
 
-            LOG.fine("questions_data.csv copied to writable location");
+            LOG.fine("Questions.csv copied to writable location");
 
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "Failed to ensure questions file exists", e);
         }
     }
 
-
+    /**
+     * Reads questions from writable Questions.csv.
+     * Expected columns:
+     * ID,Question,Difficulty,A,B,C,D,Correct Answer
+     */
     public List<Question> readQuestions() {
 
         ensureQuestionsFileExists();
@@ -79,24 +74,30 @@ public class CSVHandler {
 
             String line;
             boolean isHeader = true;
-            int id = 1;
 
             while ((line = br.readLine()) != null) {
                 if (isHeader) { isHeader = false; continue; }
                 if (line.trim().isEmpty()) continue;
 
                 String[] p = line.split(",", -1);
-                if (p.length < 7) continue;
+                if (p.length < 8) continue;
+
+                int id;
+                try {
+                    id = Integer.parseInt(p[0].trim());
+                } catch (Exception ex) {
+                    continue; // skip bad row
+                }
 
                 list.add(new Question(
-                        id++,
-                        p[0].trim(),
-                        p[1].trim(),
-                        p[2].trim(),
-                        p[3].trim(),
-                        p[4].trim(),
-                        p[5].trim(),
-                        p[6].trim()
+                        id,
+                        p[1].trim(), // Question
+                        p[2].trim(), // Difficulty
+                        p[3].trim(), // A
+                        p[4].trim(), // B
+                        p[5].trim(), // C
+                        p[6].trim(), // D
+                        p[7].trim()  // Correct Answer letter
                 ));
             }
 
@@ -109,47 +110,47 @@ public class CSVHandler {
         return list;
     }
 
-
-
+    /**
+     * Writes questions to writable Questions.csv with NEW format.
+     */
     public void writeQuestions(List<Question> list) {
 
+        ensureQuestionsFileExists();
         File file = getWritableQuestionsFile();
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 
-            bw.write("question,correctAnswer,wrongAnswer1,wrongAnswer2,wrongAnswer3,difficultyLevel,gameLevel");
+            bw.write("ID,Question,Difficulty,A,B,C,D,Correct Answer");
             bw.newLine();
 
             for (Question q : list) {
-                String line = String.format(
-                        "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"",
+                String line = String.join(",",
+                        String.valueOf(q.getQuestionID()),
                         escape(q.getQuestionText()),
-                        escape(q.getCorrectAnswer()),
-                        escape(q.getWrongAnswer1()),
-                        escape(q.getWrongAnswer2()),
-                        escape(q.getWrongAnswer3()),
                         escape(q.getDifficultyLevel()),
-                        escape(q.getGameLevel())
+                        escape(q.getOptionA()),
+                        escape(q.getOptionB()),
+                        escape(q.getOptionC()),
+                        escape(q.getOptionD()),
+                        escape(q.getCorrectLetter())
                 );
                 bw.write(line);
                 bw.newLine();
             }
 
-            LOG.fine("questions_data.csv SAVED");
+            LOG.fine("Questions.csv SAVED (new format)");
 
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "Failed to write questions", e);
         }
     }
 
-
     /* =====================================================
        ============== GAME HISTORY HANDLING =================
        ===================================================== */
 
     public void appendGameHistory(gameHistory e) {
-
-        ensureGameHistoryExists();   // ⭐ ADD THIS LINE
+        ensureGameHistoryExists();
 
         File file = new File(filePath);
 
@@ -174,10 +175,9 @@ public class CSVHandler {
         }
     }
 
-
     public List<gameHistory> readGameHistory() {
 
-        ensureGameHistoryExists();   // ⭐ ADD THIS LINE
+        ensureGameHistoryExists();
 
         List<gameHistory> list = new ArrayList<>();
         File file = new File(filePath);
@@ -213,9 +213,6 @@ public class CSVHandler {
         return list;
     }
 
-
-
-
     /* ===================================================== */
 
     private String safe(String s) {
@@ -223,49 +220,25 @@ public class CSVHandler {
     }
 
     private String escape(String s) {
-        return s == null ? "" : s.replace("\"", "\"\"");
-    }
-
-    private String[] parseCSVLine(String line) {
-
-        List<String> result = new ArrayList<>();
-        boolean insideQuotes = false;
-        StringBuilder sb = new StringBuilder();
-
-        for (char c : line.toCharArray()) {
-            if (c == '"') {
-                insideQuotes = !insideQuotes;
-                continue;
-            }
-            if (c == ',' && !insideQuotes) {
-                result.add(sb.toString().trim());
-                sb.setLength(0);
-            } else {
-                sb.append(c);
-            }
-        }
-
-        result.add(sb.toString().trim());
-        return result.toArray(new String[0]);
+        if (s == null) return "";
+        // simplest CSV-safe: remove commas (same as your logic)
+        return s.replace(",", " ").replace("\"", "\"\"");
     }
 
     private void ensureGameHistoryExists() {
-
         try {
             File file = new File(filePath);
 
-            if (file.exists()) return; // already copied
+            if (file.exists()) return;
 
             File parent = file.getParentFile();
             if (parent != null && !parent.exists()) parent.mkdirs();
 
-            // load template from JAR
             InputStream is = getClass()
                     .getClassLoader()
                     .getResourceAsStream("data/game_history.csv");
 
             if (is == null) {
-                // fallback: create header manually
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                     bw.write("date,playerA,playerB,result,time,score,level");
                     bw.newLine();
@@ -273,7 +246,6 @@ public class CSVHandler {
                 return;
             }
 
-            // copy resource → disk
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 is.transferTo(fos);
             }
@@ -284,7 +256,4 @@ public class CSVHandler {
             LOG.log(Level.SEVERE, "Failed to ensure game history exists", e);
         }
     }
-
-
 }
-

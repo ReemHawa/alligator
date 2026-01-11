@@ -37,6 +37,9 @@ public class gameController {
     private boolean historySaved = false;
 
     private boolean[][] floodVisited;
+    
+    private final java.util.HashSet<Integer> usedQuestionIds = new java.util.HashSet<>();
+
 
     // Question system
     private List<model.Question> gameQuestions;
@@ -397,24 +400,24 @@ public class gameController {
 
         StringBuilder resultMsg = new StringBuilder();
 
-        resultMsg.append("Question level: ")
-                 .append(q.getDifficultyLevel().toUpperCase())
-                 .append("\n\n");
+        resultMsg.append("Question difficulty: ")
+                .append(q.getDifficultyLevel().toUpperCase())
+                .append("\n\n");
 
         if (correct) {
             resultMsg.append("✅ Correct answer!\n\n");
         } else {
             resultMsg.append("❌ Wrong answer!\n");
             resultMsg.append("Correct answer was:\n")
-                     .append(q.getCorrectAnswer())
-                     .append("\n\n");
+                    .append(q.getCorrectAnswerText())
+                    .append("\n\n");
         }
 
         QuestionOutcome outcome =
                 model.getQuestionOutcomeFromTable(correct, q.getDifficultyLevel());
 
         resultMsg.append("Result:\n")
-                 .append(outcome.message);
+                .append(outcome.message);
 
         model.addToScore(outcome.pointsDelta);
 
@@ -422,8 +425,7 @@ public class gameController {
 
         if (outcome.livesDelta > 0) {
             overflowPenalty = model.addLifeIfPossibleOrReturnPenalty(outcome.livesDelta);
-        }
-        else if (outcome.livesDelta < 0) {
+        } else if (outcome.livesDelta < 0) {
             for (int i = 0; i < -outcome.livesDelta; i++) {
                 model.loseLife();
             }
@@ -455,8 +457,8 @@ public class gameController {
             JOptionPane.showMessageDialog(
                     view,
                     "You already have 10 lives (MAX).\n"
-                    + "Score reduced by -" + overflowPenalty
-                    + " due to life reward overflow.",
+                            + "Score reduced by -" + overflowPenalty
+                            + " due to life reward overflow.",
                     "Max Lives Reached",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -485,6 +487,7 @@ public class gameController {
             }
         }
     }
+
 
     private void floodReveal(int boardIndex, int row, int col) {
 
@@ -564,6 +567,25 @@ public class gameController {
                 JOptionPane.WARNING_MESSAGE
         );
     }
+    
+    private void showCannotFlagRevealedCellMessage() {
+        JOptionPane.showMessageDialog(
+                view,
+                "You can't place a flag on a revealed cell!",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    private void showAlreadyFlaggedCellMessage() {
+        JOptionPane.showMessageDialog(
+                view,
+                "This cell is already flagged!",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
 
     public void handleFlagClick(int boardIndex, int row, int col) {
 
@@ -578,12 +600,30 @@ public class gameController {
 
         board b = model.getBoard(boardIndex);
 
-        if (b.isRevealed(row, col) || b.isFlagged(row, col)) {
+        //  If already flagged -> warning
+        if (b.isFlagged(row, col)) {
+            showAlreadyFlaggedCellMessage();
             flagMode[boardIndex] = false;
             view.setFlagMode(boardIndex, false);
             return;
         }
 
+        //  If revealed (ANY type) -> warning
+        boolean revealedAny =
+                b.isRevealed(row, col)
+                || b.isQuestionRevealed(row, col)
+                || b.isSurpriseRevealed(row, col)
+                || b.isQuestionUsed(row, col)
+                || b.isSurpriseActivated(row, col);
+
+        if (revealedAny) {
+            showCannotFlagRevealedCellMessage();
+            flagMode[boardIndex] = false;
+            view.setFlagMode(boardIndex, false);
+            return;
+        }
+
+        //  Place flag normally
         b.placeFlag(row, col);
         view.updateTileFlag(boardIndex, row, col);
 
@@ -600,6 +640,7 @@ public class gameController {
         view.setActiveBoard(model.getCurrentPlayer());
         restartTurnTimer(); // ✅ reset turn timer
     }
+
 
     public void toggleFlagMode(int boardIndex) {
         flagMode[boardIndex] = !flagMode[boardIndex];
@@ -628,19 +669,26 @@ public class gameController {
 
         if (gameQuestions == null || gameQuestions.isEmpty()) return null;
 
-        List<model.Question> filtered = new ArrayList<>();
-
+        // pool of unused questions
+        java.util.List<model.Question> pool = new java.util.ArrayList<>();
         for (model.Question q : gameQuestions) {
-            if (q.getGameLevel().equalsIgnoreCase(model.getLevel().name())) {
-                filtered.add(q);
+            if (!usedQuestionIds.contains(q.getQuestionID())) {
+                pool.add(q);
             }
         }
 
-        if (filtered.isEmpty()) return null;
+        // if all used -> reset (so game can continue forever)
+        if (pool.isEmpty()) {
+            usedQuestionIds.clear();
+            pool.addAll(gameQuestions);
+        }
 
-        Collections.shuffle(filtered);
-        return filtered.get(0);
+        java.util.Collections.shuffle(pool);
+        model.Question chosen = pool.get(0);
+        usedQuestionIds.add(chosen.getQuestionID());
+        return chosen;
     }
+
 
     private void revealOneMineAuto(int boardIndex) {
         board b = model.getBoard(boardIndex);
@@ -679,31 +727,17 @@ public class gameController {
         }
     }
 
-    private Boolean showTimedQuestionDialog(
-            model.Question q, int activationCost, int seconds) {
+    private Boolean showTimedQuestionDialog(model.Question q, int activationCost, int seconds) {
 
-        String[] answers = {
-                q.getCorrectAnswer(),
-                q.getWrongAnswer1(),
-                q.getWrongAnswer2(),
-                q.getWrongAnswer3()
-        };
+        java.util.List<String> options = q.getAllAnswersShuffled();
 
-        java.util.List<String> list =
-                java.util.Arrays.asList(answers);
-        java.util.Collections.shuffle(list);
-
-        final JDialog dialog =
-                new JDialog(view, "Question (30s)", true);
-
+        final JDialog dialog = new JDialog(view, "Question (" + seconds + "s)", true);
         dialog.setLayout(new java.awt.BorderLayout(10, 10));
 
-        JLabel timerLabel =
-                new JLabel("Time left: " + seconds + "s",
-                        SwingConstants.CENTER);
+        JLabel timerLabel = new JLabel("Time left: " + seconds + "s", SwingConstants.CENTER);
 
         JTextArea questionArea = new JTextArea(
-                "Question Level: " + q.getDifficultyLevel().toUpperCase() +
+                "Question Difficulty: " + q.getDifficultyLevel().toUpperCase() +
                 "\nGame Level: " + model.getLevel().name() +
                 "\n\n" + q.getQuestionText() +
                 "\n\nActivation Cost: -" + activationCost
@@ -714,16 +748,14 @@ public class gameController {
         questionArea.setLineWrap(true);
         questionArea.setOpaque(false);
 
-        JPanel answersPanel =
-                new JPanel(new java.awt.GridLayout(2, 2, 10, 10));
+        JPanel answersPanel = new JPanel(new java.awt.GridLayout(2, 2, 10, 10));
 
         final Boolean[] result = { null };
-        final String correct = q.getCorrectAnswer();
 
-        for (String ans : list) {
+        for (String ans : options) {
             JButton btn = new JButton(ans);
             btn.addActionListener(e -> {
-                result[0] = ans.equals(correct);
+                result[0] = q.isCorrect(ans);
                 dialog.dispose();
             });
             answersPanel.add(btn);
@@ -737,20 +769,20 @@ public class gameController {
         dialog.setLocationRelativeTo(view);
 
         final int[] remaining = { seconds };
-        javax.swing.Timer t =
-                new javax.swing.Timer(1000, e -> {
-                    remaining[0]--;
-                    timerLabel.setText("Time left: " + remaining[0] + "s");
-                    if (remaining[0] <= 0) {
-                        result[0] = false;
-                        dialog.dispose();
-                    }
-                });
+        javax.swing.Timer t = new javax.swing.Timer(1000, e -> {
+            remaining[0]--;
+            timerLabel.setText("Time left: " + remaining[0] + "s");
+            if (remaining[0] <= 0) {
+                result[0] = false;
+                dialog.dispose();
+            }
+        });
         t.start();
 
         dialog.setVisible(true);
         return result[0];
     }
+
 
     private void onGameEnd(String result) {
 
@@ -820,7 +852,7 @@ public class gameController {
         return baseDir + File.separator + "game_history.csv";
     }
 
-    private void loadQuestionsForGame() {
+   /* private void loadQuestionsForGame() {
 
         try {
             InputStream is = getClass()
@@ -853,7 +885,28 @@ public class gameController {
             LOG.log(Level.SEVERE, "Failed loading questions!", e);
             gameQuestions = new ArrayList<>();
         }
+<<<<<<< HEAD
+    }*/
+    
+    
+    //////////////////
+    
+    
+    private void loadQuestionsForGame() {
+        try {
+            CSVHandler csv = new CSVHandler("ignored"); // path not used for questions
+            gameQuestions = csv.readQuestions();
+            System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
+
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Failed loading questions!", e);
+            gameQuestions = new ArrayList<>();
+        }
     }
+
+=======
+    }
+>>>>>>> branch 'master' of https://github.com/ReemHawa/alligator.git
 
     public void handleRightClick(int boardIndex, int row, int col) {
 
