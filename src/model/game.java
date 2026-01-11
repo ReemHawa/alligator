@@ -9,7 +9,7 @@ import java.util.Set;
 
 import model.factory.BoardFactory;
 import model.factory.BoardFactoryProvider;
-
+////new changes
 public class game {
 
     private board[] boards;
@@ -120,11 +120,15 @@ public class game {
                             return new QuestionOutcome(+3, +1, false, false,
                                     "Correct! +3 points, +1 life");
                         case "medium":
-                            return fiftyFifty
-                                    ? new QuestionOutcome(+6, 0, false, false,
-                                            "Correct! +6 points")
-                                    : new QuestionOutcome(0, 0, true, false,
-                                            "Correct! A mine was revealed");
+                  
+                            return new QuestionOutcome(
+                                    +6,          // pointsDelta
+                                    0,           // livesDelta
+                                    true,        // revealOneMine ✅ תמיד
+                                    false,       // reveal3x3Random
+                                    "Correct! +6 points and a mine was revealed"
+                            );
+
                         case "hard":
                             return new QuestionOutcome(+10, 0, false, true,
                                     "Correct! +10 points and 3x3 revealed");

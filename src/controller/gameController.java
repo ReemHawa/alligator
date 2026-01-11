@@ -84,49 +84,12 @@ public class gameController {
         }
     }
 
-    private void restartTurnTimer() {
-        if (view == null) return;
-
-        view.startTurnTimer(getTurnSeconds(), () -> {
-
-            if (model.isGameOver()) return;
-
-            model.loseLife();
-            view.updateLives(model.getLivesRemaining());
-
-            if (model.isGameOver()) {
-
-                saveGameHistory("lost");
-
-                for (int i = 0; i < 2; i++) {
-                    view.revealAllMines(i, model.getBoard(i));
-                    view.revealAllSurprises(i, model.getBoard(i));
-                }
-
-                view.stopTimer();
-                view.stopTurnTimer();
-
-                int choice = view.showGameOverDialog();
-                if (choice == JOptionPane.YES_OPTION) {
-                    view.dispose();
-                    restartSameGame();
-                } else {
-                    System.exit(0);
-                }
-                return;
-            }
-
-            model.switchTurn();
-            view.setActiveBoard(model.getCurrentPlayer());
-            restartTurnTimer();
-        });
-    }
+    
     // ====================================================
 
     public void startGame() {
         if (view != null) {
             view.setVisible(true);
-            restartTurnTimer(); // ✅ start turn timer when game starts
         }
     }
 
@@ -170,7 +133,6 @@ public class gameController {
             if (model.isGameOver()) return;
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
-            restartTurnTimer(); 
             return;
         }
 
@@ -179,7 +141,6 @@ public class gameController {
 
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
-        restartTurnTimer(); // reset timer (each turn)
     }
 
     public void handleCellClick(int boardIndex, int row, int col) {
@@ -244,67 +205,75 @@ public class gameController {
             return;
         }
 
-        // ===== MINE =====
-        if (b.isMine(row, col)) {
+     // ================= NORMAL / MINE CELL =================
 
-            b.setRevealed(row, col);
+     // block clicking already revealed cells
+     if (b.isRevealed(row, col)) {
+         showAlreadyRevealedCellMessage();
+         return;
+     }
 
-            model.loseLife();
+     // ===== MINE =====
+     if (b.isMine(row, col)) {
 
-            String msg = model.getMotivationManager()
-                              .onBadMove(model.getCurrentPlayer());
-            view.showMotivationMessage(msg);
+         b.setRevealed(row, col);
+         model.loseLife();
 
-            view.revealMineHit(boardIndex, row, col);
-            view.updateLives(model.getLivesRemaining());
+         String msg = model.getMotivationManager()
+                 .onBadMove(model.getCurrentPlayer());
+         view.showMotivationMessage(msg);
 
-            if (checkWinForBoard(boardIndex)) return;
+         view.revealMineHit(boardIndex, row, col);
+         view.updateLives(model.getLivesRemaining());
 
-            if (model.isGameOver()) {
+         if (checkWinForBoard(boardIndex)) return;
 
-                saveGameHistory("lost");
+         if (model.isGameOver()) {
 
-                for (int i = 0; i < 2; i++) {
-                    view.revealAllMines(i, model.getBoard(i));
-                    view.revealAllSurprises(i, model.getBoard(i));
-                }
+             saveGameHistory("lost");
 
-                view.stopTimer();
-                view.stopTurnTimer();
+             for (int i = 0; i < 2; i++) {
+                 view.revealAllMines(i, model.getBoard(i));
+                 view.revealAllSurprises(i, model.getBoard(i));
+             }
 
-                int choice = view.showGameOverDialog();
-                if (choice == JOptionPane.YES_OPTION) {
-                    view.dispose();
-                    restartSameGame();
-                } else {
-                    System.exit(0);
-                }
-                return;
-            }
-        }
-        // ===== SAFE CELL =====
-        else {
-            b.openSafeCell(boardIndex, row, col);
-            int count = b.getSurroundingMines(row, col);
+             view.stopTimer();
 
-            model.addToScore(+1);
-            view.updateScore(model.getScore());
+             int choice = view.showGameOverDialog();
+             if (choice == JOptionPane.YES_OPTION) {
+                 view.dispose();
+                 restartSameGame();
+             } else {
+                 System.exit(0);
+             }
+             return;
+         }
+     }
+     // ===== SAFE CELL =====
+     else {
 
-            String msg = model.getMotivationManager()
-                              .onGoodMove(model.getCurrentPlayer());
-            view.showMotivationMessage(msg);
+         b.openSafeCell(boardIndex, row, col);
+         int count = b.getSurroundingMines(row, col);
 
-            if (count == 0) {
-                floodVisited = new boolean[b.getRows()][b.getCols()];
-                floodReveal(boardIndex, row, col);
-            }
-        }
+         model.addToScore(+1);
+         view.updateScore(model.getScore());
 
-        if (model.isGameOver()) return;
+         String msg = model.getMotivationManager()
+                 .onGoodMove(model.getCurrentPlayer());
+         view.showMotivationMessage(msg);
 
-        model.switchTurn();
-        view.setActiveBoard(model.getCurrentPlayer());
-        restartTurnTimer(); // ✅ reset turn timer after switch
+         if (count == 0) {
+             floodVisited = new boolean[b.getRows()][b.getCols()];
+             floodReveal(boardIndex, row, col);
+         }
+     }
+
+     if (model.isGameOver()) return;
+
+     model.switchTurn();
+     view.setActiveBoard(model.getCurrentPlayer());
+
+       
     }
 
     private void activateSurpriseCell(int boardIndex, int row, int col) {
@@ -364,7 +333,6 @@ public class gameController {
             }
 
             view.stopTimer();
-            view.stopTurnTimer();
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -379,6 +347,18 @@ public class gameController {
     private void activateQuestionCell(int boardIndex, int row, int col) {
 
         board b = model.getBoard(boardIndex);
+
+
+
+        // ===== Partner's old logic (kept as comment, not used now) =====
+       /* if (!b.isQuestionRevealed(row, col)) {
+            b.revealQuestion(row, col);
+            view.revealQuestion(boardIndex, row, col);
+
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+            return;
+        }*/
 
         if (b.isQuestionUsed(row, col)) {
             JOptionPane.showMessageDialog(view, "This question is already USED.");
@@ -419,8 +399,18 @@ public class gameController {
         resultMsg.append("Result:\n")
                 .append(outcome.message);
 
-        model.addToScore(outcome.pointsDelta);
+     // ✅ prevent double points when 3x3 bonus is handled manually
+        int pointsDelta = outcome.pointsDelta;
 
+        if (outcome.reveal3x3Random && correct) {
+            pointsDelta = 0;            // כי את ה+10 אנחנו מוסיפים ידנית למטה
+
+        }
+
+            
+        
+
+        model.addToScore(pointsDelta);
         int overflowPenalty = 0;
 
         if (outcome.livesDelta > 0) {
@@ -435,7 +425,8 @@ public class gameController {
             revealOneMineAuto(boardIndex);
         }
         if (outcome.reveal3x3Random) {
-            revealRandom3x3(boardIndex);
+            revealBonus3x3(boardIndex);     // NEW
+            model.addToScore(10);           // NEW: תמיד +10
         }
 
         b.markQuestionUsed(row, col);
@@ -452,12 +443,12 @@ public class gameController {
         );
 
         if (overflowPenalty > 0) {
-            model.addToScore(-overflowPenalty);
+            model.addToScore(+overflowPenalty);
 
             JOptionPane.showMessageDialog(
                     view,
                     "You already have 10 lives (MAX).\n"
-                            + "Score reduced by -" + overflowPenalty
+                            + "Score reduced by +" + overflowPenalty
                             + " due to life reward overflow.",
                     "Max Lives Reached",
                     JOptionPane.WARNING_MESSAGE
@@ -465,6 +456,7 @@ public class gameController {
 
             view.updateScore(model.getScore());
         }
+        // ===== Important: question can cause losing lives -> check game over here =====
 
         if (model.isGameOver()) {
 
@@ -476,7 +468,6 @@ public class gameController {
             }
 
             view.stopTimer();
-            view.stopTurnTimer();
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -486,6 +477,9 @@ public class gameController {
                 System.exit(0);
             }
         }
+        // ===== Partner's removed turn switch (kept as comment) =====
+        /* model.switchTurn();
+           view.setActiveBoard(model.getCurrentPlayer()); */
     }
 
 
@@ -635,10 +629,12 @@ public class gameController {
         view.setFlagMode(boardIndex, false);
 
         if (checkWinForBoard(boardIndex)) return;
-
+        // ===== Partner comment (kept) =====
+       
+        // Actual needed behavior:
         model.switchTurn();
         view.setActiveBoard(model.getCurrentPlayer());
-        restartTurnTimer(); // ✅ reset turn timer
+    
     }
 
 
@@ -650,7 +646,6 @@ public class gameController {
     private boolean checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             onGameEnd("won");
-            view.stopTurnTimer();
             view.showWinForBoth(model.getScore());
             return true;
         }
@@ -696,6 +691,8 @@ public class gameController {
 
         for (int r = 0; r < b.getRows(); r++) {
             for (int c = 0; c < b.getCols(); c++) {
+                // בוחרים מוקש שעדיין לא נחשף ולא מסומן בדגל
+
                 if (b.isMine(r, c) && !b.isRevealed(r, c) && !b.isFlagged(r, c)) {
                     mines.add(new int[]{r, c});
                 }
@@ -707,10 +704,16 @@ public class gameController {
         java.util.Collections.shuffle(mines);
         int[] chosen = mines.get(0);
 
-        view.revealMineAuto(boardIndex, chosen[0], chosen[1]);
-    }
+        int r = chosen[0];
+        int c = chosen[1];
 
-    private void revealRandom3x3(int boardIndex) {
+        // ✅ חשוב: לסמן במודל שזה נחשף (ככה לא יפיל חיים בלחיצה עתידית)
+        b.setRevealed(r, c);
+
+        // ✅ להציג ב-View מוקש "חינם" בלי חיים
+        view.revealMineAuto(boardIndex, r, c);    }
+
+  /*  private void revealRandom3x3(int boardIndex) {
         board b = model.getBoard(boardIndex);
         java.util.Random rnd = new java.util.Random();
 
@@ -723,6 +726,74 @@ public class gameController {
         for (int r = sr; r < sr + 3; r++) {
             for (int c = sc; c < sc + 3; c++) {
                 view.revealHintCell(boardIndex, r, c);
+            }
+        }
+    }
+    */
+    //bouns
+    private void revealBonus3x3(int boardIndex) {
+
+        board b = model.getBoard(boardIndex);
+
+        int bestSr = 0, bestSc = 0;
+        int bestRevealedMines = Integer.MAX_VALUE;
+        int bestRevealedCells = Integer.MAX_VALUE;
+
+        // מחפשים את ה-3x3 עם הכי פחות "מוקשים שכבר נחשפו"
+        // ואם יש תיקו - הכי פחות תאים שכבר נחשפו בכלל
+        for (int sr = 0; sr <= b.getRows() - 3; sr++) {
+            for (int sc = 0; sc <= b.getCols() - 3; sc++) {
+
+                int[] stats = b.get3x3RevealStats(sr, sc);
+                int revealedCells = stats[0];
+                int revealedMines = stats[1];
+
+                if (revealedMines < bestRevealedMines ||
+                   (revealedMines == bestRevealedMines && revealedCells < bestRevealedCells)) {
+
+                    bestRevealedMines = revealedMines;
+                    bestRevealedCells = revealedCells;
+                    bestSr = sr;
+                    bestSc = sc;
+                }
+            }
+        }
+
+        // עכשיו חושפים באמת את התוכן של ה-3x3 (בלי קנסות)
+        for (int r = bestSr; r < bestSr + 3; r++) {
+            for (int c = bestSc; c < bestSc + 3; c++) {
+
+                if (b.isRevealed(r, c)) continue;
+
+                // אם זה Question - רק לחשוף (לא להפעיל)
+                if (b.isQuestionCell(r, c)) {
+                    if (!b.isQuestionRevealed(r, c)) {
+                        b.revealQuestion(r, c);
+                        view.revealQuestion(boardIndex, r, c);
+                    }
+                    continue;
+                }
+
+                // אם זה Surprise - רק לחשוף (לא להפעיל)
+                if (b.isSurprise(r, c)) {
+                    if (!b.isSurpriseRevealed(r, c)) {
+                        b.revealSurprise(r, c);
+                        view.revealSurprise(boardIndex, r, c);
+                    }
+                    continue;
+                }
+
+                // תא רגיל: מסמנים כ-revealed במודל
+                b.setRevealed(r, c);
+
+                // מציגים תוכן אמיתי
+                if (b.isMine(r, c)) {
+                    // בלי קנס חיים/נקודות
+                    view.revealMineAuto(boardIndex, r, c);
+                } else {
+                    int count = b.getSurroundingMines(r, c);
+                    view.revealSafeCell(boardIndex, r, c, count);
+                }
             }
         }
     }
@@ -793,7 +864,6 @@ public class gameController {
 
         if (view != null) {
             view.stopTimer();
-            view.stopTurnTimer();
 
             for (int i = 0; i < 2; i++) {
                 view.revealAllMines(i, model.getBoard(i));
@@ -840,6 +910,7 @@ public class gameController {
         String baseDir =
                 System.getProperty("user.home")
                 + File.separator
+                + "DualMinesweeper"
                 + ".minesweeper"
                 + File.separator
                 + "data";
@@ -879,18 +950,19 @@ public class gameController {
 
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
-            restartTurnTimer(); // ✅ reset turn timer
         }
     }
 
     public void exitToHome() {
         if (view != null) {
             view.stopTimer();
-            view.stopTurnTimer();
+            view.dispose();
         }
 
-        view.dispose();
-        if (homeScreen != null) homeScreen.setVisible(true);
-        else new HomeScreen().setVisible(true);
+        if (homeScreen != null) {
+            homeScreen.setVisible(true);
+        } else {
+            new HomeScreen().setVisible(true);
+        }
     }
 }
