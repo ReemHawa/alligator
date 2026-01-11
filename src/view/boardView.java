@@ -10,7 +10,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 import javax.imageio.ImageIO;
-//new changes
+
 public class boardView extends JPanel implements model.BoardObserver {
 
     private static final long serialVersionUID = 1L;
@@ -53,7 +53,6 @@ public class boardView extends JPanel implements model.BoardObserver {
     private final int myBoardIndex;
     
     private Cursor flagCursor;
-    private boolean paused = false;
 
 
     
@@ -135,12 +134,9 @@ public class boardView extends JPanel implements model.BoardObserver {
                 btn.setHorizontalTextPosition(SwingConstants.CENTER);
 
                 btn.addMouseListener(new java.awt.event.MouseAdapter() {
-                	@Override
-                	public void mousePressed(java.awt.event.MouseEvent e) {
 
-                	    if (paused) return;   // ✅ block ALL clicks when paused
-
-                	  
+                    @Override
+                    public void mousePressed(java.awt.event.MouseEvent e) {
 
                         // ===== RIGHT CLICK → UNFLAG ONLY =====
                         if (SwingUtilities.isRightMouseButton(e)) {
@@ -461,26 +457,6 @@ public void revealHintCell(int row, int col) {
             case 8: return Color.GRAY;
             default: return Color.WHITE;
         }
-    }
-    //pause
-    public void setInteractionEnabled(boolean enabled) {
-        setEnabledRecursive(this, enabled);
-        revalidate();
-        repaint();
-    }
-
-    private void setEnabledRecursive(Container container, boolean enabled) {
-        for (Component comp : container.getComponents()) {
-            comp.setEnabled(enabled);
-            if (comp instanceof Container) {
-                setEnabledRecursive((Container) comp, enabled);
-            }
-        }
-    }
-
-    
-    public void setPaused(boolean paused) {
-        this.paused = paused;
     }
 
 }
