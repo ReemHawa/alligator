@@ -1,6 +1,42 @@
-ï»¿ID,Question,Difficulty,A,B,C,D,Correct Answer
+ID,Question,Difficulty,A,B,C,D,Correct Answer
 1,What is a key characteristic of the Agile methodology?,medium,Complete system design before development,Short development cycles with continuous feedback,No customer involvement,Heavy documentation over working software,B
 2,What is a functional requirement?,easy,A performance constraint,A security constraint,A function or behavior the system must perform,A maintenance guideline,C
 3,What is an advantage of layered architecture?,hard,Fewer software components,Easier maintenance and scalability,Always better performance,Less need for testing,B
 4,Which phase usually takes the most time in the software life cycle?,easy,Development,Testing,Design,Maintenance,D
 5,Which situation is LEAST suitable for using the Waterfall model?,expert,Stable and well-defined requirements,Strong regulatory constraints,High uncertainty with frequent requirement changes,Projects with fixed scope and budget,C
+6,What is the main direct objective of conducting software reviews?,medium,To improve team communication and collaboration,to detect defects early in software artifacts,To reduce development costs in later project phases,To train developers in organizational standards ,B
+7,Which statement best describes a plan-driven development method?,easy,Planning is done incrementally and requirements change frequently,development is based mainly on rapid prototyping ,all development  phases are planned in advance and progress is measured against the plan ,the system is built entirely from reusable components,C
+8,what is the main difference between vaildation testing and defect testing?,medium,"validation testing focuses in system performance, while defect testing focuses on usability","validation testing checks whether the software meets user requirements, while defect testing aims to expose faults","validation testing is performed only after release, while defect testing is done during development","validation testing is a static technique, while defect testing is a dynamic technique",B
+9,Which statement correctly describes the relationship between system testing and release testing?,hard,release testing replaces system testing and is performed only by developers ,system testing and release testing have the same objectives and are performed by the same team,release testing is a form of system testing focused on validation and is usually conducted by an indepndent team,"system testing focuses on validation, while relase testing focuses only on defect detection",C
+10,"An organization is maintaining a legacy system that has high business value but low system quality. According to software maintenance and evolution principles, which strategy is most appropriate in this situation?",hard,scrap the system completely and redesign business processes,continue normal corrective maintenance without structural changes,Re-enginner the system to improve maintainability while preserving functionality ,replace the system immediately with a new-off-the-shelf solution,C
+11,What is the main purpose of an operating system?,easy,To design websites,To manage computer hardware and software,To edit videos,To store data on the internet,B
+12,What is the main benefit of the Observer design pattern?,expert,It improves execution speed,It reduces memory usage,It allows objects to be notified automatically when another object changes state,It prevents runtime errors,C
+13,Which of the following best distinguishes product standards from process standards?,medium,"Product standards focus on management, process standards focus on coding","Product standards define software characteristics, process standards define how development is performed","Product standards apply only to testing, process standards apply only to design",There is no difference between them,B
+14,Which statement best describes ISO/IEC/IEEE 12207?,expert,A prescriptive standard defining specific programming methods,A product-quality measurement standard,A framework defining software life cycle processes and activities,A certification standard for software engineers,C
+15,What is the main goal of Software Quality Assurance (SQA)?,hard,To find bugs after the software is completed,To ensure software meets user needs only,To ensure that software processes and products comply with defined standards and procedures,To replace software testing activities,C
+16,What is a non-functional requirement? ,easy,A feature that calculates invoices,A function that stores user profiles,"A constraint on the system’s quality (e.g., performance, security, usability)",A specific business rule for discounts,C
+17,"In Scrum, what is the main purpose of the Sprint Retrospective?",medium,To present the product increment to stakeholders,To inspect the team’s process and plan improvements for the next sprint,To estimate user stories for the next release,To assign tasks to individual developers for the whole project,B
+18,"Which type of software maintenance focuses on changing the system to work in a new environment (e.g., OS/hardware/platform)?",hard,Corrective maintenance,Preventive maintenance,Adaptive maintenance,Perfective maintenance,C
+19,What is a key idea of the V-Model compared to the Waterfall model?,expert, It eliminates documentation to increase speed,It merges design and coding into one phase,It explicitly links each development phase to a corresponding testing phase,It is used only for Agile projects,C
+20,"In a typical layered architecture, where is the business logic usually implemented?",medium,Presentation/UI layer,Business/Application layer,Data access layer,Hardware/Device layer,B
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
