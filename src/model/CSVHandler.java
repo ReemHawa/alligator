@@ -27,7 +27,7 @@ public class CSVHandler {
         File dir = new File(baseDir);
         if (!dir.exists()) dir.mkdirs();
 
-        return new File(dir, "Questions (1).csv");
+        return new File(dir, "Questions.csv");
     }
 
     /* =====================================================
@@ -36,15 +36,14 @@ public class CSVHandler {
 
     private static void ensureQuestionsFileExists() {
         File outFile = getWritableQuestionsFile();
-
-        // ✅ if already exists, DO NOT overwrite (keeps your edits)
         if (outFile.exists()) return;
 
-        try (InputStream is = CSVHandler.class.getClassLoader()
-                .getResourceAsStream("data/Questions (1).csv")) {
+        try (InputStream is = CSVHandler.class
+                .getClassLoader()
+                .getResourceAsStream("data/Questions.csv")) {
 
             if (is == null) {
-                LOG.severe("Missing resource: data/Questions.csv");
+                LOG.severe("Questions.csv missing in JAR");
                 return;
             }
 
@@ -52,14 +51,12 @@ public class CSVHandler {
                 is.transferTo(fos);
             }
 
-            LOG.info("Questions.csv copied to: " + outFile.getAbsolutePath());
+            LOG.fine("Questions.csv copied to writable location");
 
         } catch (IOException e) {
-            LOG.log(Level.SEVERE, "Failed to copy Questions.csv", e);
+            LOG.log(Level.SEVERE, "Failed to ensure questions file exists", e);
         }
     }
-
-
 
     /**
      * Reads questions from writable Questions.csv.

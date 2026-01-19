@@ -9,11 +9,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+//new
 public class QuestionBank {
 
-    private static final Logger LOG = Logger.getLogger(QuestionBank.class.getName());
+    private static final Logger LOG =
+            Logger.getLogger(QuestionBank.class.getName());
+
     private static final String CSV_RESOURCE_PATH = "/data/Questions.csv";
+    
 
     private final List<Question> questions = new ArrayList<>();
     private final Random rnd = new Random();
@@ -23,7 +26,12 @@ public class QuestionBank {
     }
 
     private void load() {
-        try (InputStream is = getClass().getResourceAsStream(CSV_RESOURCE_PATH)) {
+    	System.out.println("Trying to load: " + CSV_RESOURCE_PATH);
+    	System.out.println("Found? " + (getClass().getResource(CSV_RESOURCE_PATH) != null));
+
+        try (InputStream is =
+                     getClass().getResourceAsStream(CSV_RESOURCE_PATH)) {
+
             if (is == null) {
                 LOG.severe("Questions.csv not found at " + CSV_RESOURCE_PATH);
                 return;
@@ -36,15 +44,24 @@ public class QuestionBank {
                 boolean first = true;
 
                 while ((line = br.readLine()) != null) {
-                    if (first) { first = false; continue; }
+
+                    // skip header
+                    if (first) {
+                        first = false;
+                        continue;
+                    }
+
                     if (line.trim().isEmpty()) continue;
 
                     String[] p = line.split(",", -1);
                     if (p.length < 8) continue;
 
                     int id;
-                    try { id = Integer.parseInt(p[0].trim()); }
-                    catch (Exception ex) { continue; }
+                    try {
+                        id = Integer.parseInt(p[0].trim());
+                    } catch (Exception ex) {
+                        continue;
+                    }
 
                     Question q = new Question(
                             id,
@@ -62,11 +79,12 @@ public class QuestionBank {
             }
 
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Failed loading questions from QuestionBank", e);
+            LOG.log(Level.SEVERE,
+                    "Failed loading questions from QuestionBank", e);
         }
     }
 
-    /** New: random question from whole bank (no game level). */
+    /** Random question from the whole bank */
     public Question getRandomQuestion() {
         if (questions.isEmpty()) return null;
         return questions.get(rnd.nextInt(questions.size()));

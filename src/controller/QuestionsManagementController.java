@@ -26,7 +26,7 @@ public class QuestionsManagementController {
     private HomeScreen homeScreen;
     private List<Question> questions;
 
-    private static final String CSV_RESOURCE_PATH = "/data/Questions (1).csv";
+    private static final String CSV_RESOURCE_PATH = "/data/Questions.csv";
 
     // gameplay cache
     private static List<Question> cachedQuestionsForGame = null;
@@ -35,14 +35,14 @@ public class QuestionsManagementController {
     private static File getWritableQuestionsFile() {
         String baseDir = System.getProperty("user.home")
                 + File.separator
-                + ".minesweeper"
+                + "DualMinesweeper"
                 + File.separator
                 + "data";
 
         File dir = new File(baseDir);
         if (!dir.exists()) dir.mkdirs();
 
-        return new File(dir, "Questions (1).csv");
+        return new File(dir, "Questions.csv");
     }
 
     public QuestionsManagementController(HomeScreen homeScreen) {
