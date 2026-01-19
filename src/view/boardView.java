@@ -378,13 +378,15 @@ public void revealHintCell(int row, int col) {
                     buttons[r][c].setContentAreaFilled(false);
 
                     // block further clicks
-                    for (var al : buttons[r][c].getActionListeners()) {
+                    for (java.awt.event.ActionListener al : buttons[r][c].getActionListeners()) {
                         buttons[r][c].removeActionListener(al);
+                    
+
                     }
                 }
             }
         }
-    }
+}
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 

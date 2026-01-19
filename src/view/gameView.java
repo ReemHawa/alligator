@@ -29,7 +29,11 @@ public class gameView extends JFrame {
     private JLabel timerLabel;
     private javax.swing.Timer gameTimer;
     private int elapsedSeconds = 0;
-
+ /* ===== TURN TIMER =====
+    private javax.swing.Timer turnTimer;
+    private int turnSecondsLeft = 0;
+    private JLabel turnTimerLabel;
+*/
     
     private final ImageIcon fullheart;
     private final ImageIcon emptyheart;
@@ -40,6 +44,7 @@ public class gameView extends JFrame {
 
     private final ImageIcon pauseIcon;
     private final ImageIcon resumeIcon;
+    
 
     private boolean paused = false;
  // references for restart & dialogs
@@ -51,7 +56,6 @@ public class gameView extends JFrame {
     private static final String HEART_EMPTY = "/images/Llive.png";
     private static final String PAUSE_ICON  = "/images/Pause.png";
     private static final String RESUME_ICON = "/images/Resume.png";
-
 
     public gameView(gameController controller, game model) {
 
@@ -69,7 +73,11 @@ public class gameView extends JFrame {
         BackgroundPanel root = new BackgroundPanel(BG_PATH);
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-     
+      /*  turnTimerLabel = new JLabel("Time left for your turn: ");
+        turnTimerLabel.setForeground(Color.WHITE);
+        turnTimerLabel.setFont(new Font("Verdana", Font.BOLD, 14));
+
+     */
         // ===== speaker icon =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
         
@@ -648,11 +656,6 @@ public class gameView extends JFrame {
     public boardView getBoardView(int i) {
         return boardViews[i];
     }
-
-
-    
-   
-    
     //Pasue
     private void togglePause() {
         if (!paused) {
@@ -694,4 +697,38 @@ public class gameView extends JFrame {
     }
 
 
+
+  /*  public void startTurnTimer(int seconds, Runnable onTimeout) {
+        stopTurnTimer();
+        turnSecondsLeft = seconds;
+
+        if (turnTimerLabel != null) {
+            turnTimerLabel.setText("Time left for your turn: " + turnSecondsLeft + "s");
+        }
+
+        turnTimer = new javax.swing.Timer(1000, e -> {
+            turnSecondsLeft--;
+
+            if (turnTimerLabel != null) {
+                turnTimerLabel.setText("Time left for your turn: " + turnSecondsLeft + "s");
+            }
+
+            if (turnSecondsLeft <= 0) {
+                stopTurnTimer();
+                onTimeout.run();
+            }
+        });
+
+        turnTimer.start();
+    }
+
+    public void stopTurnTimer() {
+        if (turnTimer != null) {
+            turnTimer.stop();
+            turnTimer = null;
+        }
+    }
+   
+    */
+   
 }
