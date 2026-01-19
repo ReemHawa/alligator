@@ -151,13 +151,19 @@ public class boardView extends JPanel implements model.BoardObserver {
                         // ===== LEFT CLICK =====
                         if (SwingUtilities.isLeftMouseButton(e)) {
 
+                            // ✅ Block clicking on non-active board (prevents annoying popup)
+                            if (controller.getModel().getCurrentPlayer() != myBoardIndex) {
+                                return;
+                            }
+
                             if (flagMode) {
                                 controller.handleFlagClick(boardIndex, rIdx, cIdx);
                             } else {
                                 controller.handleCellClick(boardIndex, rIdx, cIdx);
                             }
                         }
-                    }
+
+                	} 
                 });
 
 

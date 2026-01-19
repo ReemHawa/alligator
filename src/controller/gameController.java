@@ -123,24 +123,28 @@ public class gameController {
             Runnable activateStep,
             String typeName
     ) {
+        // אם כבר השתמשו - לא לעשות כלום וגם לא להעביר תור
         if (isUsed) {
             showAlreadyUsedSpecialCellMessage(typeName);
             return;
         }
 
+        // ✅ אם התא עדיין לא נחשף (פעם ראשונה) -> חושפים ואז כן מעבירים תור
         if (!isRevealed) {
             revealStep.run();
             if (model.isGameOver()) return;
+
             model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
             return;
         }
 
+        // ✅ אם התא כבר נחשף -> רק מפעילים, בלי להעביר תור
         activateStep.run();
+        // אם המשחק נגמר בגלל ההפעלה - נצא (גם בלי העברת תור)
         if (model.isGameOver()) return;
 
-        model.switchTurn();
-        view.setActiveBoard(model.getCurrentPlayer());
+        // ❌ אין switchTurn כאן בכוונה
     }
 
     public void handleCellClick(int boardIndex, int row, int col) {
@@ -164,10 +168,6 @@ public class gameController {
             return;
         }
 
-        if (b.isRevealed(row, col) && !b.isQuestion(row, col) && !b.isSurprise(row, col)) {
-            showAlreadyRevealedCellMessage();
-            return;
-        }
 
         // ================= QUESTION CELL =================
         if (b.isQuestion(row, col)) {
