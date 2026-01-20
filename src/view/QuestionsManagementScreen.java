@@ -29,6 +29,10 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Component;
+import java.awt.Dimension;
+import javax.swing.JTextArea;
+import javax.swing.table.TableCellRenderer;
+
 
 
 import model.Question;
@@ -150,11 +154,11 @@ public class QuestionsManagementScreen extends JFrame {
         tableModel = new QuestionTableModel(questions);
         questionsTable = new JTable(tableModel);
         questionsTable.setRowHeight(34);
-        questionsTable.setAutoCreateRowSorter(true); // enable sorting by header click
+       // questionsTable.setAutoCreateRowSorter(true); // enable sorting by header click
         
         //edit color
      // ===== Color rows by Question Difficulty =====
-        questionsTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer());
+       // questionsTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer());
 
           
 
@@ -162,6 +166,8 @@ public class QuestionsManagementScreen extends JFrame {
         // Sorter (for filters + search)
         sorter = new TableRowSorter<>(tableModel);
         questionsTable.setRowSorter(sorter);
+        applyColumnWidths();
+        enableWrapForLongText();
 
         // Header styling
         JTableHeader header = questionsTable.getTableHeader();
@@ -395,6 +401,78 @@ public class QuestionsManagementScreen extends JFrame {
         }
     }
 */
+    
+    //new methodes fo Q
+    private void applyColumnWidths() {
+        // לפי הסדר שלך: Delete, Edit, ID, Question, Difficulty, A, B, C, D, Correct
+        questionsTable.getColumnModel().getColumn(0).setPreferredWidth(60);
+        questionsTable.getColumnModel().getColumn(1).setPreferredWidth(60);
+        questionsTable.getColumnModel().getColumn(2).setPreferredWidth(50);
+
+        questionsTable.getColumnModel().getColumn(3).setPreferredWidth(320); // Question
+        questionsTable.getColumnModel().getColumn(4).setPreferredWidth(110); // Difficulty
+
+        questionsTable.getColumnModel().getColumn(5).setPreferredWidth(260); // A
+        questionsTable.getColumnModel().getColumn(6).setPreferredWidth(260); // B
+        questionsTable.getColumnModel().getColumn(7).setPreferredWidth(260); // C
+        questionsTable.getColumnModel().getColumn(8).setPreferredWidth(260); // D
+
+        questionsTable.getColumnModel().getColumn(9).setPreferredWidth(80);  // Correct
+    }
+
+    private void enableWrapForLongText() {
+        int[] wrapCols = {3, 5, 6, 7, 8}; // Question + A/B/C/D
+        WrapCellRenderer wrap = new WrapCellRenderer();
+
+        for (int c : wrapCols) {
+            questionsTable.getColumnModel().getColumn(c).setCellRenderer(wrap);
+        }
+
+        questionsTable.setRowHeight(40);
+    }
+
+    
+    //new render:
+    private static class WrapCellRenderer extends JTextArea implements TableCellRenderer {
+        private static final long serialVersionUID = 1L;
+
+        WrapCellRenderer() {
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setOpaque(true);
+            setFont(new Font("Arial", Font.PLAIN, 13));
+            setBorder(new EmptyBorder(6, 8, 6, 8));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+
+            setText(value == null ? "" : value.toString());
+
+            if (isSelected) {
+                setBackground(new Color(180, 200, 230));
+                setForeground(Color.BLACK);
+            } else {
+                setBackground(new Color(255, 255, 255, 215));
+                setForeground(Color.BLACK);
+            }
+
+            // התאמת גובה שורה לפי הטקסט
+            int width = table.getColumnModel().getColumn(column).getWidth();
+            setSize(new Dimension(width, Short.MAX_VALUE));
+            int prefH = getPreferredSize().height;
+
+            if (table.getRowHeight(row) != prefH) {
+                table.setRowHeight(row, prefH);
+            }
+
+            return this;
+        }
+    }
+
+    
+    
 
     // ======== Background Panel (UNCHANGED) ========
 
