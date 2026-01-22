@@ -26,7 +26,7 @@ public class QuestionsManagementController {
     private HomeScreen homeScreen;
     private List<Question> questions;
 
-    private static final String CSV_RESOURCE_PATH = "/data/Questions.csv";
+    private static final String CSV_RESOURCE_PATH = "/data/questionsDATA.csv";
 
     // gameplay cache
     private static List<Question> cachedQuestionsForGame = null;
@@ -42,7 +42,7 @@ public class QuestionsManagementController {
         File dir = new File(baseDir);
         if (!dir.exists()) dir.mkdirs();
 
-        return new File(dir, "Questions.csv");
+        return new File(dir, "questionsDATA.csv");
     }
 
     public QuestionsManagementController(HomeScreen homeScreen) {

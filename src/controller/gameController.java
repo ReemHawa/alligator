@@ -123,6 +123,11 @@ public class gameController {
         newController.startGame();
     }
     
+    private boolean isPlayersTurnOnBoard(int boardIndex) {
+        return boardIndex == model.getCurrentPlayer();
+    }
+
+    
     // this is template method pattern. i took the common logic that both que and surprise cells follow ( first click, used check,..)
     // and pit it in one fixed method. the parts that change ( how cells reveled and activated ) . this method uses the same logic for diff special
     // by passing the changing steps as parameters.
@@ -654,6 +659,15 @@ public class gameController {
 
 
     public void toggleFlagMode(int boardIndex) {
+
+        if (model.isGameOver()) return;
+
+        //  only current player can toggle flag mode
+        if (!isPlayersTurnOnBoard(boardIndex)) {
+            view.showNotYourTurnMessage();
+            return;
+        }
+
         flagMode[boardIndex] = !flagMode[boardIndex];
         view.setFlagMode(boardIndex, flagMode[boardIndex]);
     }
@@ -1155,9 +1169,11 @@ public class gameController {
     
     private void loadQuestionsForGame() {
         try {
-            CSVHandler csv = new CSVHandler("ignored"); // path not used for questions
+            CSVHandler csv = new CSVHandler("ignored");
             gameQuestions = csv.readQuestions();
+
             System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
+            System.out.println("✅ QUESTIONS PATH: " + CSVHandler.getWritableQuestionsFile().getAbsolutePath());
 
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed loading questions!", e);
@@ -1167,9 +1183,15 @@ public class gameController {
 
 
 
+
     public void handleRightClick(int boardIndex, int row, int col) {
 
         if (model.isGameOver()) return;
+        
+        if (!isPlayersTurnOnBoard(boardIndex)) {
+             view.showNotYourTurnMessage();
+            return;
+        }
 
         board b = model.getBoard(boardIndex);
 
@@ -1177,7 +1199,7 @@ public class gameController {
             b.removeFlag(row, col);
             view.removeFlag(boardIndex, row, col);
 
-            model.switchTurn();
+            //model.switchTurn();
             view.setActiveBoard(model.getCurrentPlayer());
         }
     }
