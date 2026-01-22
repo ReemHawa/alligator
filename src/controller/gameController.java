@@ -90,14 +90,14 @@ public class gameController {
         return view;
     }
 
-    // ================= TURN TIMER (NEW) =================
+   /* // ================= TURN TIMER  =================
     private int getTurnSeconds() {
         switch (model.getLevel()) {
             case EASY:   return 40;
             case MEDIUM: return 30;
             default:     return 20;
         }
-    }
+    }*/
 
     
     // ====================================================
@@ -128,10 +128,7 @@ public class gameController {
     }
 
     
-    // this is template method pattern. i took the common logic that both que and surprise cells follow ( first click, used check,..)
-    // and pit it in one fixed method. the parts that change ( how cells reveled and activated ) . this method uses the same logic for diff special
-    // by passing the changing steps as parameters.
-
+   
 
     private void handleSpecialCellTemplate(
             int boardIndex,
@@ -149,7 +146,7 @@ public class gameController {
             return;
         }
 
-        // ✅ אם התא עדיין לא נחשף (פעם ראשונה) -> חושפים ואז כן מעבירים תור
+        //  אם התא עדיין לא נחשף (פעם ראשונה) -> חושפים ואז כן מעבירים תור
         if (!isRevealed) {
             revealStep.run();
             if (model.isGameOver()) return;
@@ -164,7 +161,6 @@ public class gameController {
         // אם המשחק נגמר בגלל ההפעלה - נצא (גם בלי העברת תור)
         if (model.isGameOver()) return;
 
-        // ❌ אין switchTurn כאן בכוונה
     }
 
     public void handleCellClick(int boardIndex, int row, int col) {
@@ -419,7 +415,7 @@ public class gameController {
         resultMsg.append("Result:\n")
                 .append(outcome.message);
 
-     // ✅ prevent double points when 3x3 bonus is handled manually
+     //  prevent double points when 3x3 bonus is handled manually
         int pointsDelta = outcome.pointsDelta;
 
         if (outcome.reveal3x3Random && correct) {
@@ -445,8 +441,8 @@ public class gameController {
             revealOneMineAuto(boardIndex);
         }
         if (outcome.reveal3x3Random) {
-            revealBonus3x3(boardIndex);     // NEW
-            model.addToScore(10);           // NEW: תמיד +10
+            revealBonus3x3(boardIndex);     
+            model.addToScore(10);          
         }
 
         b.markQuestionUsed(row, col);
@@ -1107,7 +1103,7 @@ public class gameController {
         btn.setRolloverEnabled(true);
     }
 
-    // ✅ helper: prevent HTML breaking if answer contains < >
+    //  helper: prevent HTML breaking if answer contains < >
     private String escapeHtml(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;")
