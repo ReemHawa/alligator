@@ -13,7 +13,9 @@ public class SpeakerIcon {
     public static JLabel createSpeakerLabel() {
 
         JLabel speaker = new JLabel();
-        speaker.setSize(25, 25);
+        speaker.setPreferredSize(new Dimension(40, 40));
+        speaker.setSize(40, 40);
+
 
         updateIcon(speaker);
 
