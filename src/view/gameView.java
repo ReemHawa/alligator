@@ -44,9 +44,14 @@ public class gameView extends JFrame {
 
     private final ImageIcon pauseIcon;
     private final ImageIcon resumeIcon;
-    
+  
 
     private boolean paused = false;
+ // ===== Pause Overlay =====
+    private JPanel pauseOverlay;
+    private JButton resumeOverlayBtn;
+    private JButton newGameOverlayBtn;
+
  // references for restart & dialogs
     private final gameController controller;
     private final game model;
@@ -98,6 +103,10 @@ public class gameView extends JFrame {
             	if (motivationOverlay != null) {
             	    motivationOverlay.setBounds(0, 0, lp.getWidth(), lp.getHeight());
             	}
+            	if (pauseOverlay != null) {
+            	    pauseOverlay.setBounds(0, 0, getWidth(), getHeight());
+            	}
+
             }
         });
 
@@ -226,6 +235,16 @@ public class gameView extends JFrame {
         getLayeredPane().add(speaker, JLayeredPane.PALETTE_LAYER);
 
         setVisible(true);
+        //pause
+        buildPauseOverlay();
+
+        resumeOverlayBtn.addActionListener(e -> resumeGame());
+
+        newGameOverlayBtn.addActionListener(e -> {
+            controller.exitToHome(); 
+            // או controller.startNewGame(); אם יש אצלכם
+        });
+
 
         SwingUtilities.invokeLater(() -> {
             speaker.setBounds(
@@ -417,6 +436,9 @@ public class gameView extends JFrame {
 
         JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
     }
+    
+  
+
 
     // ===================== dialogs =====================
     public int showGameOverDialog() {
@@ -574,6 +596,59 @@ public class gameView extends JFrame {
         JOptionPane.showMessageDialog(this, "You win! Final Score: " + finalScore, "Victory",
                 JOptionPane.INFORMATION_MESSAGE);
     }
+    
+    
+    //pause
+    private void buildPauseOverlay() {
+
+        pauseOverlay = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(new Color(0, 0, 0, 140)); // כהות לכל המסך
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        pauseOverlay.setOpaque(false);
+
+        JPanel box = new JPanel();
+        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        box.setBackground(Color.WHITE);
+        box.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(60, 60, 60), 2),
+                BorderFactory.createEmptyBorder(20, 40, 20, 40)
+        ));
+
+        JLabel title = new JLabel("PAUSE", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setFont(new Font("Georgia", Font.BOLD, 34));
+        title.setForeground(new Color(230, 140, 0)); 
+        title.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
+        resumeOverlayBtn = new JButton("RESUME");
+        newGameOverlayBtn = new JButton("NEW GAME");
+
+        Dimension btnSize = new Dimension(180, 35);
+        resumeOverlayBtn.setMaximumSize(btnSize);
+        newGameOverlayBtn.setMaximumSize(btnSize);
+
+        resumeOverlayBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        newGameOverlayBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        box.add(title);
+        box.add(Box.createVerticalStrut(15));
+        box.add(resumeOverlayBtn);
+        box.add(Box.createVerticalStrut(10));
+        box.add(newGameOverlayBtn);
+
+        pauseOverlay.add(box);
+        pauseOverlay.setVisible(false);
+
+        getLayeredPane().add(pauseOverlay, JLayeredPane.MODAL_LAYER);
+    }
+
+    
+    
 
     // ===================== util =====================
     private String formatTime(int totalSeconds) {
@@ -625,6 +700,7 @@ public class gameView extends JFrame {
         }
     }
 
+  
     private int computeTileSizeForBoards() {
 
         Dimension window = getContentPane().getSize();
@@ -673,10 +749,13 @@ public class gameView extends JFrame {
 
         // 2) לחסום לחיצות על הלוחות
         setBoardsEnabled(false);
-        btnPause.setEnabled(true); // שלא “ייכבה” בטעות
-        btnExit.setEnabled(true);  // שגם Exit יעבוד
+        btnPause.setEnabled(true);
+        btnExit.setEnabled(true);
 
+        // ✅ NEW: show pause overlay
+        if (pauseOverlay != null) pauseOverlay.setVisible(true);
     }
+
     private void resumeGame() {
         paused = false;
         btnPause.setIcon(pauseIcon);
@@ -686,7 +765,11 @@ public class gameView extends JFrame {
 
         // 2) להחזיר לחיצות ללוחות
         setBoardsEnabled(true);
+
+        // ✅ NEW: hide pause overlay
+        if (pauseOverlay != null) pauseOverlay.setVisible(false);
     }
+
     private void setBoardsEnabled(boolean enabled) {
         for (int i = 0; i < boardViews.length; i++) {
             if (boardViews[i] != null) {
