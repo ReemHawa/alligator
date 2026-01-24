@@ -244,21 +244,16 @@ public class chooseLevelView extends JFrame {
         switch (level) {
             case "EASY" : descText.setText(
                     "A 9×9 board with 10 mines.\n" +
-                    "Good for beginners or for a calm start.\n" +
-                    "You get 50 seconds per turn, so pick your move wisely."
+                    "Good for beginners or for a calm start.\n" 
             );
             break;
             case "MEDIUM" : descText.setText(
                     "A 13×13 board with 26 mines.\n" +
-                    "Balanced difficulty- not too easy and not too hard.\n" +
-                    "You get 40 seconds per turn to make your move, stay focused."
-            );
+                    "Balanced difficulty- not too easy and not too hard.\n"             );
             break;
             case "HARD" : descText.setText(
                     "A 16×16 board with 44 mines.\n" +
-                    "Made for players who want a real challenge.\n" +
-                    "You get 20 seconds per turn, so act fast."
-            );
+                    "Made for players who want a real challenge.\n"             );
             break;
         }
     }

@@ -1,43 +1,24 @@
 package controller;
 
 import model.DifficultyLevel;
-import model.Question;
+import model.QuestionOutcome;
 import model.board;
 import model.game;
-import model.QuestionOutcome;
 import view.HomeScreen;
 import view.gameView;
 import model.CSVHandler;
 import model.gameHistory;
-import java.awt.FlowLayout;
-import java.awt.Point;
 
-
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
-import javax.swing.*;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.swing.*;
 
 public class gameController {
 
@@ -54,22 +35,28 @@ public class gameController {
     private static final Color LOCKED_BG  = new Color(245, 245, 245); // אפור עדין (אופציונלי)
 
     
+
     private boolean historySaved = false;
 
     private boolean[][] floodVisited;
-    
     private final java.util.HashSet<Integer> usedQuestionIds = new java.util.HashSet<>();
-
 
     // Question system
     private List<model.Question> gameQuestions;
+
+    // =========================
+    // ✅ NEW: FLAGS LIMIT SYSTEM
+    // =========================
+    private int maxFlagsPerPlayer = 0;
+    private final int[] remainingFlags = new int[]{0, 0};
 
     public gameController() {
         model = new game();
         loadQuestionsForGame();
         view = new gameView(this, model);
 
-        // register observer
+        initFlagsLimitAndUI();
+
         for (int i = 0; i < 2; i++) {
             model.getBoard(i).addObserver(view.getBoardView(i));
         }
@@ -81,10 +68,33 @@ public class gameController {
         loadQuestionsForGame();
         view = new gameView(this, model);
 
-        // register observer
+        initFlagsLimitAndUI();
+
         for (int i = 0; i < 2; i++) {
             model.getBoard(i).addObserver(view.getBoardView(i));
         }
+    }
+
+    // ✅ computes half-of-mines and sets per-player remaining counters
+    private void initFlagsLimitAndUI() {
+        int mines = model.getBoard(0).getMinesNum();   // same mines per board
+        maxFlagsPerPlayer = mines ;                 // your rule: half of mines
+
+        remainingFlags[0] = maxFlagsPerPlayer;
+        remainingFlags[1] = maxFlagsPerPlayer;
+
+        if (view != null) {
+            view.updateRemainingFlags(0, remainingFlags[0]);
+            view.updateRemainingFlags(1, remainingFlags[1]);
+        }
+    }
+
+    public int getMaxFlagsPerPlayer() {
+        return maxFlagsPerPlayer;
+    }
+
+    public int getRemainingFlags(int playerIndex) {
+        return remainingFlags[playerIndex];
     }
 
     public game getModel() {
@@ -94,18 +104,6 @@ public class gameController {
     public gameView getView() {
         return view;
     }
-
-   /* // ================= TURN TIMER  =================
-    private int getTurnSeconds() {
-        switch (model.getLevel()) {
-            case EASY:   return 40;
-            case MEDIUM: return 30;
-            default:     return 20;
-        }
-    }*/
-
-    
-    // ====================================================
 
     public void startGame() {
         if (view != null) {
@@ -127,47 +125,14 @@ public class gameController {
         gameController newController = new gameController(level, p1, p2, home);
         newController.startGame();
     }
-    
+
     private boolean isPlayersTurnOnBoard(int boardIndex) {
         return boardIndex == model.getCurrentPlayer();
     }
 
-    
-   
-
-    private void handleSpecialCellTemplate(
-            int boardIndex,
-            int row,
-            int col,
-            boolean isRevealed,
-            boolean isUsed,
-            Runnable revealStep,
-            Runnable activateStep,
-            String typeName
-    ) {
-        // אם כבר השתמשו - לא לעשות כלום וגם לא להעביר תור
-        if (isUsed) {
-            showAlreadyUsedSpecialCellMessage(typeName);
-            return;
-        }
-
-        //  אם התא עדיין לא נחשף (פעם ראשונה) -> חושפים ואז כן מעבירים תור
-        if (!isRevealed) {
-            revealStep.run();
-            if (model.isGameOver()) return;
-
-            model.switchTurn();
-            view.setActiveBoard(model.getCurrentPlayer());
-            return;
-        }
-
-        // ✅ אם התא כבר נחשף -> רק מפעילים, בלי להעביר תור
-        activateStep.run();
-        // אם המשחק נגמר בגלל ההפעלה - נצא (גם בלי העברת תור)
-        if (model.isGameOver()) return;
-
-    }
-
+    // ====================================================
+    // ================= CELL CLICK ========================
+    // ====================================================
     public void handleCellClick(int boardIndex, int row, int col) {
 
         if (model.isGameOver()) return;
@@ -189,21 +154,20 @@ public class gameController {
             return;
         }
 
-
         // ================= QUESTION CELL =================
         if (b.isQuestion(row, col)) {
             handleSpecialCellTemplate(
-                boardIndex,
-                row,
-                col,
-                b.isQuestionRevealed(row, col),
-                b.isQuestionUsed(row, col),
-                () -> {
-                    b.revealQuestion(row, col);
-                    view.revealQuestion(boardIndex, row, col);
-                },
-                () -> activateQuestionCell(boardIndex, row, col),
-                "question"
+                    boardIndex,
+                    row,
+                    col,
+                    b.isQuestionRevealed(row, col),
+                    b.isQuestionUsed(row, col),
+                    () -> {
+                        b.revealQuestion(row, col);
+                        view.revealQuestion(boardIndex, row, col);
+                    },
+                    () -> activateQuestionCell(boardIndex, row, col),
+                    "question"
             );
             return;
         }
@@ -211,94 +175,303 @@ public class gameController {
         // ================= SURPRISE CELL =================
         if (b.isSurprise(row, col)) {
             handleSpecialCellTemplate(
-                boardIndex,
-                row,
-                col,
-                b.isSurpriseRevealed(row, col),
-                b.isSurpriseActivated(row, col),
-                () -> {
-                    b.revealSurprise(row, col);
-                    view.revealSurprise(boardIndex, row, col);
-                },
-                () -> activateSurpriseCell(boardIndex, row, col),
-                "surprise"
+                    boardIndex,
+                    row,
+                    col,
+                    b.isSurpriseRevealed(row, col),
+                    b.isSurpriseActivated(row, col),
+                    () -> {
+                        b.revealSurprise(row, col);
+                        view.revealSurprise(boardIndex, row, col);
+                    },
+                    () -> activateSurpriseCell(boardIndex, row, col),
+                    "surprise"
             );
             return;
         }
 
-     // ================= NORMAL / MINE CELL =================
+        // ================= NORMAL / MINE CELL =================
+        if (b.isRevealed(row, col)) {
+            showAlreadyRevealedCellMessage();
+            return;
+        }
 
-     // block clicking already revealed cells
-     if (b.isRevealed(row, col)) {
-         showAlreadyRevealedCellMessage();
-         return;
-     }
+        // ===== MINE =====
+        if (b.isMine(row, col)) {
 
-     // ===== MINE =====
-     if (b.isMine(row, col)) {
+            b.setRevealed(row, col);
+            model.loseLife();
 
-         b.setRevealed(row, col);
-         model.loseLife();
+            String msg = model.getMotivationManager()
+                    .onBadMove(model.getCurrentPlayer());
+            view.showMotivationMessage(msg);
 
-         String msg = model.getMotivationManager()
-                 .onBadMove(model.getCurrentPlayer());
-         view.showMotivationMessage(msg);
+            view.revealMineHit(boardIndex, row, col);
+            view.updateLives(model.getLivesRemaining());
 
-         view.revealMineHit(boardIndex, row, col);
-         view.updateLives(model.getLivesRemaining());
+            if (checkWinForBoard(boardIndex)) return;
 
-         if (checkWinForBoard(boardIndex)) return;
+            if (model.isGameOver()) {
 
-         if (model.isGameOver()) {
+                saveGameHistory("lost");
 
-             saveGameHistory("lost");
+                for (int i = 0; i < 2; i++) {
+                    view.revealAllMines(i, model.getBoard(i));
+                    view.revealAllSurprises(i, model.getBoard(i));
+                }
 
-             for (int i = 0; i < 2; i++) {
-                 view.revealAllMines(i, model.getBoard(i));
-                 view.revealAllSurprises(i, model.getBoard(i));
-             }
+                view.stopTimer();
 
-             view.stopTimer();
+                int choice = view.showGameOverDialog();
+                if (choice == JOptionPane.YES_OPTION) {
+                    view.dispose();
+                    restartSameGame();
+                } else {
+                    System.exit(0);
+                }
+                return;
+            }
+        }
+        // ===== SAFE CELL =====
+        else {
 
-             int choice = view.showGameOverDialog();
-             if (choice == JOptionPane.YES_OPTION) {
-                 view.dispose();
-                 restartSameGame();
-             } else {
-                 System.exit(0);
-             }
-             return;
-         }
-     }
-     // ===== SAFE CELL =====
-     else {
+            b.openSafeCell(boardIndex, row, col);
+            int count = b.getSurroundingMines(row, col);
 
-         b.openSafeCell(boardIndex, row, col);
-         int count = b.getSurroundingMines(row, col);
+            model.addToScore(+1);
+            view.updateScore(model.getScore());
 
-         model.addToScore(+1);
-         view.updateScore(model.getScore());
+            String msg = model.getMotivationManager()
+                    .onGoodMove(model.getCurrentPlayer());
+            view.showMotivationMessage(msg);
 
-         String msg = model.getMotivationManager()
-                 .onGoodMove(model.getCurrentPlayer());
-         view.showMotivationMessage(msg);
+            if (count == 0) {
+                floodVisited = new boolean[b.getRows()][b.getCols()];
+                floodReveal(boardIndex, row, col);
+            }
+        }
 
-         if (count == 0) {
-             floodVisited = new boolean[b.getRows()][b.getCols()];
-             floodReveal(boardIndex, row, col);
-         }
-     }
+        if (model.isGameOver()) return;
 
-     if (model.isGameOver()) return;
-
-     model.switchTurn();
-     view.setActiveBoard(model.getCurrentPlayer());
-
-       
+        model.switchTurn();
+        view.setActiveBoard(model.getCurrentPlayer());
     }
 
-    private void activateSurpriseCell(int boardIndex, int row, int col) {
+    // ====================================================
+    // ✅ NEW: FLAG CLICK WITH LIMIT + NO TURN SWITCH
+    // ====================================================
+    public void handleFlagClick(int boardIndex, int row, int col) {
 
+        if (model.isGameOver()) return;
+
+        if (boardIndex != model.getCurrentPlayer()) {
+            view.showNotYourTurnMessage();
+            flagMode[boardIndex] = false;
+            view.setFlagMode(boardIndex, false);
+            return;
+        }
+
+        board b = model.getBoard(boardIndex);
+
+        // ✅ if player used all flags -> block
+        if (remainingFlags[boardIndex] <= 0) {
+            JOptionPane.showMessageDialog(
+                    view,
+                    "You’ve used all your flags for this level.\n" +
+                            "Nice effort! Now focus on revealing safe cells ✨",
+                    "No Flags Left",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            flagMode[boardIndex] = false;
+            view.setFlagMode(boardIndex, false);
+            return;
+        }
+
+        // If already flagged
+        if (b.isFlagged(row, col)) {
+            showAlreadyFlaggedCellMessage();
+            flagMode[boardIndex] = false;
+            view.setFlagMode(boardIndex, false);
+            return;
+        }
+
+        // If revealed
+        boolean revealedAny =
+                b.isRevealed(row, col)
+                        || b.isQuestionRevealed(row, col)
+                        || b.isSurpriseRevealed(row, col)
+                        || b.isQuestionUsed(row, col)
+                        || b.isSurpriseActivated(row, col);
+
+        if (revealedAny) {
+            showCannotFlagRevealedCellMessage();
+            flagMode[boardIndex] = false;
+            view.setFlagMode(boardIndex, false);
+            return;
+        }
+
+        // Place flag
+        b.placeFlag(row, col);
+        view.updateTileFlag(boardIndex, row, col);
+
+        int delta = b.isMine(row, col) ? +1 : -3;
+        model.addToScore(delta);
+        view.updateScore(model.getScore());
+
+        // ✅ consume 1 flag placement
+        remainingFlags[boardIndex]--;
+        view.updateRemainingFlags(boardIndex, remainingFlags[boardIndex]);
+
+        // ✅ cute message when last flag is used
+        if (remainingFlags[boardIndex] == 0) {
+            JOptionPane.showMessageDialog(
+                    view,
+                    "That was your last flag ✅\n" +
+                            "Great scouting! Now it’s all about smart reveals 🧠",
+                    "All Flags Used",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+
+        // exit flag mode
+        flagMode[boardIndex] = false;
+        view.setFlagMode(boardIndex, false);
+
+        if (checkWinForBoard(boardIndex)) return;
+
+        // ✅ IMPORTANT: DO NOT SWITCH TURN when placing a flag
+        view.setActiveBoard(model.getCurrentPlayer());
+    }
+
+    // ====================================================
+    // ✅ NEW: RIGHT CLICK REMOVAL DOES NOT REFUND FLAGS
+    // ====================================================
+    public void handleRightClick(int boardIndex, int row, int col) {
+
+        if (model.isGameOver()) return;
+
+        if (!isPlayersTurnOnBoard(boardIndex)) {
+            view.showNotYourTurnMessage();
+            return;
+        }
+
+        board b = model.getBoard(boardIndex);
+
+        // Only act if the cell is flagged
+        if (!b.isFlagged(row, col)) return;
+
+        int remaining = getRemainingFlags(boardIndex);
+
+        String msg =
+                "Remove this flag?\n\n"
+              + "• This will NOT restore your remaining flags.\n"
+              + "• You will still have " + remaining + " flag(s) left to place.\n\n"
+              + "Do you want to continue?";
+
+        int choice = JOptionPane.showConfirmDialog(
+                view,
+                msg,
+                "Confirm Flag Removal",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (choice != JOptionPane.YES_OPTION) {
+            // player cancelled — keep flag
+            JOptionPane.showMessageDialog(
+                    view,
+                    "All good The flag stays right where it is.",
+                    "Cancelled",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        // ✅ confirmed → remove flag
+        b.removeFlag(row, col);
+        view.removeFlag(boardIndex, row, col);
+
+        JOptionPane.showMessageDialog(
+                view,
+                "Flag removed \n",
+                "Flag removed",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+        // ✅ stay on same player's turn
+        view.setActiveBoard(model.getCurrentPlayer());
+    }
+
+
+    // ====================================================
+    // Flag mode toggle
+    // ====================================================
+    public void toggleFlagMode(int boardIndex) {
+
+        if (model.isGameOver()) return;
+
+        if (!isPlayersTurnOnBoard(boardIndex)) {
+            view.showNotYourTurnMessage();
+            return;
+        }
+
+        // ✅ optional: if no flags left, don't even enable mode
+        if (remainingFlags[boardIndex] <= 0) {
+            JOptionPane.showMessageDialog(
+                    view,
+                    "No flags remaining for you in this level.\n" +
+                            "Try revealing cells carefully — you’ve got this 🌟",
+                    "No Flags Left",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            view.setFlagMode(boardIndex, false);
+            flagMode[boardIndex] = false;
+            return;
+        }
+
+        flagMode[boardIndex] = !flagMode[boardIndex];
+        view.setFlagMode(boardIndex, flagMode[boardIndex]);
+    }
+
+    // ====================================================
+    // ========= Special cell template (your existing) =====
+    // ====================================================
+    private void handleSpecialCellTemplate(
+            int boardIndex,
+            int row,
+            int col,
+            boolean isRevealed,
+            boolean isUsed,
+            Runnable revealStep,
+            Runnable activateStep,
+            String typeName
+    ) {
+        if (isUsed) {
+            showAlreadyUsedSpecialCellMessage(typeName);
+            return;
+        }
+
+        // FIRST CLICK reveal only 
+        if (!isRevealed) {
+            revealStep.run();
+            view.setActiveBoard(model.getCurrentPlayer()); // stay same player
+            return;
+        }
+
+        //  SECOND CLICK: activate
+        activateStep.run();
+
+        if (model.isGameOver()) return;
+
+        
+        view.setActiveBoard(model.getCurrentPlayer());
+    }
+
+    // ====================================================
+    // =============== Your existing logic below ===========
+    // ====================================================
+
+    private void activateSurpriseCell(int boardIndex, int row, int col) {
         board b = model.getBoard(boardIndex);
 
         int cost, reward;
@@ -337,15 +510,14 @@ public class gameController {
         int netPoints = rewardPoints - cost - fullLifePenalty;
 
         view.showSurpriseResult(
-            good, lifeDelta, rewardPoints,
-            cost, fullLifePenalty, netPoints
+                good, lifeDelta, rewardPoints,
+                cost, fullLifePenalty, netPoints
         );
 
         view.updateScore(model.getScore());
         view.updateLives(model.getLivesRemaining());
 
         if (model.isGameOver()) {
-
             saveGameHistory("lost");
 
             for (int i = 0; i < 2; i++) {
@@ -366,23 +538,10 @@ public class gameController {
     }
 
     private void activateQuestionCell(int boardIndex, int row, int col) {
-
         board b = model.getBoard(boardIndex);
 
-
-
-        // ===== Partner's old logic (kept as comment, not used now) =====
-       /* if (!b.isQuestionRevealed(row, col)) {
-            b.revealQuestion(row, col);
-            view.revealQuestion(boardIndex, row, col);
-
-            model.switchTurn();
-            view.setActiveBoard(model.getCurrentPlayer());
-            return;
-        }*/
-
         if (b.isQuestionUsed(row, col)) {
-            JOptionPane.showMessageDialog(view, "This question is already USED.");
+            JOptionPane.showMessageDialog(view, "This question was already used.", "Question", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -390,9 +549,8 @@ public class gameController {
         model.addToScore(-activationCost);
 
         model.Question q = getRandomUnusedQuestionForGame();
-
         if (q == null) {
-            JOptionPane.showMessageDialog(view, "No questions available.");
+            JOptionPane.showMessageDialog(view, "No questions available.", "Question", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -400,7 +558,6 @@ public class gameController {
         boolean correct = Boolean.TRUE.equals(correctObj);
 
         StringBuilder resultMsg = new StringBuilder();
-
         resultMsg.append("Question difficulty: ")
                 .append(q.getDifficultyLevel().toUpperCase())
                 .append("\n\n");
@@ -420,16 +577,10 @@ public class gameController {
         resultMsg.append("Result:\n")
                 .append(outcome.message);
 
-     //  prevent double points when 3x3 bonus is handled manually
         int pointsDelta = outcome.pointsDelta;
-
         if (outcome.reveal3x3Random && correct) {
-            pointsDelta = 0;            // כי את ה+10 אנחנו מוסיפים ידנית למטה
-
+            pointsDelta = 0;
         }
-
-            
-        
 
         model.addToScore(pointsDelta);
         int overflowPenalty = 0;
@@ -437,17 +588,13 @@ public class gameController {
         if (outcome.livesDelta > 0) {
             overflowPenalty = model.addLifeIfPossibleOrReturnPenalty(outcome.livesDelta);
         } else if (outcome.livesDelta < 0) {
-            for (int i = 0; i < -outcome.livesDelta; i++) {
-                model.loseLife();
-            }
+            for (int i = 0; i < -outcome.livesDelta; i++) model.loseLife();
         }
 
-        if (outcome.revealOneMine) {
-            revealOneMineAuto(boardIndex);
-        }
+        if (outcome.revealOneMine) revealOneMineAuto(boardIndex);
         if (outcome.reveal3x3Random) {
-            revealBonus3x3(boardIndex);     
-            model.addToScore(10);          
+            revealBonus3x3(boardIndex);
+            model.addToScore(10);
         }
 
         b.markQuestionUsed(row, col);
@@ -468,19 +615,15 @@ public class gameController {
 
             JOptionPane.showMessageDialog(
                     view,
-                    "You already have 10 lives (MAX).\n"
-                            + "Score reduced by +" + overflowPenalty
-                            + " due to life reward overflow.",
-                    "Max Lives Reached",
+                    "Max lives reached.\n" +
+                            "Score reduced by +" + overflowPenalty + " due to life overflow.",
+                    "Max Lives",
                     JOptionPane.WARNING_MESSAGE
             );
-
             view.updateScore(model.getScore());
         }
-        // ===== Important: question can cause losing lives -> check game over here =====
 
         if (model.isGameOver()) {
-
             saveGameHistory("lost");
 
             for (int i = 0; i < 2; i++) {
@@ -498,14 +641,9 @@ public class gameController {
                 System.exit(0);
             }
         }
-        // ===== Partner's removed turn switch (kept as comment) =====
-        /* model.switchTurn();
-           view.setActiveBoard(model.getCurrentPlayer()); */
     }
 
-
     private void floodReveal(int boardIndex, int row, int col) {
-
         board b = model.getBoard(boardIndex);
 
         if (floodVisited[row][col]) return;
@@ -523,52 +661,93 @@ public class gameController {
                 int nc = col + dc;
 
                 if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+
+                // Never open mines in flood
                 if (b.isMine(nr, nc)) continue;
 
-                if (b.isQuestionCell(nr, nc)) {
+                // If already revealed/used/activated (any state) -> skip
+                if (isAnyRevealedOrUsed(b, nr, nc)) continue;
 
-                    if (!b.isQuestionRevealed(nr, nc)) {
+                boolean isFlagged  = b.isFlagged(nr, nc);
+                boolean isQuestion = b.isQuestionCell(nr, nc);
+                boolean isSurprise = b.isSurprise(nr, nc);
+
+                int count = b.getSurroundingMines(nr, nc);
+
+                // ==========================
+                // 1) NUMBER cell (count > 0)
+                // ==========================
+                // Stop the flood here.
+                // Reveal ONLY if NOT flagged.
+                if (!isQuestion && !isSurprise && count > 0) {
+                    if (!isFlagged) {
+                        b.setRevealed(nr, nc);
+                        view.revealSafeCell(boardIndex, nr, nc, count);
+
+                        model.addToScore(1);
+                        view.updateScore(model.getScore());
+                    }
+                    continue;
+                }
+
+                // =========================================
+                // 2) EMPTY cell (count == 0, normal cell)
+                // =========================================
+                // Reveal (if not flagged) + keep going
+                if (!isQuestion && !isSurprise && count == 0) {
+                    if (!isFlagged) {
+                        b.setRevealed(nr, nc);
+                        view.revealSafeCell(boardIndex, nr, nc, 0);
+
+                        model.addToScore(1);
+                        view.updateScore(model.getScore());
+                    }
+
+                    // Keep going even if it's flagged (flag stays)
+                    floodReveal(boardIndex, nr, nc);
+                    continue;
+                }
+
+                // =========================================
+                // 3) QUESTION / SURPRISE behave like EMPTY
+                // =========================================
+                // Reveal icon (if not flagged) + keep going.
+                // Do NOT activate them.
+                if (isQuestion) {
+                    if (!isFlagged) {
                         b.revealQuestion(nr, nc);
                         view.revealQuestion(boardIndex, nr, nc);
                     }
-
+                    // keep spreading (even if flagged)
                     floodReveal(boardIndex, nr, nc);
                     continue;
                 }
 
-                if (b.isSurprise(nr, nc)) {
-
-                    if (!b.isSurpriseRevealed(nr, nc)) {
+                if (isSurprise) {
+                    if (!isFlagged) {
                         b.revealSurprise(nr, nc);
                         view.revealSurprise(boardIndex, nr, nc);
                     }
-
+                    // keep spreading (even if flagged)
                     floodReveal(boardIndex, nr, nc);
-                    continue;
-                }
-
-                if (!b.isRevealed(nr, nc)) {
-
-                    b.setRevealed(nr, nc);
-
-                    int count = b.getSurroundingMines(nr, nc);
-                    view.revealSafeCell(boardIndex, nr, nc, count);
-
-                    model.addToScore(1);
-                    view.updateScore(model.getScore());
-
-                    if (count == 0) {
-                        floodReveal(boardIndex, nr, nc);
-                    }
                 }
             }
         }
     }
 
+    private boolean isAnyRevealedOrUsed(board b, int r, int c) {
+        return b.isRevealed(r, c)
+                || b.isQuestionRevealed(r, c)
+                || b.isSurpriseRevealed(r, c)
+                || b.isQuestionUsed(r, c)
+                || b.isSurpriseActivated(r, c);
+    }
+
+
     private void showAlreadyRevealedCellMessage() {
         JOptionPane.showMessageDialog(
                 view,
-                "This cell is already revealed!",
+                "This cell is already revealed.",
                 "Invalid Move",
                 JOptionPane.WARNING_MESSAGE
         );
@@ -577,16 +756,16 @@ public class gameController {
     private void showAlreadyUsedSpecialCellMessage(String what) {
         JOptionPane.showMessageDialog(
                 view,
-                "This " + what + " was already used!",
+                "This " + what + " was already used.",
                 "Invalid Move",
                 JOptionPane.WARNING_MESSAGE
         );
     }
-    
+
     private void showCannotFlagRevealedCellMessage() {
         JOptionPane.showMessageDialog(
                 view,
-                "You can't place a flag on a revealed cell!",
+                "You can’t place a flag on a revealed cell.",
                 "Invalid Move",
                 JOptionPane.WARNING_MESSAGE
         );
@@ -595,82 +774,10 @@ public class gameController {
     private void showAlreadyFlaggedCellMessage() {
         JOptionPane.showMessageDialog(
                 view,
-                "This cell is already flagged!",
+                "This cell already has a flag.",
                 "Invalid Move",
                 JOptionPane.WARNING_MESSAGE
         );
-    }
-
-
-    public void handleFlagClick(int boardIndex, int row, int col) {
-
-        if (model.isGameOver()) return;
-
-        if (boardIndex != model.getCurrentPlayer()) {
-            view.showNotYourTurnMessage();
-            flagMode[boardIndex] = false;
-            view.setFlagMode(boardIndex, false);
-            return;
-        }
-
-        board b = model.getBoard(boardIndex);
-
-        //  If already flagged -> warning
-        if (b.isFlagged(row, col)) {
-            showAlreadyFlaggedCellMessage();
-            flagMode[boardIndex] = false;
-            view.setFlagMode(boardIndex, false);
-            return;
-        }
-
-        //  If revealed (ANY type) -> warning
-        boolean revealedAny =
-                b.isRevealed(row, col)
-                || b.isQuestionRevealed(row, col)
-                || b.isSurpriseRevealed(row, col)
-                || b.isQuestionUsed(row, col)
-                || b.isSurpriseActivated(row, col);
-
-        if (revealedAny) {
-            showCannotFlagRevealedCellMessage();
-            flagMode[boardIndex] = false;
-            view.setFlagMode(boardIndex, false);
-            return;
-        }
-
-        //  Place flag normally
-        b.placeFlag(row, col);
-        view.updateTileFlag(boardIndex, row, col);
-
-        int delta = b.isMine(row, col) ? +1 : -3;
-        model.addToScore(delta);
-        view.updateScore(model.getScore());
-
-        flagMode[boardIndex] = false;
-        view.setFlagMode(boardIndex, false);
-
-        if (checkWinForBoard(boardIndex)) return;
-        // ===== Partner comment (kept) =====
-       
-        // Actual needed behavior:
-        model.switchTurn();
-        view.setActiveBoard(model.getCurrentPlayer());
-    
-    }
-
-
-    public void toggleFlagMode(int boardIndex) {
-
-        if (model.isGameOver()) return;
-
-        //  only current player can toggle flag mode
-        if (!isPlayersTurnOnBoard(boardIndex)) {
-            view.showNotYourTurnMessage();
-            return;
-        }
-
-        flagMode[boardIndex] = !flagMode[boardIndex];
-        view.setFlagMode(boardIndex, flagMode[boardIndex]);
     }
 
     private boolean checkWinForBoard(int boardIndex) {
@@ -691,18 +798,13 @@ public class gameController {
     }
 
     private model.Question getRandomUnusedQuestionForGame() {
-
         if (gameQuestions == null || gameQuestions.isEmpty()) return null;
 
-        // pool of unused questions
         java.util.List<model.Question> pool = new java.util.ArrayList<>();
         for (model.Question q : gameQuestions) {
-            if (!usedQuestionIds.contains(q.getQuestionID())) {
-                pool.add(q);
-            }
+            if (!usedQuestionIds.contains(q.getQuestionID())) pool.add(q);
         }
 
-        // if all used -> reset (so game can continue forever)
         if (pool.isEmpty()) {
             usedQuestionIds.clear();
             pool.addAll(gameQuestions);
@@ -714,15 +816,12 @@ public class gameController {
         return chosen;
     }
 
-
     private void revealOneMineAuto(int boardIndex) {
         board b = model.getBoard(boardIndex);
         java.util.List<int[]> mines = new java.util.ArrayList<>();
 
         for (int r = 0; r < b.getRows(); r++) {
             for (int c = 0; c < b.getCols(); c++) {
-                // בוחרים מוקש שעדיין לא נחשף ולא מסומן בדגל
-
                 if (b.isMine(r, c) && !b.isRevealed(r, c) && !b.isFlagged(r, c)) {
                     mines.add(new int[]{r, c});
                 }
@@ -737,40 +836,17 @@ public class gameController {
         int r = chosen[0];
         int c = chosen[1];
 
-        // ✅ חשוב: לסמן במודל שזה נחשף (ככה לא יפיל חיים בלחיצה עתידית)
         b.setRevealed(r, c);
-
-        // ✅ להציג ב-View מוקש "חינם" בלי חיים
-        view.revealMineAuto(boardIndex, r, c);    }
-
-  /*  private void revealRandom3x3(int boardIndex) {
-        board b = model.getBoard(boardIndex);
-        java.util.Random rnd = new java.util.Random();
-
-        int r0 = rnd.nextInt(b.getRows());
-        int c0 = rnd.nextInt(b.getCols());
-
-        int sr = Math.max(0, Math.min(b.getRows() - 3, r0 - 1));
-        int sc = Math.max(0, Math.min(b.getCols() - 3, c0 - 1));
-
-        for (int r = sr; r < sr + 3; r++) {
-            for (int c = sc; c < sc + 3; c++) {
-                view.revealHintCell(boardIndex, r, c);
-            }
-        }
+        view.revealMineAuto(boardIndex, r, c);
     }
-    */
-    //bouns
-    private void revealBonus3x3(int boardIndex) {
 
+    private void revealBonus3x3(int boardIndex) {
         board b = model.getBoard(boardIndex);
 
         int bestSr = 0, bestSc = 0;
         int bestRevealedMines = Integer.MAX_VALUE;
         int bestRevealedCells = Integer.MAX_VALUE;
 
-        // מחפשים את ה-3x3 עם הכי פחות "מוקשים שכבר נחשפו"
-        // ואם יש תיקו - הכי פחות תאים שכבר נחשפו בכלל
         for (int sr = 0; sr <= b.getRows() - 3; sr++) {
             for (int sc = 0; sc <= b.getCols() - 3; sc++) {
 
@@ -779,7 +855,7 @@ public class gameController {
                 int revealedMines = stats[1];
 
                 if (revealedMines < bestRevealedMines ||
-                   (revealedMines == bestRevealedMines && revealedCells < bestRevealedCells)) {
+                        (revealedMines == bestRevealedMines && revealedCells < bestRevealedCells)) {
 
                     bestRevealedMines = revealedMines;
                     bestRevealedCells = revealedCells;
@@ -789,13 +865,11 @@ public class gameController {
             }
         }
 
-        // עכשיו חושפים באמת את התוכן של ה-3x3 (בלי קנסות)
         for (int r = bestSr; r < bestSr + 3; r++) {
             for (int c = bestSc; c < bestSc + 3; c++) {
 
                 if (b.isRevealed(r, c)) continue;
 
-                // אם זה Question - רק לחשוף (לא להפעיל)
                 if (b.isQuestionCell(r, c)) {
                     if (!b.isQuestionRevealed(r, c)) {
                         b.revealQuestion(r, c);
@@ -804,7 +878,6 @@ public class gameController {
                     continue;
                 }
 
-                // אם זה Surprise - רק לחשוף (לא להפעיל)
                 if (b.isSurprise(r, c)) {
                     if (!b.isSurpriseRevealed(r, c)) {
                         b.revealSurprise(r, c);
@@ -813,12 +886,9 @@ public class gameController {
                     continue;
                 }
 
-                // תא רגיל: מסמנים כ-revealed במודל
                 b.setRevealed(r, c);
 
-                // מציגים תוכן אמיתי
                 if (b.isMine(r, c)) {
-                    // בלי קנס חיים/נקודות
                     view.revealMineAuto(boardIndex, r, c);
                 } else {
                     int count = b.getSurroundingMines(r, c);
@@ -828,6 +898,8 @@ public class gameController {
         }
     }
 
+    // ===== Keep your showTimedQuestionDialog(...) exactly as you already have =====
+    // (Not repeated here to avoid making this message insanely long)
     private Boolean showTimedQuestionDialog(model.Question q, int activationCost, int seconds) {
 
         java.util.List<String> options = q.getAllAnswersShuffled();
@@ -1060,7 +1132,12 @@ public class gameController {
 
         dialog.setVisible(true);
         return result[0];
+
+        // <-- paste your existing method body here exactly (unchanged)
+       // return false;
+
     }
+
 
 //
     private void setAnswerFeedbackColor(JButton btn, Color bg) {
@@ -1073,8 +1150,8 @@ public class gameController {
         return s.replaceAll("\\<.*?\\>", "").trim();
     }
 
-    private void onGameEnd(String result) {
 
+    private void onGameEnd(String result) {
         if (model.isGameOver()) return;
 
         model.setGameOver(true);
@@ -1089,6 +1166,7 @@ public class gameController {
             }
         }
     }
+
     private void styleAnswerButton(JButton btn) {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
@@ -1168,8 +1246,8 @@ public class gameController {
                 .replace(">", "&gt;");
     }
 
-    private void saveGameHistory(String result) {
 
+    private void saveGameHistory(String result) {
         if (historySaved) return;
         historySaved = true;
 
@@ -1198,62 +1276,33 @@ public class gameController {
 
         CSVHandler csv = new CSVHandler(getGameHistoryPath());
         csv.appendGameHistory(entry);
-        System.out.println(" Game history saved to: " + getGameHistoryPath());
+        System.out.println("Game history saved to: " + getGameHistoryPath());
     }
 
     public static String getGameHistoryPath() {
-
         String baseDir =
                 System.getProperty("user.home")
-                + File.separator
-                + "DualMinesweeper"
-                + ".minesweeper"
-                + File.separator
-                + "data";
+                        + File.separator
+                        + "DualMinesweeper"
+                        + ".minesweeper"
+                        + File.separator
+                        + "data";
 
         File dir = new File(baseDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        if (!dir.exists()) dir.mkdirs();
 
         return baseDir + File.separator + "game_history.csv";
     }
 
-    
     private void loadQuestionsForGame() {
         try {
             CSVHandler csv = new CSVHandler("ignored");
             gameQuestions = csv.readQuestions();
-
             System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
             System.out.println("✅ QUESTIONS PATH: " + CSVHandler.getWritableQuestionsFile().getAbsolutePath());
-
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed loading questions!", e);
             gameQuestions = new ArrayList<>();
-        }
-    }
-
-
-
-
-    public void handleRightClick(int boardIndex, int row, int col) {
-
-        if (model.isGameOver()) return;
-        
-        if (!isPlayersTurnOnBoard(boardIndex)) {
-             view.showNotYourTurnMessage();
-            return;
-        }
-
-        board b = model.getBoard(boardIndex);
-
-        if (b.isFlagged(row, col)) {
-            b.removeFlag(row, col);
-            view.removeFlag(boardIndex, row, col);
-
-            //model.switchTurn();
-            view.setActiveBoard(model.getCurrentPlayer());
         }
     }
 
@@ -1270,4 +1319,3 @@ public class gameController {
         }
     }
 }
-    

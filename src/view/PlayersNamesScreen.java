@@ -9,15 +9,21 @@ public class PlayersNamesScreen extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    private  JTextField txtPlayerA;
+    private JTextField txtPlayerA;
     private JTextField txtPlayerB;
     private JButton btnPlay;
     private JButton btnBack;
+
+    // ✅ NEW: inline error labels
+    private JLabel errA;
+    private JLabel errB;
+
     private String level;
     private chooseLevelView levelScreen;
     private HomeScreen homeScreen;
     private PlayersNamesController controller;
-    private static final String PH_A = "Enter first player name";     
+
+    private static final String PH_A = "Enter first player name";
     private static final String PH_B = "Enter second player name";
 
     public PlayersNamesScreen(String level, chooseLevelView levelScreen, HomeScreen homeScreen) {
@@ -33,8 +39,8 @@ public class PlayersNamesScreen extends JFrame {
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(null);
         setContentPane(bg);
-        
-     // ===== Speaker icon (bottom-left) =====
+
+        // ===== Speaker icon (bottom-left) =====
         JLabel speaker = SpeakerIcon.createSpeakerLabel();
         bg.add(speaker);
 
@@ -49,16 +55,15 @@ public class PlayersNamesScreen extends JFrame {
                 iconSize
         );
 
-        addComponentListener(new java.awt.event.ComponentAdapter() {
+        addComponentListener(new ComponentAdapter() {
             @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
+            public void componentResized(ComponentEvent e) {
                 speaker.setLocation(
                         marginLeft,
                         bg.getHeight() - iconSize - marginBottom
                 );
             }
         });
-
 
         JLabel lblTitle = new JLabel("Enter your names:");
         lblTitle.setFont(new Font("Serif", Font.BOLD, 26));
@@ -67,18 +72,26 @@ public class PlayersNamesScreen extends JFrame {
         lblTitle.setBounds(200, 120, 400, 40);
         bg.add(lblTitle);
 
-        JLabel lblSub = new JLabel("You Must Fill In Both Names To Start The Game.");
+        // ✅ better professional instruction
+        JLabel lblSub = new JLabel("Both names must be 4–14 letters (A–Z).");
         lblSub.setFont(new Font("Serif", Font.BOLD, 16));
         lblSub.setForeground(Color.WHITE);
         lblSub.setHorizontalAlignment(SwingConstants.CENTER);
         lblSub.setBounds(160, 155, 480, 30);
         bg.add(lblSub);
-        
+
         txtPlayerA = new JTextField(PH_A);
         txtPlayerA.setFont(new Font("Arial", Font.PLAIN, 18));
         txtPlayerA.setForeground(new Color(180, 180, 180));
         txtPlayerA.setBounds(260, 220, 280, 48);
         bg.add(txtPlayerA);
+
+        // ✅ NEW: error label under player A
+        errA = new JLabel(" ");
+        errA.setBounds(260, 270, 520, 18);
+        errA.setForeground(new Color(255, 120, 120));
+        errA.setFont(new Font("Arial", Font.BOLD, 12));
+        bg.add(errA);
 
         txtPlayerA.addFocusListener(new FocusAdapter() {
             @Override
@@ -101,8 +114,15 @@ public class PlayersNamesScreen extends JFrame {
         txtPlayerB = new JTextField(PH_B);
         txtPlayerB.setFont(new Font("Arial", Font.PLAIN, 18));
         txtPlayerB.setForeground(new Color(180, 180, 180));
-        txtPlayerB.setBounds(260, 280, 280, 48);
+        txtPlayerB.setBounds(260, 300, 280, 48);
         bg.add(txtPlayerB);
+
+        // ✅ NEW: error label under player B
+        errB = new JLabel(" ");
+        errB.setBounds(260, 350, 520, 18);
+        errB.setForeground(new Color(255, 120, 120));
+        errB.setFont(new Font("Arial", Font.BOLD, 12));
+        bg.add(errB);
 
         txtPlayerB.addFocusListener(new FocusAdapter() {
             @Override
@@ -121,16 +141,15 @@ public class PlayersNamesScreen extends JFrame {
                 if (controller != null) controller.onInputChanged();
             }
         });
-        // it always starts placeholder
+
         btnPlay = new JButton("Let's Play");
-        btnPlay.setBounds(300, 350, 200, 45);
+        btnPlay.setBounds(300, 390, 200, 45);
         btnPlay.setEnabled(false);
         btnPlay.setBackground(new Color(200, 200, 200));
         bg.add(btnPlay);
 
         btnBack = new JButton("← Go Back");
         btnBack.setBounds(640, 20, 110, 30);
-      //  btnBack.setFont(new Font("Serif", Font.BOLD, 16));
         bg.add(btnBack);
 
         btnBack.addActionListener(e -> {
@@ -151,13 +170,11 @@ public class PlayersNamesScreen extends JFrame {
 
         btnPlay.addActionListener(e -> controller.onPlayClicked());
 
-        // Initial check
         controller.onInputChanged();
-
         setVisible(true);
     }
 
- /// using the methods of the controller
+    // ===== controller API =====
 
     public String getLevel() {
         return level;
@@ -184,14 +201,19 @@ public class PlayersNamesScreen extends JFrame {
         btnPlay.setBackground(enabled ? new JButton().getBackground() : new Color(200, 200, 200));
     }
 
+    // ✅ THIS FIXES YOUR ERROR: controller calls this method
+    public void setNameError(int index, String message) {
+        JLabel target = (index == 0) ? errA : errB;
+        target.setText(message == null ? " " : message);
+    }
+
     public void showError(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
+        JOptionPane.showMessageDialog(this, msg, "Invalid Name", JOptionPane.WARNING_MESSAGE);
     }
 
     public HomeScreen getHomeScreen() {
         return homeScreen;
     }
-
 
     private static class BackgroundPanel extends JPanel {
         private static final long serialVersionUID = 1L;

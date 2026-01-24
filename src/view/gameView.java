@@ -170,6 +170,11 @@ public class gameView extends JFrame {
 
         boardsPanel.add(boardViews[0]);
         boardsPanel.add(boardViews[1]);
+        
+        //flags counter
+        
+        updateRemainingFlags(0, controller.getRemainingFlags(0));
+        updateRemainingFlags(1, controller.getRemainingFlags(1));
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
@@ -776,6 +781,12 @@ public class gameView extends JFrame {
                // boardViews[i].setInteractionEnabled(enabled);
             	boardViews[i].setPaused(!enabled);
             }
+        }
+    }
+    
+    public void updateRemainingFlags(int boardIndex, int remaining) {
+        if (boardViews[boardIndex] != null) {
+            boardViews[boardIndex].setRemainingFlags(remaining);
         }
     }
 

@@ -17,43 +17,61 @@ public class PlayersNamesController {
     }
 
     public void onInputChanged() {
-        String p1 = view.getPlayerAName();
-        String p2 = view.getPlayerBName();
+        // placeholders must be treated as empty
+        String p1 = view.isPlayerAPlaceholder() ? "" : view.getPlayerAName();
+        String p2 = view.isPlayerBPlaceholder() ? "" : view.getPlayerBName();
 
-        boolean valid =
-                isValidName(p1) &&
-                isValidName(p2);
+        String err1 = validateName(p1);
+        String err2 = validateName(p2);
 
-        view.setPlayEnabled(valid);
+        view.setNameError(0, err1);
+        view.setNameError(1, err2);
+
+        view.setPlayEnabled(err1 == null && err2 == null);
     }
 
     public void onPlayClicked() {
-        String p1 = view.getPlayerAName();
-        String p2 = view.getPlayerBName();
+        String p1 = view.isPlayerAPlaceholder() ? "" : view.getPlayerAName();
+        String p2 = view.isPlayerBPlaceholder() ? "" : view.getPlayerBName();
 
-        if (!isValidName(p1) || !isValidName(p2)) {
-            view.showError(
-                "Names must contain at least 4 letters.\n" +
-                "Letters only — no numbers, spaces, or symbols."
-            );
+        String err1 = validateName(p1);
+        String err2 = validateName(p2);
+
+        view.setNameError(0, err1);
+        view.setNameError(1, err2);
+
+        if (err1 != null || err2 != null) {
+            view.setPlayEnabled(false);
             return;
         }
 
         DifficultyLevel diff = DifficultyLevel.valueOf(level);
-        
-        /// to start the game 
 
         gameController gc = new gameController(diff, p1, p2, homeScreen);
         gc.startGame();
 
         view.setVisible(false);
     }
-      /// the names must have only letters and each name must has at least 4 letterss
-    public static boolean isValidName(String name) {
-        if (name == null) return false;
-        if (name.length() < 4) return false;
-        if (name.contains(" ")) return false;
-        return true;
+
+    // ✅ NEW validation: returns null if valid, otherwise returns a message
+    private String validateName(String name) {
+        if (name == null) return "Name is required.";
+
+        name = name.trim();
+        if (name.isEmpty()) return "Name is required.";
+        if (name.length() < 4) return "Name must be at least 4 characters.";
+        if (name.length() > 14) return "Name must be at most 14 characters.";
+
+        // letters only (no spaces, numbers, symbols)
+        if (!name.matches("^[A-Za-z]+$")) {
+            return "Letters only (A–Z). No spaces, numbers, or symbols.";
+        }
+
+        return null;
     }
 
+    // ✅ COMPATIBILITY: if other code still calls isValidName(...)
+    public boolean isValidName(String name) {
+        return validateName(name) == null;
+    }
 }
