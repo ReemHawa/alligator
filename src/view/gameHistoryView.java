@@ -4,145 +4,63 @@ import controller.gameHistoryController;
 import model.gameHistory;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
+import javax.swing.table.*;
 import java.awt.*;
 
 public class gameHistoryView extends JFrame {
 
     private static final long serialVersionUID = 1L;
-    private JButton btnBack;
 
     public gameHistoryView(gameHistoryController controller) {
 
         setTitle("MineSweeper - History");
-        setSize(900, 600);
-        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(null);
 
-        ImageIcon originalIcon;
-        try {
-            originalIcon = new ImageIcon(getClass().getResource("/images/background.jpeg"));
-        } catch (Exception e) {
-            originalIcon = new ImageIcon("src/images/background.jpeg");
-        }
+        BackgroundPanel bg = new BackgroundPanel();
+        bg.setLayout(new GridBagLayout());
+        setContentPane(bg);
 
-        Image scaledImage = originalIcon.getImage()
-                .getScaledInstance(900, 600, Image.SCALE_SMOOTH);
-        ImageIcon scaledIcon = new ImageIcon(scaledImage);
-
-        JLabel bg = new JLabel(scaledIcon);
-        bg.setBounds(0, 0, 900, 600);
-        bg.setLayout(null);
-        add(bg);
-
-        JLabel speaker = SpeakerIcon.createSpeakerLabel();
-        getLayeredPane().add(speaker, JLayeredPane.POPUP_LAYER);
-
-        int iconSize = 40;
-        int marginLeft = 10;
-        int marginBottom = 40;
-
-        speaker.setBounds(
-                marginLeft,
-                getHeight() - iconSize - marginBottom,
-                iconSize,
-                iconSize
-        );
-
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                speaker.setLocation(
-                        marginLeft,
-                        getHeight() - iconSize - marginBottom
-                );
-            }
-        });
-
-        JLabel title = new JLabel("Games History", SwingConstants.CENTER);
-        title.setForeground(Color.WHITE);
-        title.setFont(new Font("Serif", Font.BOLD, 44));
-        title.setBounds(0, 60, 900, 50);
-        bg.add(title);
-
-        JLabel subtitle = new JLabel(
-                "See your wins, losses, and progress over time",
-                SwingConstants.CENTER
-        );
-        subtitle.setForeground(new Color(240, 240, 240));
-        subtitle.setFont(new Font("Serif", Font.PLAIN, 20));
-        subtitle.setBounds(0, 110, 900, 30);
-        bg.add(subtitle);
-
-        btnBack = new JButton("← Go Back") {
-            /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                int arc = 18;
-
-                // background
-                g2.setColor(new Color(255, 255, 255, 235));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
-
-                // border
-                g2.setColor(new Color(200, 200, 200, 220));
-                g2.setStroke(new BasicStroke(2f));
-                g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
-
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        btnBack.setBounds(710, 35, 160, 40);
-        btnBack.setFont(new Font("Serif", Font.BOLD, 16));
-        btnBack.setForeground(Color.BLACK);
+        // ===== TOP-RIGHT Back =====
+        JButton btnBack = new JButton("\u2190 Go Back");
         btnBack.setFocusPainted(false);
-        btnBack.setBorderPainted(false);
-        btnBack.setContentAreaFilled(false);
-        btnBack.setOpaque(false);
-        btnBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        bg.add(btnBack);
+
+        GridBagConstraints gbcBack = new GridBagConstraints();
+        gbcBack.gridx = 0;
+        gbcBack.gridy = 0;
+        gbcBack.weightx = 1;
+        gbcBack.anchor = GridBagConstraints.NORTHEAST;
+        gbcBack.insets = new Insets(18, 18, 10, 18);
+        bg.add(btnBack, gbcBack);
+
         btnBack.addActionListener(e -> dispose());
 
-        // ===== WHITE GLASS PANEL =====
-        Color glass = new Color(255, 255, 255, 215);
+        // ===== CENTER Card =====
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
-        int panelWidth = 760;
-        int panelHeight = 300;
-        int panelX = (900 - panelWidth) / 2;
-        int panelY = 175;
+        JLabel title = new JLabel("Games History", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setForeground(Color.WHITE);
+        title.setFont(new Font("Serif", Font.BOLD, 44));
 
-        RoundedPanel overlayPanel = new RoundedPanel(22, glass);
-        overlayPanel.setLayout(new BorderLayout());
-        overlayPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
-        overlayPanel.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
-        bg.add(overlayPanel);
+        JLabel subtitle = new JLabel("See your wins, losses, and progress over time", SwingConstants.CENTER);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtitle.setForeground(new Color(240, 240, 240));
+        subtitle.setFont(new Font("Serif", Font.PLAIN, 20));
 
+        center.add(title);
+        center.add(Box.createVerticalStrut(6));
+        center.add(subtitle);
+        center.add(Box.createVerticalStrut(18));
+
+        // ===== Table model =====
         String[] columnNames = {"Date", "Player A", "Player B", "Result", "Time", "Score", "Level"};
-
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0) {
-            /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // history is read-only
-            }
+            private static final long serialVersionUID = 1L;
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
 
-        // fill rows
         for (int i = 0; i < controller.getNumberOfEntries(); i++) {
             gameHistory entry = controller.getEntry(i);
             tableModel.addRow(new Object[]{
@@ -163,7 +81,6 @@ public class gameHistoryView extends JFrame {
         historyTable.setBackground(Color.WHITE);
         historyTable.setForeground(Color.BLACK);
         historyTable.setFillsViewportHeight(true);
-
 
         JTableHeader header = historyTable.getTableHeader();
         header.setFont(new Font("Serif", Font.BOLD, 18));
@@ -187,10 +104,59 @@ public class gameHistoryView extends JFrame {
         JScrollPane scrollPane = new JScrollPane(historyTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.getViewport().setOpaque(true);
 
+        // ===== Rounded glass container (scales nicely) =====
+        RoundedPanel overlayPanel = new RoundedPanel(22, new Color(255, 255, 255, 215));
+        overlayPanel.setLayout(new BorderLayout());
+        overlayPanel.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
         overlayPanel.add(scrollPane, BorderLayout.CENTER);
 
+        overlayPanel.setPreferredSize(new Dimension(780, 330));
+        overlayPanel.setMaximumSize(new Dimension(1050, 450));
+
+        center.add(overlayPanel);
+
+        GridBagConstraints gbcCenter = new GridBagConstraints();
+        gbcCenter.gridx = 0;
+        gbcCenter.gridy = 1;
+        gbcCenter.weightx = 1;
+        gbcCenter.weighty = 1;
+        gbcCenter.anchor = GridBagConstraints.CENTER;
+        gbcCenter.insets = new Insets(0, 25, 25, 25);
+        bg.add(center, gbcCenter);
+
+        // ===== Speaker bottom-left =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        speaker.setPreferredSize(new Dimension(40, 40));
+
+        GridBagConstraints gbcSpeaker = new GridBagConstraints();
+        gbcSpeaker.gridx = 0;
+        gbcSpeaker.gridy = 2;
+        gbcSpeaker.weightx = 1;
+        gbcSpeaker.anchor = GridBagConstraints.SOUTHWEST;
+        gbcSpeaker.insets = new Insets(0, 10, 8, 0);
+        bg.add(speaker, gbcSpeaker);
+
+        setMinimumSize(new Dimension(900, 600));
+        setSize(1100, 700);
+        setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    // ✅ background scales automatically
+    private static class BackgroundPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
+        private Image bg;
+
+        public BackgroundPanel() {
+            try { bg = new ImageIcon(getClass().getResource("/images/background.jpeg")).getImage(); }
+            catch (Exception e) { bg = new ImageIcon("src/images/background.jpeg").getImage(); }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (bg != null) g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+        }
     }
 }

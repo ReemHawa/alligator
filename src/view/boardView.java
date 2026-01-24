@@ -509,4 +509,51 @@ public class boardView extends JPanel implements model.BoardObserver {
         }
         return dots;
     }
+    
+    public void setTileSize(int newTileSize) {
+
+        if (newTileSize <= 0) return;
+        if (newTileSize == TILE_SIZE) return;
+
+        TILE_SIZE = newTileSize;
+
+        // reload size-dependent icons
+        mineIcon = loadIcon(MINE, TILE_SIZE, TILE_SIZE);
+        surpriseIcon = loadIcon(SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
+        openedSurpriseIcon = loadIcon(OPENED_SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
+        questionIcon = loadIcon(QUESTION, TILE_SIZE - 6, TILE_SIZE - 6);
+        questionUsedIcon = loadIcon(QUESTION_USED, TILE_SIZE - 6, TILE_SIZE - 6);
+
+        // resize all buttons + re-apply stone icons
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                JButton btn = buttons[r][c];
+                if (btn != null) {
+                    btn.setPreferredSize(new Dimension(TILE_SIZE, TILE_SIZE));
+
+                    // if still closed (stone), rescale the stone too
+                    if (btn.getIcon() != null && btn.getText() == null) {
+                        // rescale the stored stone icon for this cell
+                        ImageIcon oldStone = stoneForCell[r][c];
+                        if (oldStone != null && oldStone.getImage() != null) {
+                            Image scaled = oldStone.getImage().getScaledInstance(TILE_SIZE, TILE_SIZE, Image.SCALE_SMOOTH);
+                            stoneForCell[r][c] = new ImageIcon(scaled);
+                            btn.setIcon(stoneForCell[r][c]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // update wrapper preferred size so the border stays tight
+        int boardW = cols * TILE_SIZE + (cols - 1) * 2;
+        int boardH = rows * TILE_SIZE + (rows - 1) * 2;
+        boardWrapper.setPreferredSize(new Dimension(boardW + 16, boardH + 16));
+
+        updateNameEllipsis();
+
+        revalidate();
+        repaint();
+    }
+
 }

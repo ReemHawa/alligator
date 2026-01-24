@@ -7,83 +7,92 @@ import controller.homeScreenController;
 public class HomeScreen extends JFrame {
 
     private static final long serialVersionUID = 1L;
-	private JButton btnStartNewGame;
+
+    private JButton btnStartNewGame;
     private JButton btnViewHistory;
     private JButton btnViewQuestions;
-    
-    
 
     public HomeScreen() {
-    	
-    	//music.bcMusic.play("/music/Host Entrance Background Music.wav");
-
         setTitle("MineSweeper - Home");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         BackgroundPanel bg = new BackgroundPanel();
-        bg.setLayout(null);
+        // ✅ IMPORTANT: use layout manager (not null)
+        bg.setLayout(new GridBagLayout());
         setContentPane(bg);
 
-        setSize(800, 550);
-        
-     // ===== Speaker icon (bottom-left) =====
-        JLabel speaker = SpeakerIcon.createSpeakerLabel();
-        bg.add(speaker);
-
-        int iconSize = 40;     // recommended size
-        int marginLeft = 10;  // left margin
-        int marginBottom = 5; // how close to the bottom
-
-        // initial position
-        speaker.setBounds(
-                marginLeft,
-                getContentPane().getHeight() - iconSize - marginBottom,
-                iconSize,
-                iconSize
-        );
-
-        // keep bottom-left on resize
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                speaker.setLocation(
-                        marginLeft,
-                        getContentPane().getHeight() - iconSize - marginBottom
-                );
-            }
-        });
-
-        
-        
-        setLocationRelativeTo(null);
+        // ===== Center content (title + subtitle + buttons) =====
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
         JLabel title = new JLabel("Welcome To Minesweeper", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Serif", Font.BOLD, 28));
-        title.setBounds(200, 60, 400, 40);
-        bg.add(title);
+        title.setFont(new Font("Serif", Font.BOLD, 34));
 
         JLabel sub = new JLabel("Start the game when you're ready :)", SwingConstants.CENTER);
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
         sub.setForeground(Color.WHITE);
         sub.setFont(new Font("Serif", Font.PLAIN, 16));
-        sub.setBounds(230, 100, 340, 30);
-        bg.add(sub);
 
-        btnViewHistory = new JButton("View Games History");
-        btnViewHistory.setBounds(270, 190, 260, 40);
-        bg.add(btnViewHistory);
+        center.add(title);
+        center.add(Box.createVerticalStrut(8));
+        center.add(sub);
+        center.add(Box.createVerticalStrut(45));
 
-        btnViewQuestions = new JButton("View Questions Management");
-        btnViewQuestions.setBounds(270, 250, 260, 40);
-        bg.add(btnViewQuestions);
+        btnViewHistory = createWideButton("View Games History");
+        btnViewQuestions = createWideButton("View Questions Management");
+        btnStartNewGame = createWideButton("Start A New Game");
 
-        btnStartNewGame = new JButton("Start A New Game");
-        btnStartNewGame.setBounds(270, 310, 260, 40);
-        bg.add(btnStartNewGame);
+        center.add(btnViewHistory);
+        center.add(Box.createVerticalStrut(18));
+        center.add(btnViewQuestions);
+        center.add(Box.createVerticalStrut(18));
+        center.add(btnStartNewGame);
+
+        // ✅ Add center panel, always centered
+        GridBagConstraints gbcCenter = new GridBagConstraints();
+        gbcCenter.gridx = 0;
+        gbcCenter.gridy = 0;
+        gbcCenter.weightx = 1;
+        gbcCenter.weighty = 1;
+        gbcCenter.anchor = GridBagConstraints.CENTER;
+        gbcCenter.fill = GridBagConstraints.NONE;
+        bg.add(center, gbcCenter);
+
+        // ===== Speaker icon (always bottom-left) =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        int iconSize = 40;
+        speaker.setPreferredSize(new Dimension(iconSize, iconSize));
+
+        GridBagConstraints gbcSpeaker = new GridBagConstraints();
+        gbcSpeaker.gridx = 0;
+        gbcSpeaker.gridy = 1;
+        gbcSpeaker.weightx = 1;
+        gbcSpeaker.weighty = 0;
+        gbcSpeaker.anchor = GridBagConstraints.SOUTHWEST;
+        gbcSpeaker.insets = new Insets(0, 10, 8, 0);
+        bg.add(speaker, gbcSpeaker);
 
         new homeScreenController(this);
 
+        // ✅ Better resize behavior
+        setMinimumSize(new Dimension(800, 550));
+        setSize(900, 600);
+        setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private JButton createWideButton(String text) {
+        JButton b = new JButton(text);
+        b.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // ✅ fixed nice size; stays centered on resize
+        b.setPreferredSize(new Dimension(320, 45));
+        b.setMaximumSize(new Dimension(320, 45));
+        b.setMinimumSize(new Dimension(320, 45));
+        return b;
     }
 
     public JButton getBtnStartNewGame() { return btnStartNewGame; }
@@ -91,21 +100,19 @@ public class HomeScreen extends JFrame {
     public JButton getBtnViewQuestions() { return btnViewQuestions; }
 
     private static class BackgroundPanel extends JPanel {
-
         private static final long serialVersionUID = 1L;
-		private Image backgroundImage;
+        private Image backgroundImage;
 
         public BackgroundPanel() {
             try {
                 backgroundImage = new ImageIcon(
-                    getClass().getResource("/images/background.jpeg")
+                        getClass().getResource("/images/background.jpeg")
                 ).getImage();
             } catch (Exception e) {
-                // Fallback when classpath fails (standalone mode)
+                // Fallback for IDE run (not JAR)
                 backgroundImage = new ImageIcon("src/images/background.jpeg").getImage();
             }
         }
-        
 
         @Override
         protected void paintComponent(Graphics g) {
@@ -114,7 +121,5 @@ public class HomeScreen extends JFrame {
                 g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
             }
         }
-        
-        
     }
 }

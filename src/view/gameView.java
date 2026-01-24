@@ -91,23 +91,26 @@ public class gameView extends JFrame {
         int marginBottom = 5;
 
         addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-               	JLayeredPane lp = getLayeredPane();
-            	speaker.setBounds(
-            	        marginLeft,
-            	        lp.getHeight() - iconSize - marginBottom,
-            	        iconSize,
-            	        iconSize
-            	);
-            	if (motivationOverlay != null) {
-            	    motivationOverlay.setBounds(0, 0, lp.getWidth(), lp.getHeight());
-            	}
-            	if (pauseOverlay != null) {
-            	    pauseOverlay.setBounds(0, 0, getWidth(), getHeight());
-            	}
+        	@Override
+        	public void componentResized(java.awt.event.ComponentEvent e) {
+        	    JLayeredPane lp = getLayeredPane();
 
-            }
+        	    // speaker stays bottom-left
+        	    speaker.setBounds(marginLeft, lp.getHeight() - iconSize - marginBottom, iconSize, iconSize);
+
+        	    // overlays fill screen
+        	    if (motivationOverlay != null) motivationOverlay.setBounds(0, 0, lp.getWidth(), lp.getHeight());
+        	    if (pauseOverlay != null) pauseOverlay.setBounds(0, 0, getWidth(), getHeight());
+
+        	    // resize boards tiles
+        	    int newTile = computeTileSizeForBoards();
+        	    if (boardViews[0] != null) boardViews[0].setTileSize(newTile);
+        	    if (boardViews[1] != null) boardViews[1].setTileSize(newTile);
+
+        	    revalidate();
+        	    repaint();
+        	}
+
         });
 
        
@@ -219,7 +222,7 @@ public class gameView extends JFrame {
         setContentPane(root);
         getLayeredPane().setLayout(null);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setResizable(false);
+        setResizable(true);
         setLocationRelativeTo(null);
 
         // ===== big motivation overlay label (CENTER) =====

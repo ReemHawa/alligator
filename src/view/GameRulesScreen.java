@@ -10,77 +10,63 @@ public class GameRulesScreen extends JFrame {
     private JButton btnBack;
     private JButton btnPickLevel;
     private JButton btnToggleRules;
-    private JPanel rulesPanel;
-    private JScrollPane scroll;
+
     private JTextArea txt;
+    private JScrollPane scroll;
 
     private boolean expanded = false;
 
+    // for resizing card nicely
+    private RoundedPanel rulesCard;
+
     public GameRulesScreen(HomeScreen homeScreen) {
         setTitle("MineSweeper - Game Rules");
-        setSize(800, 550);
-        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(null);
 
-        ImageIcon originalIcon;
+        BackgroundPanel bg = new BackgroundPanel();
+        bg.setLayout(new GridBagLayout());
+        setContentPane(bg);
 
-        try {
-            originalIcon = new ImageIcon(getClass().getResource("/images/background.jpeg"));
-        } catch (Exception e) {
-            originalIcon = new ImageIcon("src/images/background.jpeg");
-        }
+        // ===== TOP-RIGHT Back =====
+        btnBack = new JButton("\u2190 Go Back");
+        GridBagConstraints gbcBack = new GridBagConstraints();
+        gbcBack.gridx = 0;
+        gbcBack.gridy = 0;
+        gbcBack.weightx = 1;
+        gbcBack.weighty = 0;
+        gbcBack.anchor = GridBagConstraints.NORTHEAST;
+        gbcBack.insets = new Insets(18, 18, 10, 18);
+        bg.add(btnBack, gbcBack);
 
-        Image scaledImage = originalIcon.getImage().getScaledInstance(800, 550, Image.SCALE_SMOOTH);
-        ImageIcon scaledIcon = new ImageIcon(scaledImage);
-
-        JLabel bg = new JLabel(scaledIcon);
-        bg.setBounds(0, 0, 800, 550);
-        bg.setLayout(null);
-        add(bg);
-
-        // ===== Speaker icon (bottom-left) =====
-        JLabel speaker = SpeakerIcon.createSpeakerLabel();
-        getLayeredPane().add(speaker, JLayeredPane.POPUP_LAYER);
-
-        int iconSize = 40;
-        int marginLeft = 10;
-        int marginBottom = 40;
-
-        speaker.setBounds(
-                marginLeft,
-                getHeight() - iconSize - marginBottom,
-                iconSize,
-                iconSize
-        );
-
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                speaker.setLocation(
-                        marginLeft,
-                        getHeight() - iconSize - marginBottom
-                );
-            }
+        btnBack.addActionListener(e -> {
+            homeScreen.setVisible(true);
+            dispose();
         });
 
+        // ===== CENTER content =====
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+
         JLabel title = new JLabel("Game Rules", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Serif", Font.BOLD, 32));
-        title.setBounds(200, 40, 400, 40);
-        bg.add(title);
 
         JLabel sub = new JLabel("Learn how to play before you start", SwingConstants.CENTER);
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
         sub.setForeground(Color.WHITE);
         sub.setFont(new Font("Serif", Font.PLAIN, 16));
-        sub.setBounds(220, 80, 360, 30);
-        bg.add(sub);
 
-        rulesPanel = new JPanel();
-        rulesPanel.setLayout(null);
-        rulesPanel.setBackground(new Color(210, 222, 222));
-        rulesPanel.setBounds(80, 130, 640, 260);
-        bg.add(rulesPanel);
+        center.add(title);
+        center.add(Box.createVerticalStrut(6));
+        center.add(sub);
+        center.add(Box.createVerticalStrut(18));
+
+        // ===== Rules card (glass) =====
+        rulesCard = new RoundedPanel(22, new Color(210, 222, 222, 230));
+        rulesCard.setLayout(new BorderLayout(10, 10));
+        rulesCard.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
         txt = new JTextArea();
         txt.setEditable(false);
@@ -88,33 +74,51 @@ public class GameRulesScreen extends JFrame {
         txt.setLineWrap(true);
         txt.setWrapStyleWord(true);
         txt.setFont(new Font("Serif", Font.PLAIN, 15));
+
         setCollapsedRules();
 
         scroll = new JScrollPane(txt);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
-        scroll.setBounds(20, 20, 600, 200);
-        rulesPanel.add(scroll);
 
         btnToggleRules = new JButton("Read more rules...");
-        btnToggleRules.setBounds(20, 225, 180, 30);
-        rulesPanel.add(btnToggleRules);
+        btnToggleRules.setFocusPainted(false);
+
+        JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        bottomRow.setOpaque(false);
+        bottomRow.add(btnToggleRules);
+
+        rulesCard.add(scroll, BorderLayout.CENTER);
+        rulesCard.add(bottomRow, BorderLayout.SOUTH);
+
+        // initial size (collapsed)
+        applyCardSize(false);
+
+        center.add(rulesCard);
+
+        GridBagConstraints gbcCenter = new GridBagConstraints();
+        gbcCenter.gridx = 0;
+        gbcCenter.gridy = 1;
+        gbcCenter.weightx = 1;
+        gbcCenter.weighty = 1;
+        gbcCenter.anchor = GridBagConstraints.CENTER;
+        gbcCenter.insets = new Insets(0, 25, 10, 25);
+        bg.add(center, gbcCenter);
 
         btnToggleRules.addActionListener(e -> toggleRules());
 
-        btnBack = new JButton("← Go Back");
-        btnBack.setBounds(640, 20, 110, 30);
-        bg.add(btnBack);
-
-        btnBack.addActionListener(e -> {
-            homeScreen.setVisible(true);
-            dispose();
-        });
-
+        // ===== BOTTOM-RIGHT Pick Level =====
         btnPickLevel = new JButton("Got it! Let's pick a level");
-        btnPickLevel.setBounds(520, 460, 220, 35);
-        bg.add(btnPickLevel);
+
+        GridBagConstraints gbcPick = new GridBagConstraints();
+        gbcPick.gridx = 0;
+        gbcPick.gridy = 2;
+        gbcPick.weightx = 1;
+        gbcPick.weighty = 0;
+        gbcPick.anchor = GridBagConstraints.SOUTHEAST;
+        gbcPick.insets = new Insets(0, 18, 18, 18);
+        bg.add(btnPickLevel, gbcPick);
 
         btnPickLevel.addActionListener(e -> {
             chooseLevelView levelScreen = new chooseLevelView(this, homeScreen);
@@ -122,7 +126,53 @@ public class GameRulesScreen extends JFrame {
             setVisible(false);
         });
 
+        // ===== BOTTOM-LEFT Speaker =====
+        JLabel speaker = SpeakerIcon.createSpeakerLabel();
+        speaker.setPreferredSize(new Dimension(40, 40));
+
+        GridBagConstraints gbcSpeaker = new GridBagConstraints();
+        gbcSpeaker.gridx = 0;
+        gbcSpeaker.gridy = 3;
+        gbcSpeaker.weightx = 1;
+        gbcSpeaker.weighty = 0;
+        gbcSpeaker.anchor = GridBagConstraints.SOUTHWEST;
+        gbcSpeaker.insets = new Insets(0, 10, 8, 0);
+        bg.add(speaker, gbcSpeaker);
+
+        setMinimumSize(new Dimension(800, 550));
+        setSize(950, 650);
+        setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void toggleRules() {
+        expanded = !expanded;
+
+        if (expanded) {
+            btnToggleRules.setText("Read less rules.");
+            setExpandedRules();
+        } else {
+            btnToggleRules.setText("Read more rules...");
+            setCollapsedRules();
+        }
+
+        applyCardSize(expanded);
+
+        rulesCard.revalidate();
+        rulesCard.repaint();
+        revalidate();
+        repaint();
+    }
+
+    // ✅ just change preferred sizes, no setBounds()
+    private void applyCardSize(boolean expanded) {
+        if (expanded) {
+            rulesCard.setPreferredSize(new Dimension(720, 360));
+            rulesCard.setMaximumSize(new Dimension(980, 420));
+        } else {
+            rulesCard.setPreferredSize(new Dimension(720, 290));
+            rulesCard.setMaximumSize(new Dimension(980, 340));
+        }
     }
 
     private void setCollapsedRules() {
@@ -138,6 +188,7 @@ public class GameRulesScreen extends JFrame {
                 "5. Questions: Question squares can be revealed, then activated.\n" +
                 "   Activating a question is timed and costs points."
         );
+        txt.setCaretPosition(0);
     }
 
     private void setExpandedRules() {
@@ -162,42 +213,40 @@ public class GameRulesScreen extends JFrame {
                 "   • Clicking a cell while in flag mode places a flag instead of revealing.\n\n" +
                 "7. Special squares:\n" +
                 "   • Question Square:\n" +
-                "     - First click reveals it (like an empty square).\n" +
+                "     - First click reveals it.\n" +
                 "     - Second click activates it (only once).\n" +
-                "     - Activation costs points and opens a timed question.\n" +
-                "     - If time runs out, it counts as a wrong answer.\n\n" +
+                "     - Activation costs points and opens a timed question.\n\n" +
                 "   • Surprise Square:\n" +
-                "     - First click reveals it (like an empty square).\n" +
+                "     - First click reveals it.\n" +
                 "     - Second click activates it (only once).\n" +
                 "     - Activation costs points and gives a random good/bad effect.\n\n" +
                 "8. Cascade (auto-opening):\n" +
-                "   When you open an empty square, neighboring empty squares open automatically\n" +
-                "   until the area reaches numbered squares.\n\n" +
+                "   When you open an empty square, neighboring empty squares open automatically.\n\n" +
                 "9. Winning:\n" +
-                "   You win when all safe squares on a board are revealed (no safe squares remain)."
+                "   You win when all safe squares are revealed."
         );
+        txt.setCaretPosition(0);
     }
 
-    private void toggleRules() {
+    // ===== background scales automatically =====
+    private static class BackgroundPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
+        private Image bg;
 
-        if (!expanded) {
-            expanded = true;
-            btnToggleRules.setText("Read less rules.");
-            rulesPanel.setBounds(80, 130, 640, 320);
-            scroll.setBounds(20, 20, 600, 240);
-            btnToggleRules.setBounds(20, 270, 180, 30);
-            setExpandedRules();
-
-        } else {
-            expanded = false;
-            btnToggleRules.setText("Read more rules...");
-            rulesPanel.setBounds(80, 130, 640, 260);
-            scroll.setBounds(20, 20, 600, 200);
-            btnToggleRules.setBounds(20, 225, 180, 30);
-            setCollapsedRules();
+        public BackgroundPanel() {
+            try {
+                bg = new ImageIcon(getClass().getResource("/images/background.jpeg")).getImage();
+            } catch (Exception e) {
+                bg = new ImageIcon("src/images/background.jpeg").getImage();
+            }
         }
 
-        rulesPanel.revalidate();
-        rulesPanel.repaint();
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (bg != null) {
+                g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+            }
+        }
     }
 }
