@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
 
 import model.Question;
 import view.HomeScreen;
@@ -24,7 +25,6 @@ public class QuestionsManagementController {
 
     private QuestionsManagementScreen screen;
     private HomeScreen homeScreen;
-    private List<Question> questions;
 
     private static final String CSV_RESOURCE_PATH = "/data/questionsDATA.csv";
 
@@ -48,7 +48,7 @@ public class QuestionsManagementController {
     public QuestionsManagementController(HomeScreen homeScreen) {
         this.homeScreen = homeScreen;
 
-        questions = loadQuestionsFromCSV();
+        List<Question> questions = loadQuestionsFromCSV();
         LOG.fine("Questions loaded: " + questions.size());
 
         screen = new QuestionsManagementScreen(questions);
@@ -114,15 +114,19 @@ public class QuestionsManagementController {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
 
-                int row = screen.getQuestionsTable().rowAtPoint(e.getPoint());
-                int col = screen.getQuestionsTable().columnAtPoint(e.getPoint());
+                JTable table = screen.getQuestionsTable();
+                int viewRow = table.rowAtPoint(e.getPoint());
+                int viewCol = table.columnAtPoint(e.getPoint());
+
+                if (viewRow < 0 || viewCol < 0) return;
+
+                // ✅ convert view row -> model row (important when sorting/filtering)
+                int modelRow = table.convertRowIndexToModel(viewRow);
 
                 QuestionTableModel model = screen.getTableModel();
 
-                if (row < 0) return;
-
-                if (col == 0) { // DELETE
-                    Question q = model.getQuestionAt(row);
+                if (viewCol == 0) { // DELETE
+                    Question q = model.getQuestionAt(modelRow);
 
                     int confirm = JOptionPane.showConfirmDialog(
                             screen,
@@ -132,19 +136,54 @@ public class QuestionsManagementController {
                     );
 
                     if (confirm == JOptionPane.YES_OPTION) {
-                        model.removeQuestionAt(row);
+
+                        // commit editing if any
+                        if (table.isEditing()) {
+                            var editor = table.getCellEditor();
+                            if (editor != null) editor.stopCellEditing();
+                        }
+
+                        model.removeQuestionAt(modelRow);
                         saveToCSV();
                     }
 
-                } else if (col == 1) { // EDIT
-                    model.setEditableRow(row);
+                } else if (viewCol == 1) { // EDIT TOGGLE
 
-                    JOptionPane.showMessageDialog(
-                            screen,
-                            "Row is now editable.\nEdit values directly in the table.",
-                            "Edit Mode",
-                            JOptionPane.INFORMATION_MESSAGE
-                    );
+                    // commit last edit if user was typing
+                    if (table.isEditing()) {
+                        var editor = table.getCellEditor();
+                        if (editor != null) editor.stopCellEditing();
+                    }
+
+                    // If already editing this row -> finish + save + confirmation
+                    if (model.isRowInEditMode(modelRow)) {
+
+                        model.finishEdit();
+                        saveToCSV();
+
+                        JOptionPane.showMessageDialog(
+                                screen,
+                                "Changes saved successfully ✅",
+                                "Edit Completed",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+
+                    } else {
+                        // Start editing this row (and stop editing any other)
+                        model.startEditRow(modelRow);
+
+                        JOptionPane.showMessageDialog(
+                                screen,
+                                "Edit mode enabled for this row.\n" +
+                                "Edit cells directly, then click ✎ again to save.",
+                                "Edit Mode",
+                                JOptionPane.INFORMATION_MESSAGE
+                        );
+
+                        // focus first editable cell (Question column = 3)
+                        table.requestFocus();
+                        table.changeSelection(viewRow, 3, false, false);
+                    }
                 }
             }
         });
@@ -154,7 +193,8 @@ public class QuestionsManagementController {
         ensureQuestionsFileExists();
         File file = getWritableQuestionsFile();
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, false))) {
+        try (BufferedWriter bw = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(file, false), StandardCharsets.UTF_8))) {
 
             bw.write("ID,Question,Difficulty,A,B,C,D,Correct Answer");
             bw.newLine();
@@ -181,6 +221,12 @@ public class QuestionsManagementController {
 
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "Failed to save questions to CSV", e);
+            JOptionPane.showMessageDialog(
+                    screen,
+                    "Failed to save questions file.\nCheck permissions and try again.",
+                    "Save Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 
@@ -269,11 +315,17 @@ public class QuestionsManagementController {
     }
 
     private void goBackHome() {
+        // commit edits before save
+        JTable t = screen.getQuestionsTable();
+        if (t.isEditing()) {
+            var ed = t.getCellEditor();
+            if (ed != null) ed.stopCellEditing();
+        }
+        screen.getTableModel().finishEdit();
+
         saveToCSV();
 
-        if (screen != null) {
-            screen.dispose();
-        }
+        if (screen != null) screen.dispose();
 
         if (homeScreen != null) {
             homeScreen.setVisible(true);
@@ -293,7 +345,7 @@ public class QuestionsManagementController {
                      QuestionsManagementController.class.getResourceAsStream(CSV_RESOURCE_PATH)) {
 
             if (is == null) {
-                LOG.severe("Questions.csv missing in resources: " + CSV_RESOURCE_PATH);
+                LOG.severe("Questions CSV missing in resources: " + CSV_RESOURCE_PATH);
                 return;
             }
 
@@ -301,7 +353,7 @@ public class QuestionsManagementController {
                 is.transferTo(fos);
             }
 
-            LOG.fine("Questions.csv copied to writable folder");
+            LOG.fine("questionsDATA.csv copied to writable folder");
 
         } catch (IOException e) {
             LOG.log(Level.SEVERE, "Failed to ensure questions file exists", e);

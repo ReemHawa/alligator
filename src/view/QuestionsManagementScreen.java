@@ -1,39 +1,16 @@
 package view;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Image;
+import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.net.URL;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.RowFilter;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableRowSorter;
-import javax.swing.table.DefaultTableCellRenderer;
-import java.awt.Component;
-import java.awt.Dimension;
-import javax.swing.JTextArea;
-import javax.swing.table.TableCellRenderer;
-
-
+import javax.swing.table.*;
 
 import model.Question;
 
@@ -46,10 +23,8 @@ public class QuestionsManagementScreen extends JFrame {
     private JButton addQuestionButton;
     private QuestionTableModel tableModel;
 
-    // NEW UI
     private JTextField searchField;
-    private JComboBox<String> questionLevelFilter;
-    private JComboBox<String> gameLevelFilter;
+    private JComboBox<String> difficultyFilter;
     private JButton resetFiltersButton;
     private JLabel counterLabel;
 
@@ -58,11 +33,13 @@ public class QuestionsManagementScreen extends JFrame {
     public QuestionsManagementScreen(List<Question> questions) {
         setTitle("Questions Management");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setSize(1200, 700);
-        setLocationRelativeTo(null);
-        setResizable(false);
 
-        //// Background panel (UNCHANGED)
+        // ✅ allow maximize + resizing
+        setResizable(true);
+        setMinimumSize(new Dimension(1100, 650));
+        setSize(1400, 800);
+        setLocationRelativeTo(null);
+
         BackgroundPanel bg = new BackgroundPanel();
         bg.setLayout(new BorderLayout());
         setContentPane(bg);
@@ -79,17 +56,16 @@ public class QuestionsManagementScreen extends JFrame {
 
         JLabel titleLabel = new JLabel("Questions Management", SwingConstants.CENTER);
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Serif", Font.BOLD, 36));
+        titleLabel.setFont(new Font("Serif", Font.BOLD, 40));
 
         topPanel.add(backButton, BorderLayout.WEST);
         topPanel.add(titleLabel, BorderLayout.CENTER);
         topPanel.add(addQuestionButton, BorderLayout.EAST);
 
-        // --- TOOLBAR (Search + Filters + Counter) ---
-        JPanel toolsPanel = new JPanel();
+        // --- TOOLBAR (Search + Difficulty + Counter) ---
+        JPanel toolsPanel = new JPanel(new BorderLayout());
         toolsPanel.setOpaque(false);
         toolsPanel.setBorder(new EmptyBorder(8, 40, 10, 40));
-        toolsPanel.setLayout(new BorderLayout());
 
         JPanel leftTools = new JPanel();
         leftTools.setOpaque(false);
@@ -98,40 +74,27 @@ public class QuestionsManagementScreen extends JFrame {
         searchLbl.setForeground(Color.WHITE);
         searchLbl.setFont(new Font("Arial", Font.BOLD, 14));
 
-        searchField = new JTextField(22);
+        searchField = new JTextField(30);
         searchField.setFont(new Font("Arial", Font.PLAIN, 14));
-        searchField.setToolTipText("Type to search in the table (question / answers / levels)");
+        searchField.setToolTipText("Search across question & answers...");
 
         leftTools.add(searchLbl);
         leftTools.add(searchField);
+        leftTools.add(Box.createHorizontalStrut(18));
 
-        leftTools.add(Box.createHorizontalStrut(15));
+        JLabel diffLbl = new JLabel("Difficulty:");
+        diffLbl.setForeground(Color.WHITE);
+        diffLbl.setFont(new Font("Arial", Font.BOLD, 14));
 
-        JLabel qLevelLbl = new JLabel("Question Level:");
-        qLevelLbl.setForeground(Color.WHITE);
-        qLevelLbl.setFont(new Font("Arial", Font.BOLD, 14));
+        difficultyFilter = new JComboBox<>(new String[] { "All", "Easy", "Medium", "Hard", "Expert" });
+        difficultyFilter.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        questionLevelFilter = new JComboBox<>(new String[] { "All", "Easy", "Medium", "Hard", "Expert" });
-        questionLevelFilter.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        leftTools.add(qLevelLbl);
-        leftTools.add(questionLevelFilter);
-
-        leftTools.add(Box.createHorizontalStrut(15));
-
-        JLabel gLevelLbl = new JLabel("Game Level:");
-        gLevelLbl.setForeground(Color.WHITE);
-        gLevelLbl.setFont(new Font("Arial", Font.BOLD, 14));
-
-        gameLevelFilter = new JComboBox<>(new String[] { "All", "Easy", "Medium", "Hard", "Expert" });
-        gameLevelFilter.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        leftTools.add(gLevelLbl);
-        leftTools.add(gameLevelFilter);
+        leftTools.add(diffLbl);
+        leftTools.add(difficultyFilter);
 
         resetFiltersButton = new JButton("Reset");
         resetFiltersButton.setFont(new Font("Arial", Font.BOLD, 13));
-        leftTools.add(Box.createHorizontalStrut(10));
+        leftTools.add(Box.createHorizontalStrut(12));
         leftTools.add(resetFiltersButton);
 
         counterLabel = new JLabel(" ");
@@ -142,7 +105,6 @@ public class QuestionsManagementScreen extends JFrame {
         toolsPanel.add(leftTools, BorderLayout.WEST);
         toolsPanel.add(counterLabel, BorderLayout.EAST);
 
-        // wrap top area
         JPanel topWrapper = new JPanel(new BorderLayout());
         topWrapper.setOpaque(false);
         topWrapper.add(topPanel, BorderLayout.NORTH);
@@ -152,50 +114,57 @@ public class QuestionsManagementScreen extends JFrame {
 
         // --- TABLE ---
         tableModel = new QuestionTableModel(questions);
-        questionsTable = new JTable(tableModel);
-        questionsTable.setRowHeight(34);
-       // questionsTable.setAutoCreateRowSorter(true); // enable sorting by header click
-        
-        //edit color
-     // ===== Color rows by Question Difficulty =====
-       // questionsTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer());
 
-          
+        questionsTable = new JTable(tableModel) {
+            private static final long serialVersionUID = 1L;
 
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int col) {
+                Component c = super.prepareRenderer(renderer, row, col);
 
-        // Sorter (for filters + search)
+                if (c instanceof JTextArea) {
+                    int prefH = c.getPreferredSize().height;
+                    if (getRowHeight(row) < prefH) {
+                        setRowHeight(row, prefH);
+                    }
+                }
+                return c;
+            }
+        };
+
+        questionsTable.setFillsViewportHeight(true);
+        questionsTable.setRowHeight(42);
+
+        // ✅ No auto resize -> horizontal scroll if needed
+        questionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
         sorter = new TableRowSorter<>(tableModel);
         questionsTable.setRowSorter(sorter);
+
         applyColumnWidths();
         enableWrapForLongText();
 
-        // Header styling
         JTableHeader header = questionsTable.getTableHeader();
         header.setFont(new Font("Arial", Font.BOLD, 14));
-        header.setOpaque(false);
         header.setDefaultRenderer(new HeaderRenderer());
 
-        // Center align delete/edit/number
         DefaultTableCellRenderer center = new DefaultTableCellRenderer();
         center.setHorizontalAlignment(SwingConstants.CENTER);
 
         questionsTable.getColumnModel().getColumn(0).setCellRenderer(center);
         questionsTable.getColumnModel().getColumn(1).setCellRenderer(center);
         questionsTable.getColumnModel().getColumn(2).setCellRenderer(center);
+        questionsTable.getColumnModel().getColumn(9).setCellRenderer(center);
 
-        // Striping + tooltips for all cells
-       // questionsTable.setDefaultRenderer(Object.class, new StripedTooltipRenderer());
-
-        // Slight borders for table
         questionsTable.setShowHorizontalLines(true);
         questionsTable.setShowVerticalLines(true);
         questionsTable.setGridColor(new Color(255, 255, 255, 50));
-        questionsTable.setFillsViewportHeight(true);
 
         JScrollPane scrollPane = new JScrollPane(questionsTable);
-        scrollPane.setOpaque(false);
-        scrollPane.getViewport().setOpaque(false);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setOpaque(false);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
@@ -204,81 +173,65 @@ public class QuestionsManagementScreen extends JFrame {
 
         bg.add(centerPanel, BorderLayout.CENTER);
 
-        // Add question dialog (UNCHANGED)
+        // Add Question dialog
         addQuestionButton.addActionListener(e -> {
-            AddQuestionDialog dialog = new AddQuestionDialog(
-                    QuestionsManagementScreen.this,
-                    tableModel
-            );
+            AddQuestionDialog dialog = new AddQuestionDialog(this, tableModel);
             dialog.setVisible(true);
-
-            // After adding -> update counter & filters
             applyFilters();
         });
 
-        // Filters/Search wiring
         wireSearchAndFilters();
-
-        // Initial counter
         updateCounter();
+
+        // ✅ On resize/maximize -> recalc heights
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                recalcAllRowHeights();
+            }
+        });
+
+        setVisible(true);
     }
 
-    // ======== REQUIRED METHODS FOR CONTROLLER ========
+    // ===== PUBLIC GETTERS =====
+    public JTable getQuestionsTable() { return questionsTable; }
+    public JButton getBackButton() { return backButton; }
+    public QuestionTableModel getTableModel() { return tableModel; }
 
-    public JTable getQuestionsTable() {
-        return questionsTable;
-    }
-
-    public JButton getBackButton() {
-        return backButton;
-    }
-
-    public QuestionTableModel getTableModel() {
-        return tableModel;
-    }
-
-    // ======== Search & Filters ========
-
+    // ===== Filters/Search =====
     private void wireSearchAndFilters() {
 
-        // live search
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
             @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
             @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
         });
 
-        questionLevelFilter.addActionListener(e -> applyFilters());
-        gameLevelFilter.addActionListener(e -> applyFilters());
+        difficultyFilter.addActionListener(e -> applyFilters());
 
         resetFiltersButton.addActionListener(e -> {
             searchField.setText("");
-            questionLevelFilter.setSelectedIndex(0);
-            gameLevelFilter.setSelectedIndex(0);
+            difficultyFilter.setSelectedIndex(0);
             applyFilters();
         });
     }
 
     private void applyFilters() {
-        final String text = searchField.getText() == null ? "" : searchField.getText().trim();
-        final String qLevel = String.valueOf(questionLevelFilter.getSelectedItem());
-        final String gLevel = String.valueOf(gameLevelFilter.getSelectedItem());
+        final String text = searchField.getText() == null ? "" : searchField.getText().trim().toLowerCase();
+        final String diff = String.valueOf(difficultyFilter.getSelectedItem());
 
-        // Column indexes based on your table:
-        // 8 = Question Level, 9 = Game Level
-        final int QUESTION_LEVEL_COL = 8;
-        final int GAME_LEVEL_COL = 9;
+        final int DIFFICULTY_COL = 4; // model column index
 
         RowFilter<QuestionTableModel, Integer> rf = new RowFilter<QuestionTableModel, Integer>() {
             @Override
             public boolean include(Entry<? extends QuestionTableModel, ? extends Integer> entry) {
 
-                // Search text across all columns
                 if (!text.isEmpty()) {
                     boolean found = false;
                     for (int i = 0; i < entry.getValueCount(); i++) {
                         Object v = entry.getValue(i);
-                        if (v != null && v.toString().toLowerCase().contains(text.toLowerCase())) {
+                        if (v != null && v.toString().toLowerCase().contains(text)) {
                             found = true;
                             break;
                         }
@@ -286,16 +239,9 @@ public class QuestionsManagementScreen extends JFrame {
                     if (!found) return false;
                 }
 
-                // Question level filter
-                if (!"All".equalsIgnoreCase(qLevel)) {
-                    Object v = entry.getValue(QUESTION_LEVEL_COL);
-                    if (v == null || !v.toString().equalsIgnoreCase(qLevel)) return false;
-                }
-
-                // Game level filter
-                if (!"All".equalsIgnoreCase(gLevel)) {
-                    Object v = entry.getValue(GAME_LEVEL_COL);
-                    if (v == null || !v.toString().equalsIgnoreCase(gLevel)) return false;
+                if (!"All".equalsIgnoreCase(diff)) {
+                    Object v = entry.getValue(DIFFICULTY_COL);
+                    if (v == null || !v.toString().equalsIgnoreCase(diff)) return false;
                 }
 
                 return true;
@@ -304,16 +250,30 @@ public class QuestionsManagementScreen extends JFrame {
 
         sorter.setRowFilter(rf);
         updateCounter();
+        recalcAllRowHeights();
     }
 
     private void updateCounter() {
         int total = tableModel.getRowCount();
-        int shown = questionsTable.getRowCount(); // after filter
+        int shown = questionsTable.getRowCount();
         counterLabel.setText("Showing: " + shown + " / " + total);
     }
 
-    // ======== Renderers ========
+    // ✅ ensures full visibility after changes
+    private void recalcAllRowHeights() {
+        for (int row = 0; row < questionsTable.getRowCount(); row++) {
+            int maxH = 42; // minimum
+            for (int col : new int[]{3, 5, 6, 7, 8}) { // Question + A/B/C/D (VIEW cols)
+                Component c = questionsTable.prepareRenderer(
+                        questionsTable.getCellRenderer(row, col), row, col
+                );
+                maxH = Math.max(maxH, c.getPreferredSize().height);
+            }
+            questionsTable.setRowHeight(row, maxH);
+        }
+    }
 
+    // ===== Renderers =====
     private static class HeaderRenderer extends DefaultTableCellRenderer {
         private static final long serialVersionUID = 1L;
 
@@ -322,100 +282,23 @@ public class QuestionsManagementScreen extends JFrame {
             setForeground(Color.WHITE);
             setFont(new Font("Arial", Font.BOLD, 14));
             setOpaque(true);
-            setBackground(new Color(0, 0, 0, 140));
+            setBackground(new Color(0, 0, 0, 150));
         }
     }
-    /*
-    private static class StripedTooltipRenderer extends DefaultTableCellRenderer {
-        private static final long serialVersionUID = 1L;
 
-        @Override
-        public Component getTableCellRendererComponent(
-                JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
-
-            // tooltip for long text
-            if (value != null) {
-                String s = value.toString();
-                setToolTipText(s.length() > 30 ? s : null);
-            } else {
-                setToolTipText(null);
-            }
-
-            // keep selection color
-            if (isSelected) {
-                c.setBackground(new Color(180, 200, 230));
-                c.setForeground(Color.BLACK);
-            } else {
-
-                // IMPORTANT: row is VIEW row (because of sorter). Convert to MODEL row.
-                int modelRow = table.convertRowIndexToModel(row);
-
-                // Difficulty column index = 8 in MODEL
-                Object diffObj = table.getModel().getValueAt(modelRow, 8);
-                String difficulty = diffObj != null ? diffObj.toString().trim() : "";
-
-                Color baseColor;
-                switch (difficulty.toLowerCase()) {
-                    case "easy":
-                        baseColor = new Color(220, 245, 220); // light green
-                        break;
-                    case "medium":
-                        baseColor = new Color(220, 235, 250); // light blue
-                        break;
-                    case "hard":
-                        baseColor = new Color(255, 235, 205); // light orange
-                        break;
-                    case "expert":
-                        baseColor = new Color(255, 220, 220); // light red
-                        break;
-                    default:
-                        baseColor = (row % 2 == 0)
-                                ? new Color(255, 255, 255, 215)
-                                : new Color(245, 245, 245, 215);
-                }
-
-                // Optional: zebra effect on top of base color (very subtle)
-                if (row % 2 == 1) {
-                    // slightly darken for odd rows
-                    baseColor = new Color(
-                            Math.max(0, baseColor.getRed() - 8),
-                            Math.max(0, baseColor.getGreen() - 8),
-                            Math.max(0, baseColor.getBlue() - 8)
-                    );
-                }
-
-                c.setBackground(baseColor);
-                c.setForeground(Color.BLACK);
-            }
-
-            // alignment
-            if (col == 0 || col == 1 || col == 2) {
-                setHorizontalAlignment(SwingConstants.CENTER);
-            } else {
-                setHorizontalAlignment(SwingConstants.LEFT);
-            }
-
-            return c;
-        }
-    }
-*/
-    
-    //new methodes fo Q
     private void applyColumnWidths() {
-        // לפי הסדר שלך: Delete, Edit, ID, Question, Difficulty, A, B, C, D, Correct
+        // Delete, Edit, ID, Question, Difficulty, A, B, C, D, Correct
         questionsTable.getColumnModel().getColumn(0).setPreferredWidth(60);
         questionsTable.getColumnModel().getColumn(1).setPreferredWidth(60);
-        questionsTable.getColumnModel().getColumn(2).setPreferredWidth(50);
+        questionsTable.getColumnModel().getColumn(2).setPreferredWidth(55);
 
-        questionsTable.getColumnModel().getColumn(3).setPreferredWidth(320); // Question
+        questionsTable.getColumnModel().getColumn(3).setPreferredWidth(420); // Question
         questionsTable.getColumnModel().getColumn(4).setPreferredWidth(110); // Difficulty
 
-        questionsTable.getColumnModel().getColumn(5).setPreferredWidth(260); // A
-        questionsTable.getColumnModel().getColumn(6).setPreferredWidth(260); // B
-        questionsTable.getColumnModel().getColumn(7).setPreferredWidth(260); // C
-        questionsTable.getColumnModel().getColumn(8).setPreferredWidth(260); // D
+        questionsTable.getColumnModel().getColumn(5).setPreferredWidth(320); // A
+        questionsTable.getColumnModel().getColumn(6).setPreferredWidth(320); // B
+        questionsTable.getColumnModel().getColumn(7).setPreferredWidth(320); // C
+        questionsTable.getColumnModel().getColumn(8).setPreferredWidth(320); // D
 
         questionsTable.getColumnModel().getColumn(9).setPreferredWidth(80);  // Correct
     }
@@ -427,12 +310,8 @@ public class QuestionsManagementScreen extends JFrame {
         for (int c : wrapCols) {
             questionsTable.getColumnModel().getColumn(c).setCellRenderer(wrap);
         }
-
-        questionsTable.setRowHeight(40);
     }
 
-    
-    //new render:
     private static class WrapCellRenderer extends JTextArea implements TableCellRenderer {
         private static final long serialVersionUID = 1L;
 
@@ -454,40 +333,41 @@ public class QuestionsManagementScreen extends JFrame {
                 setBackground(new Color(180, 200, 230));
                 setForeground(Color.BLACK);
             } else {
-                setBackground(new Color(255, 255, 255, 215));
+                setBackground(new Color(255, 255, 255, 220));
                 setForeground(Color.BLACK);
             }
 
-            // התאמת גובה שורה לפי הטקסט
+            // ✅ set width so preferred height is correct
             int width = table.getColumnModel().getColumn(column).getWidth();
             setSize(new Dimension(width, Short.MAX_VALUE));
-            int prefH = getPreferredSize().height;
-
-            if (table.getRowHeight(row) != prefH) {
-                table.setRowHeight(row, prefH);
-            }
 
             return this;
         }
     }
 
-    
-    
-
-    // ======== Background Panel (UNCHANGED) ========
-
+    // ===== Background Panel (✅ JAR SAFE) =====
     private static class BackgroundPanel extends JPanel {
         private static final long serialVersionUID = 1L;
-        private Image img;
+        private final Image img;
 
         public BackgroundPanel() {
-            img = new ImageIcon("src/images/background.jpeg").getImage();
+            URL url = getClass().getResource("/images/background.jpeg");
+            if (url != null) {
+                img = new ImageIcon(url).getImage();
+            } else {
+                img = new ImageIcon("src/images/background.jpeg").getImage(); // IDE fallback
+            }
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+            if (img == null) return;
+
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+            g2.dispose();
         }
     }
 }

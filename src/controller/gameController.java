@@ -913,7 +913,12 @@ public class gameController {
 
         // ===== Overlay (dim whole window) =====
         JPanel overlay = new JPanel(new GridBagLayout()) {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -927,7 +932,12 @@ public class gameController {
 
         // ===== Card wrapper (rounded white glass) =====
         JPanel cardWrapper = new JPanel(new BorderLayout()) {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();

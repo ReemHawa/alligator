@@ -2,9 +2,7 @@ package view;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.table.AbstractTableModel;
-
 import model.Question;
 
 public class QuestionTableModel extends AbstractTableModel {
@@ -18,8 +16,8 @@ public class QuestionTableModel extends AbstractTableModel {
             "Correct"
     };
 
-    private List<Question> questions;
-    private int editableRow = -1;
+    private final List<Question> questions;
+    private int editableRow = -1; // model-row index, -1 = none
 
     public QuestionTableModel(List<Question> questions) {
         this.questions = new ArrayList<>(questions);
@@ -67,14 +65,13 @@ public class QuestionTableModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-
-        // Delete/Edit columns are clickable
+        // Delete/Edit are clickable
         if (columnIndex == 0 || columnIndex == 1) return true;
 
         // Never edit ID
         if (columnIndex == 2) return false;
 
-        // Other columns only in edit mode
+        // Only in edit mode for that row
         return rowIndex == editableRow;
     }
 
@@ -99,14 +96,39 @@ public class QuestionTableModel extends AbstractTableModel {
         fireTableCellUpdated(rowIndex, columnIndex);
     }
 
-    // ===== Utilities =====
+    // =========================
+    // ✅ Edit Mode Helpers
+    // =========================
+    public void startEditRow(int row) {
+        int old = this.editableRow;
+        this.editableRow = row;
 
+        if (old >= 0 && old < questions.size()) fireTableRowsUpdated(old, old);
+        if (row >= 0 && row < questions.size()) fireTableRowsUpdated(row, row);
+    }
+
+    public void finishEdit() {
+        int old = this.editableRow;
+        this.editableRow = -1;
+        if (old >= 0 && old < questions.size()) fireTableRowsUpdated(old, old);
+    }
+
+    public boolean isRowInEditMode(int row) {
+        return row == editableRow;
+    }
+
+    public int getEditableRow() {
+        return editableRow;
+    }
+
+    // ===== Utilities =====
     public Question getQuestionAt(int row) {
         return questions.get(row);
     }
 
     public void removeQuestionAt(int row) {
         if (row < 0 || row >= questions.size()) return;
+
         questions.remove(row);
         fireTableRowsDeleted(row, row);
 
@@ -118,21 +140,6 @@ public class QuestionTableModel extends AbstractTableModel {
         int newIndex = questions.size();
         questions.add(q);
         fireTableRowsInserted(newIndex, newIndex);
-    }
-
-    public void setEditableRow(int row) {
-        this.editableRow = row;
-        if (row >= 0 && row < questions.size()) {
-            fireTableRowsUpdated(row, row);
-        }
-    }
-
-    public void clearEditableRow() {
-        int old = this.editableRow;
-        this.editableRow = -1;
-        if (old >= 0 && old < questions.size()) {
-            fireTableRowsUpdated(old, old);
-        }
     }
 
     public List<Question> getAllQuestions() {
@@ -147,29 +154,6 @@ public class QuestionTableModel extends AbstractTableModel {
             }
         }
         return max + 1;
-    }
-
-    // Optional helper if you use it in dialogs
-    public void updateQuestionAt(
-            int row,
-            String questionText,
-            String difficulty,
-            String a, String b, String c, String d,
-            String correctLetter
-    ) {
-        if (row < 0 || row >= questions.size()) return;
-
-        Question q = questions.get(row);
-
-        q.setQuestionText(normalize(questionText));
-        q.setDifficultyLevel(normalize(difficulty));
-        q.setOptionA(normalize(a));
-        q.setOptionB(normalize(b));
-        q.setOptionC(normalize(c));
-        q.setOptionD(normalize(d));
-        q.setCorrectLetter(normalize(correctLetter));
-
-        fireTableRowsUpdated(row, row);
     }
 
     private String normalize(String s) {

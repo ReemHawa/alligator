@@ -26,11 +26,10 @@ public class AddQuestionDialog extends JDialog {
         super(owner, "Add Question", true);
         this.model = model;
 
-        setSize(520, 420);
+        setSize(560, 460);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
 
-        // ===== FORM =====
         JPanel form = new JPanel(new GridLayout(8, 2, 10, 10));
         form.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -73,7 +72,6 @@ public class AddQuestionDialog extends JDialog {
 
         add(form, BorderLayout.CENTER);
 
-        // ===== BUTTONS =====
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         JButton save = new JButton("Save");
         JButton cancel = new JButton("Cancel");
@@ -84,13 +82,11 @@ public class AddQuestionDialog extends JDialog {
         add(buttons, BorderLayout.SOUTH);
 
         cancel.addActionListener(e -> dispose());
-
         save.addActionListener(e -> onSave());
     }
 
     private void onSave() {
 
-        // basic validation
         if (questionField.getText().trim().isEmpty()
                 || aField.getText().trim().isEmpty()
                 || bField.getText().trim().isEmpty()
@@ -117,10 +113,7 @@ public class AddQuestionDialog extends JDialog {
 
         String correctLetter = String.valueOf(correctBox.getSelectedItem());
 
-        // Create question with NEW constructor:
-        // (id, text, difficulty, A, B, C, D, correctLetter)
         Question q = new Question(id, question, difficulty, a, b, c, d, correctLetter);
-
         model.addQuestion(q);
 
         JOptionPane.showMessageDialog(this, "Question added successfully!");

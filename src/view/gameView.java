@@ -472,7 +472,12 @@ public class gameView extends JFrame {
 
         // ===== overlay panel (dims entire window) =====
         JPanel overlay = new JPanel(new GridBagLayout()) {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -493,7 +498,12 @@ public class gameView extends JFrame {
         card.setBorder(BorderFactory.createEmptyBorder(20, 24, 18, 24));
 
         JPanel cardWrapper = new JPanel(new BorderLayout()) {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -607,7 +617,12 @@ public class gameView extends JFrame {
     private void buildPauseOverlay() {
 
         pauseOverlay = new JPanel(new GridBagLayout()) {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 g.setColor(new Color(0, 0, 0, 140)); // כהות לכל המסך
