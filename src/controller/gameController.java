@@ -48,7 +48,12 @@ public class gameController {
     private HomeScreen homeScreen;
 
     private final boolean[] flagMode = new boolean[] { false, false };
+    private static final Color CORRECT_BG = new Color(210, 245, 210); // ירוק בהיר
+    private static final Color WRONG_BG   = new Color(245, 215, 215); // אדום בהיר
 
+    private static final Color LOCKED_BG  = new Color(245, 245, 245); // אפור עדין (אופציונלי)
+
+    
     private boolean historySaved = false;
 
     private boolean[][] floodVisited;
@@ -826,6 +831,7 @@ public class gameController {
     private Boolean showTimedQuestionDialog(model.Question q, int activationCost, int seconds) {
 
         java.util.List<String> options = q.getAllAnswersShuffled();
+        
 
         final JDialog dialog = new JDialog(view, true);
         dialog.setUndecorated(true);
@@ -948,15 +954,48 @@ public class gameController {
         JPanel answersPanel = new JPanel(new GridLayout(2, 2, 14, 14));
         answersPanel.setOpaque(false);
 
+        java.util.List<JButton> answerButtons = new java.util.ArrayList<>();
+
         for (String ans : options) {
             JButton btn = new JButton(ans);
             styleAnswerButton(btn);
+
+            answerButtons.add(btn);
+
             btn.addActionListener(e -> {
-                result[0] = q.isCorrect(ans);
-                dialog.dispose();
+            	
+
+                boolean isCorrect = q.isCorrect(ans);
+                result[0] = isCorrect;
+
+                /* נועלים את כל הכפתורים
+                for (JButton btt : answerButtons) {
+                    btt.setEnabled(false);
+                }
+*/
+                // צובעים את הנלחץ
+                setAnswerFeedbackColor(btn, isCorrect ? CORRECT_BG : WRONG_BG);
+
+                // אם טעה - נסמן גם את התשובה הנכונה בירוק
+                if (!isCorrect) {
+                    String correctText = q.getCorrectAnswerText();
+                    for (JButton btt : answerButtons) {
+                        if (stripHtml(btt.getText()).equals(correctText)) {
+                            setAnswerFeedbackColor(btt, CORRECT_BG);
+                            break;
+                        }
+                    }
+                }
+
+                // השהייה קצרה ואז סגירה
+                javax.swing.Timer closeDelay = new javax.swing.Timer(650, ev -> dialog.dispose());
+                closeDelay.setRepeats(false);
+                closeDelay.start();
             });
+
             answersPanel.add(btn);
         }
+
 
         // ===== Layout inside card =====
         JPanel center = new JPanel();
@@ -1023,6 +1062,16 @@ public class gameController {
         return result[0];
     }
 
+//
+    private void setAnswerFeedbackColor(JButton btn, Color bg) {
+        btn.putClientProperty("feedbackBg", bg);
+        btn.repaint();
+    }
+
+    private String stripHtml(String s) {
+        if (s == null) return "";
+        return s.replaceAll("\\<.*?\\>", "").trim();
+    }
 
     private void onGameEnd(String result) {
 
@@ -1047,8 +1096,8 @@ public class gameController {
         btn.setOpaque(false);
 
         btn.setFont(new Font("Verdana", Font.BOLD, 16));
-        btn.setForeground(new Color(40, 40, 40));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setForeground(Color.BLACK);
 
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setVerticalAlignment(SwingConstants.CENTER);
@@ -1070,8 +1119,16 @@ public class gameController {
                 boolean hover = b.getModel().isRollover();
                 boolean press = b.getModel().isPressed();
 
-                Color bg = hover ? new Color(240, 240, 240) : new Color(255, 255, 255);
-                if (press) bg = new Color(230, 230, 230);
+                Color forced = (Color) b.getClientProperty("feedbackBg");
+                Color bg;
+
+                if (forced != null) {
+                    bg = forced;
+                } else {
+                    bg = hover ? new Color(240, 240, 240) : new Color(255, 255, 255);
+                    if (press) bg = new Color(230, 230, 230);
+                }
+
 
                 // shadow
                 g2.setColor(new Color(0, 0, 0, 35));
