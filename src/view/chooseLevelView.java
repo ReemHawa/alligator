@@ -2,8 +2,7 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 
 public class chooseLevelView extends JFrame {
 
@@ -19,8 +18,13 @@ public class chooseLevelView extends JFrame {
 
     private Color defaultButtonColor;
     private Color defaultTextColor;
+
     private final Color hoverColor = new Color(220, 220, 220);
     private final Color levelSelectedColor = new Color(173, 216, 230);
+
+    // ✅ hover stability
+    private Timer hideDescTimer;
+    private String lastHoverLevel = null;
 
     public chooseLevelView(GameRulesScreen rulesScreen, HomeScreen homeScreen) {
         this.rulesScreen = rulesScreen;
@@ -35,6 +39,8 @@ public class chooseLevelView extends JFrame {
 
         // ===== TOP-RIGHT Back =====
         btnBack = new JButton("\u2190 Go Back");
+        btnBack.setFocusPainted(false);
+        btnBack.setFont(new Font("Serif", Font.BOLD, 14));
 
         GridBagConstraints gbcBack = new GridBagConstraints();
         gbcBack.gridx = 0;
@@ -57,19 +63,19 @@ public class chooseLevelView extends JFrame {
         JLabel title = new JLabel("Choose your level", SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Serif", Font.BOLD, 32));
+        title.setFont(new Font("Serif", Font.BOLD, 40));
         center.add(title);
         center.add(Box.createVerticalStrut(26));
 
         defaultButtonColor = UIManager.getColor("Button.background");
-        defaultTextColor   = UIManager.getColor("Button.foreground");
+        defaultTextColor = UIManager.getColor("Button.foreground");
 
-        JPanel levelRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 18, 0));
+        JPanel levelRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 22, 0));
         levelRow.setOpaque(false);
 
-        btnEasy   = createLevelButton("Easy");
+        btnEasy = createLevelButton("Easy");
         btnMedium = createLevelButton("Medium");
-        btnHard   = createLevelButton("Hard");
+        btnHard = createLevelButton("Hard");
 
         levelRow.add(btnEasy);
         levelRow.add(btnMedium);
@@ -78,7 +84,7 @@ public class chooseLevelView extends JFrame {
         center.add(levelRow);
         center.add(Box.createVerticalStrut(18));
 
-        // description panel
+        // ===== description panel =====
         descPanel = new JPanel(new BorderLayout()) {
             private static final long serialVersionUID = 1L;
             @Override protected void paintComponent(Graphics g) {
@@ -91,29 +97,39 @@ public class chooseLevelView extends JFrame {
             }
         };
         descPanel.setOpaque(false);
-        descPanel.setPreferredSize(new Dimension(680, 95));
-        descPanel.setMaximumSize(new Dimension(900, 120));
+        descPanel.setPreferredSize(new Dimension(740, 110));
+        descPanel.setMaximumSize(new Dimension(1000, 140));
+        descPanel.setVisible(false);
 
         descText = new JTextArea();
         descText.setEditable(false);
         descText.setOpaque(false);
         descText.setLineWrap(true);
         descText.setWrapStyleWord(true);
-        descText.setFont(new Font("Serif", Font.BOLD, 16));
+        descText.setFont(new Font("Serif", Font.BOLD, 18));
         descText.setForeground(Color.WHITE);
-        descText.setMargin(new Insets(10, 20, 10, 20));
+        descText.setMargin(new Insets(12, 22, 12, 22));
         descPanel.add(descText, BorderLayout.CENTER);
-        descPanel.setVisible(false);
+
+        // ✅ if mouse enters description, cancel hiding (no flicker)
+        descPanel.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) {
+                cancelHideDesc();
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                startHideDesc();
+            }
+        });
 
         center.add(descPanel);
-        center.add(Box.createVerticalStrut(18));
+        center.add(Box.createVerticalStrut(22));
 
         btnNext = new JButton("Next");
-        btnNext.setFont(new Font("Serif", Font.BOLD, 16));
+        btnNext.setFont(new Font("Serif", Font.BOLD, 18));
         btnNext.setEnabled(false);
         btnNext.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnNext.setPreferredSize(new Dimension(200, 45));
-        btnNext.setMaximumSize(new Dimension(200, 45));
+        btnNext.setPreferredSize(new Dimension(240, 52));
+        btnNext.setMaximumSize(new Dimension(240, 52));
         center.add(btnNext);
 
         GridBagConstraints gbcCenter = new GridBagConstraints();
@@ -137,6 +153,7 @@ public class chooseLevelView extends JFrame {
         gbcSpeaker.insets = new Insets(0, 10, 8, 0);
         bg.add(speaker, gbcSpeaker);
 
+        // ✅ stable hover behaviour
         addLevelBehaviour(btnEasy, "EASY");
         addLevelBehaviour(btnMedium, "MEDIUM");
         addLevelBehaviour(btnHard, "HARD");
@@ -152,62 +169,97 @@ public class chooseLevelView extends JFrame {
         });
 
         setMinimumSize(new Dimension(800, 550));
-        setSize(950, 650);
+        setSize(1000, 700);
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
     private JButton createLevelButton(String text) {
         JButton b = new JButton(text);
-        b.setFont(new Font("Serif", Font.BOLD, 18));
+        b.setFont(new Font("Serif", Font.BOLD, 22));
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setBackground(defaultButtonColor);
         b.setForeground(defaultTextColor);
-        b.setPreferredSize(new Dimension(140, 60));
+        b.setPreferredSize(new Dimension(180, 70));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
     }
 
-    private void addLevelBehaviour(JButton button, String levelKey) {
+    private void addLevelBehaviour(final JButton button, final String levelKey) {
+
         button.addMouseListener(new MouseAdapter() {
+
             @Override public void mouseEntered(MouseEvent e) {
+                cancelHideDesc();
+                lastHoverLevel = levelKey;   // ✅ set hover only when actually inside
+
                 descPanel.setVisible(true);
                 showDescription(levelKey);
-                if (!levelKey.equals(selectedLevel)) button.setBackground(hoverColor);
+
+                refreshButtonsStyle(); // ✅ apply hover/selected correctly
             }
+
             @Override public void mouseExited(MouseEvent e) {
-                descPanel.setVisible(false);
-                descText.setText("");
-                if (levelKey.equals(selectedLevel)) applySelectedStyle(button);
-                else {
-                    button.setBackground(defaultButtonColor);
-                    button.setForeground(defaultTextColor);
-                }
+                lastHoverLevel = null;       // ✅ IMPORTANT: clear hover when leaving button
+                refreshButtonsStyle();       // ✅ remove hover highlight immediately
+                startHideDesc();             // ✅ delay hide so moving to desc panel is smooth
             }
         });
+
         button.addActionListener(e -> selectLevel(levelKey));
+    }
+
+    private void startHideDesc() {
+        cancelHideDesc();
+        hideDescTimer = new Timer(180, e -> {
+            // ✅ hide and also clear hover state
+            lastHoverLevel = null;
+            descPanel.setVisible(false);
+            descText.setText("");
+            refreshButtonsStyle();
+        });
+        hideDescTimer.setRepeats(false);
+        hideDescTimer.start();
+    }
+
+    private void cancelHideDesc() {
+        if (hideDescTimer != null && hideDescTimer.isRunning()) {
+            hideDescTimer.stop();
+        }
     }
 
     private void selectLevel(String level) {
         selectedLevel = level;
+        lastHoverLevel = null; // ✅ selection should not keep hover state
+        btnNext.setEnabled(true);
 
+        // keep description visible after click
+        descPanel.setVisible(true);
+        showDescription(level);
+
+        refreshButtonsStyle();
+    }
+
+    private void refreshButtonsStyle() {
+        // reset
         btnEasy.setBackground(defaultButtonColor);
         btnMedium.setBackground(defaultButtonColor);
         btnHard.setBackground(defaultButtonColor);
 
-        switch (level) {
-        case "EASY":
-            applySelectedStyle(btnEasy);
-            break;
-        case "MEDIUM":
-            applySelectedStyle(btnMedium);
-            break;
-        case "HARD":
-            applySelectedStyle(btnHard);
-            break;
-    }
+        btnEasy.setForeground(defaultTextColor);
+        btnMedium.setForeground(defaultTextColor);
+        btnHard.setForeground(defaultTextColor);
 
-        btnNext.setEnabled(true);
+        // selected
+        if ("EASY".equals(selectedLevel)) applySelectedStyle(btnEasy);
+        if ("MEDIUM".equals(selectedLevel)) applySelectedStyle(btnMedium);
+        if ("HARD".equals(selectedLevel)) applySelectedStyle(btnHard);
+
+        // hover ONLY if currently inside a button
+        if ("EASY".equals(lastHoverLevel) && !"EASY".equals(selectedLevel)) btnEasy.setBackground(hoverColor);
+        if ("MEDIUM".equals(lastHoverLevel) && !"MEDIUM".equals(selectedLevel)) btnMedium.setBackground(hoverColor);
+        if ("HARD".equals(lastHoverLevel) && !"HARD".equals(selectedLevel)) btnHard.setBackground(hoverColor);
     }
 
     private void applySelectedStyle(JButton button) {
@@ -216,18 +268,15 @@ public class chooseLevelView extends JFrame {
     }
 
     private void showDescription(String level) {
-    	switch (level) {
-        case "EASY":
+        if ("EASY".equals(level)) {
             descText.setText("A 9×9 board with 10 mines.\nGood for beginners or a calm start.");
-            break;
-        case "MEDIUM":
+        } else if ("MEDIUM".equals(level)) {
             descText.setText("A 13×13 board with 26 mines.\nBalanced difficulty – not too easy and not too hard.");
-            break;
-        case "HARD":
+        } else if ("HARD".equals(level)) {
             descText.setText("A 16×16 board with 44 mines.\nMade for players who want a real challenge.");
-            break;
-    }
-
+        } else {
+            descText.setText("");
+        }
     }
 
     private static class BackgroundPanel extends JPanel {
@@ -235,8 +284,11 @@ public class chooseLevelView extends JFrame {
         private Image bg;
 
         public BackgroundPanel() {
-            try { bg = new ImageIcon(getClass().getResource("/images/background.jpeg")).getImage(); }
-            catch (Exception e) { bg = new ImageIcon("src/images/background.jpeg").getImage(); }
+            try {
+                bg = new ImageIcon(getClass().getResource("/images/background.jpeg")).getImage();
+            } catch (Exception e) {
+                bg = new ImageIcon("src/images/background.jpeg").getImage();
+            }
         }
 
         @Override protected void paintComponent(Graphics g) {

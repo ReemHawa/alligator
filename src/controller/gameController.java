@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import javax.swing.*;
 
+
 public class gameController {
 
     private static final Logger LOG = Logger.getLogger(gameController.class.getName());
@@ -32,7 +33,7 @@ public class gameController {
     private static final Color CORRECT_BG = new Color(210, 245, 210); // ירוק בהיר
     private static final Color WRONG_BG   = new Color(245, 215, 215); // אדום בהיר
 
-    private static final Color LOCKED_BG  = new Color(245, 245, 245); // אפור עדין (אופציונלי)
+ //   private static final Color LOCKED_BG  = new Color(245, 245, 245); // אפור עדין (אופציונלי)
 
     
 
@@ -157,15 +158,10 @@ public class gameController {
         // ================= QUESTION CELL =================
         if (b.isQuestion(row, col)) {
             handleSpecialCellTemplate(
-                    boardIndex,
-                    row,
-                    col,
+                    boardIndex, row, col,
                     b.isQuestionRevealed(row, col),
                     b.isQuestionUsed(row, col),
-                    () -> {
-                        b.revealQuestion(row, col);
-                        view.revealQuestion(boardIndex, row, col);
-                    },
+                    () -> { b.revealQuestion(row, col); view.revealQuestion(boardIndex, row, col); },
                     () -> activateQuestionCell(boardIndex, row, col),
                     "question"
             );
@@ -175,20 +171,16 @@ public class gameController {
         // ================= SURPRISE CELL =================
         if (b.isSurprise(row, col)) {
             handleSpecialCellTemplate(
-                    boardIndex,
-                    row,
-                    col,
+                    boardIndex, row, col,
                     b.isSurpriseRevealed(row, col),
                     b.isSurpriseActivated(row, col),
-                    () -> {
-                        b.revealSurprise(row, col);
-                        view.revealSurprise(boardIndex, row, col);
-                    },
+                    () -> { b.revealSurprise(row, col); view.revealSurprise(boardIndex, row, col); },
                     () -> activateSurpriseCell(boardIndex, row, col),
                     "surprise"
             );
             return;
         }
+
 
         // ================= NORMAL / MINE CELL =================
         if (b.isRevealed(row, col)) {
@@ -258,7 +250,7 @@ public class gameController {
     }
 
     // ====================================================
-    // ✅ NEW: FLAG CLICK WITH LIMIT + NO TURN SWITCH
+    //  FLAG CLICK WITH LIMIT + NO TURN SWITCH
     // ====================================================
     public void handleFlagClick(int boardIndex, int row, int col) {
 
@@ -436,7 +428,7 @@ public class gameController {
     // ====================================================
     // ========= Special cell template (your existing) =====
     // ====================================================
-    private void handleSpecialCellTemplate(
+    private boolean handleSpecialCellTemplate(
             int boardIndex,
             int row,
             int col,
@@ -448,24 +440,20 @@ public class gameController {
     ) {
         if (isUsed) {
             showAlreadyUsedSpecialCellMessage(typeName);
-            return;
+            return false;
         }
 
-        // FIRST CLICK reveal only 
         if (!isRevealed) {
             revealStep.run();
-            view.setActiveBoard(model.getCurrentPlayer()); // stay same player
-            return;
+            return true; // direct click revealed it -> consume turn
         }
 
-        //  SECOND CLICK: activate
         activateStep.run();
+        if (model.isGameOver()) return false;
 
-        if (model.isGameOver()) return;
-
-        
-        view.setActiveBoard(model.getCurrentPlayer());
+        return true; // direct click activated it -> consume turn
     }
+
 
     // ====================================================
     // =============== Your existing logic below ===========
@@ -932,7 +920,12 @@ public class gameController {
 
         // ===== Card wrapper (rounded white glass) =====
         JPanel cardWrapper = new JPanel(new BorderLayout()) {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -1188,7 +1181,7 @@ public class gameController {
         // padding inside
         btn.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
-        // ✅ allow HTML wrap (width you want)
+        //  allow HTML wrap (width you want)
         String raw = btn.getText();
         btn.setText("<html><div style='width:320px;'>" + escapeHtml(raw) + "</div></html>");
 
@@ -1227,7 +1220,6 @@ public class gameController {
 
                 g2.dispose();
 
-                // ✅ IMPORTANT: let Swing paint the HTML text (wrap!)
                 super.paint(g, c);
             }
 
@@ -1310,6 +1302,13 @@ public class gameController {
             gameQuestions = new ArrayList<>();
         }
     }
+    
+    public void notifyNotYourTurn() {
+        if (view != null) {
+            view.showNotYourTurnMessage();
+        }
+    }
+
 
     public void exitToHome() {
         if (view != null) {

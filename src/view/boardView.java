@@ -15,43 +15,6 @@ public class boardView extends JPanel implements model.BoardObserver {
 
     private static final long serialVersionUID = 1L;
 
-    private JButton[][] buttons;
-    private ImageIcon[][] stoneForCell;
-
-    // wrapper for the grid (the orange/gray border should be tight around this)
-    private final JPanel boardWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-    private final JPanel boardHolder = new JPanel(new GridBagLayout()); // prevents stretching
-
-    private final ArrayList<ImageIcon> stoneIcons = new ArrayList<>();
-    private final Font numberFont = new Font("Verdana", Font.BOLD, 20);
-
-    private static int TILE_SIZE = 40;
-    private boolean flagMode = false;
-
-    private ImageIcon flagIcon;
-    private ImageIcon mineIcon;
-    private ImageIcon surpriseIcon;
-    private ImageIcon openedSurpriseIcon;
-    private ImageIcon questionIcon;
-    private ImageIcon questionUsedIcon;
-
-    // header elements
-    private JLabel nameLabel;
-    private JLabel flagIconLabel;          // clickable
-    private JLabel flagsRemainingLabel;    // not clickable
-
-    private final int rows;
-    private final int cols;
-    private final int myBoardIndex;
-
-    private Cursor flagCursor;
-    private boolean paused = false;
-    
-    private boolean warnedOneFlagLeft = false;
-
-
-    private String originalTitle = "";
-
     private static final String FLAG = "/images/flag.png";
     private static final String STONES_FOLDER = "/stones/";
     private static final String MINE = "/images/mine.png";
@@ -60,14 +23,71 @@ public class boardView extends JPanel implements model.BoardObserver {
     private static final String QUESTION = "/images/question.png";
     private static final String QUESTION_USED = "/images/usedQ.png";
 
-    public boardView(int boardIndex, String title, gameController controller, int tileSize) {
+    private static final int GRID_GAP = 2;
+
+    private static final int OUTER_BORDER_W = 4;
+    private static final int INNER_PAD = 6;
+
+    private final int rows;
+    private final int cols;
+    private final int myBoardIndex;
+
+    private int tileSize;
+    private boolean paused = false;
+    private boolean flagMode = false;
+
+    private final Font numberFont = new Font("Verdana", Font.BOLD, 20);
+
+    private JButton[][] buttons;
+    private ImageIcon[][] stoneForCell;
+
+    private final ArrayList<ImageIcon> stoneIcons = new ArrayList<>();
+
+    private ImageIcon flagIcon;
+    private ImageIcon mineIcon;
+    private ImageIcon surpriseIcon;
+    private ImageIcon openedSurpriseIcon;
+    private ImageIcon questionIcon;
+    private ImageIcon questionUsedIcon;
+
+    private Cursor flagCursor;
+
+    private JLabel nameLabel;
+    private JLabel flagIconLabel;
+    private JLabel flagsRemainingLabel;
+
+    private boolean warnedOneFlagLeft = false;
+    private final String originalTitle;
+
+    private final JPanel boardWrapper = new JPanel(new GridBagLayout());
+    private final JPanel boardHolder = new JPanel(new GridBagLayout());
+    private JPanel boardPanel;
+
+    private int topBarPreferredH = 0;
+
+    private static final class FixedCellButton extends JButton {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		private final Dimension fixed;
+        FixedCellButton(Dimension fixed) {
+            super();
+            this.fixed = fixed;
+            setMargin(new Insets(0, 0, 0, 0));
+        }
+        @Override public Dimension getPreferredSize() { return fixed; }
+        @Override public Dimension getMinimumSize()   { return fixed; }
+        @Override public Dimension getMaximumSize()   { return fixed; }
+    }
+
+    public boardView(int boardIndex, String title, gameController controller, int initialTileSize) {
 
         board model = controller.getModel().getBoard(boardIndex);
 
         this.rows = model.getRows();
         this.cols = model.getCols();
-        TILE_SIZE = tileSize;
-
+        this.tileSize = Math.max(28, initialTileSize);
         this.myBoardIndex = boardIndex;
         this.originalTitle = (title == null) ? "" : title;
 
@@ -77,19 +97,93 @@ public class boardView extends JPanel implements model.BoardObserver {
         setLayout(new BorderLayout());
         setOpaque(false);
 
-        // ===== icons =====
-        mineIcon = loadIcon(MINE, TILE_SIZE, TILE_SIZE);
-        surpriseIcon = loadIcon(SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
-        openedSurpriseIcon = loadIcon(OPENED_SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
-        questionIcon = loadIcon(QUESTION, TILE_SIZE - 6, TILE_SIZE - 6);
-        questionUsedIcon = loadIcon(QUESTION_USED, TILE_SIZE - 6, TILE_SIZE - 6);
+        rebuildIcons();
 
-        // flag icon + cursor
         flagIcon = loadIcon(FLAG, 32, 32);
         Toolkit tk = Toolkit.getDefaultToolkit();
         flagCursor = tk.createCustomCursor(flagIcon.getImage(), new Point(1, 1), "flagCursor");
 
-        // ===== TOP BAR (painted, no artifacts) =====
+        JPanel topBar = buildTopBar(controller, boardIndex);
+        add(topBar, BorderLayout.NORTH);
+
+        SwingUtilities.invokeLater(() -> {
+            topBarPreferredH = topBar.getPreferredSize().height;
+            updateNameEllipsis();
+        });
+
+        loadStoneIcons();
+        Random rand = new Random();
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                stoneForCell[r][c] = stoneIcons.get(rand.nextInt(stoneIcons.size()));
+            }
+        }
+
+        boardPanel = new JPanel(new GridLayout(rows, cols, GRID_GAP, GRID_GAP));
+        boardPanel.setOpaque(false);
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+
+                final int rr = r;
+                final int cc = c;
+
+                Dimension d = new Dimension(tileSize, tileSize);
+                JButton btn = new FixedCellButton(d);
+                styleCellButton(btn);
+                btn.setIcon(stoneForCell[r][c]);
+
+                btn.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mousePressed(java.awt.event.MouseEvent e) {
+
+                        if (paused) return;
+
+                        // clicking other player's board -> show not your turn
+                        if (controller.getModel().getCurrentPlayer() != myBoardIndex) {
+                            controller.notifyNotYourTurn();
+                            return;
+                        }
+
+                        if (SwingUtilities.isRightMouseButton(e)) {
+                            controller.handleRightClick(boardIndex, rr, cc);
+                            return;
+                        }
+
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            if (flagMode) controller.handleFlagClick(boardIndex, rr, cc);
+                            else controller.handleCellClick(boardIndex, rr, cc);
+                        }
+                    }
+                });
+
+
+                buttons[r][c] = btn;
+                boardPanel.add(btn);
+            }
+        }
+
+        boardWrapper.setOpaque(false);
+        boardWrapper.add(boardPanel, new GridBagConstraints());
+
+        boardHolder.setOpaque(false);
+        boardHolder.add(boardWrapper, new GridBagConstraints());
+
+        add(boardHolder, BorderLayout.CENTER);
+
+        setActive(false);
+        applyFixedSizesForCurrentTile();
+
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                updateNameEllipsis();
+            }
+        });
+    }
+
+    private JPanel buildTopBar(gameController controller, int boardIndex) {
+
         nameLabel = new JLabel("");
         nameLabel.setForeground(Color.WHITE);
         nameLabel.setFont(new Font("Verdana", Font.BOLD, 22));
@@ -101,50 +195,33 @@ public class boardView extends JPanel implements model.BoardObserver {
         flagsRemainingLabel = new JLabel("— left");
         flagsRemainingLabel.setForeground(new Color(210, 210, 210));
         flagsRemainingLabel.setFont(new Font("Verdana", Font.BOLD, 12));
-        flagsRemainingLabel.setOpaque(false); // badge paints background
+        flagsRemainingLabel.setOpaque(false);
 
-        // badge that paints its own rounded background
         JPanel flagBadge = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0)) {
-            /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
+            private static final long serialVersionUID = 1L;
+            @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // rounded dark chip
                 g2.setColor(new Color(0, 0, 0, 150));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
         flagBadge.setOpaque(false);
         flagBadge.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
-
-        // ✅ IMPORTANT: add components into the badge (you forgot this)
         flagBadge.add(flagIconLabel);
         flagBadge.add(flagsRemainingLabel);
 
-        // top bar panel that also paints background (no artifacts)
         JPanel topBar = new JPanel(new BorderLayout()) {
-            /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
+            private static final long serialVersionUID = 1L;
+            @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 g2.setColor(new Color(0, 0, 0, 110));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -154,9 +231,6 @@ public class boardView extends JPanel implements model.BoardObserver {
         topBar.add(nameLabel, BorderLayout.WEST);
         topBar.add(flagBadge, BorderLayout.EAST);
 
-        add(topBar, BorderLayout.NORTH);
-
-        // ✅ ONLY clicking the FLAG ICON toggles flag mode
         flagIconLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -165,122 +239,81 @@ public class boardView extends JPanel implements model.BoardObserver {
             }
         });
 
-        // ===== stones =====
-        loadStoneIcons();
-        Random r = new Random();
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                stoneForCell[i][j] = stoneIcons.get(r.nextInt(stoneIcons.size()));
-            }
-        }
-
-        // ===== board grid =====
-        JPanel boardPanel = new JPanel(new GridLayout(rows, cols, 2, 2));
-        boardPanel.setOpaque(false);
-
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < cols; col++) {
-
-                final int rIdx = row;
-                final int cIdx = col;
-
-                JButton btn = new JButton();
-                btn.setPreferredSize(new Dimension(TILE_SIZE, TILE_SIZE));
-                btn.setBorderPainted(false);
-                btn.setFocusPainted(false);
-                btn.setContentAreaFilled(false);
-                btn.setMargin(new Insets(0, 0, 0, 0));
-                btn.setIcon(stoneForCell[row][col]);
-                btn.setHorizontalTextPosition(SwingConstants.CENTER);
-
-                btn.addMouseListener(new java.awt.event.MouseAdapter() {
-                    @Override
-                    public void mousePressed(java.awt.event.MouseEvent e) {
-
-                        if (paused) return;
-
-                        // RIGHT CLICK
-                        if (SwingUtilities.isRightMouseButton(e)) {
-                            controller.handleRightClick(boardIndex, rIdx, cIdx);
-                            return;
-                        }
-
-                        // LEFT CLICK
-                        if (SwingUtilities.isLeftMouseButton(e)) {
-
-                            // block clicking on non-active board
-                            if (controller.getModel().getCurrentPlayer() != myBoardIndex) {
-                                return;
-                            }
-
-                            if (flagMode) controller.handleFlagClick(boardIndex, rIdx, cIdx);
-                            else controller.handleCellClick(boardIndex, rIdx, cIdx);
-                        }
-                    }
-                });
-
-                buttons[row][col] = btn;
-                boardPanel.add(btn);
-            }
-        }
-
-        // wrapper keeps border tight around grid
-        boardWrapper.setOpaque(false);
-        boardWrapper.add(boardPanel);
-
-        int boardW = cols * TILE_SIZE + (cols - 1) * 2;
-        int boardH = rows * TILE_SIZE + (rows - 1) * 2;
-        boardWrapper.setPreferredSize(new Dimension(boardW + 16, boardH + 16));
-
-        boardHolder.setOpaque(false);
-        boardHolder.add(boardWrapper);
-
-        add(boardHolder, BorderLayout.CENTER);
-
-        // name ellipsis (also on resize)
-        SwingUtilities.invokeLater(this::updateNameEllipsis);
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                updateNameEllipsis();
-            }
-        });
-
-        setActive(false);
+        return topBar;
     }
 
-    // called by controller / gameView
+    private void styleCellButton(JButton btn) {
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
+        btn.setHorizontalTextPosition(SwingConstants.CENTER);
+        btn.setVerticalTextPosition(SwingConstants.CENTER);
+        btn.setFont(numberFont);
+    }
+
+    private void rebuildIcons() {
+        mineIcon = loadIcon(MINE, tileSize, tileSize);
+        surpriseIcon = loadIcon(SURPRISE, tileSize - 6, tileSize - 6);
+        openedSurpriseIcon = loadIcon(OPENED_SURPRISE, tileSize - 6, tileSize - 6);
+        questionIcon = loadIcon(QUESTION, tileSize - 6, tileSize - 6);
+        questionUsedIcon = loadIcon(QUESTION_USED, tileSize - 6, tileSize - 6);
+    }
+
+    private void applyFixedSizesForCurrentTile() {
+
+        int gridW = cols * tileSize + (cols - 1) * GRID_GAP ;
+        int gridH = rows * tileSize + (rows - 1) * GRID_GAP;
+
+        Dimension gridDim = new Dimension(gridW, gridH);
+        boardPanel.setPreferredSize(gridDim);
+        boardPanel.setMinimumSize(gridDim);
+        boardPanel.setMaximumSize(gridDim);
+
+        int inset = 2 * (OUTER_BORDER_W + INNER_PAD);
+        Dimension wrapDim = new Dimension(gridW + inset, gridH + inset);
+        boardWrapper.setPreferredSize(wrapDim);
+        boardWrapper.setMinimumSize(wrapDim);
+        boardWrapper.setMaximumSize(wrapDim);
+
+        revalidate();
+        repaint();
+    }
+
+    public Dimension getBoardOuterSize() {
+        int gridW = cols * tileSize + (cols - 1) * GRID_GAP;
+        int gridH = rows * tileSize + (rows - 1) * GRID_GAP;
+        int inset = 2 * (OUTER_BORDER_W + INNER_PAD);
+        return new Dimension(gridW + inset, gridH + inset);
+    }
+
+    public int getTopBarPreferredHeight() {
+        return Math.max(0, topBarPreferredH);
+    }
+
     public void setRemainingFlags(int remaining) {
         flagsRemainingLabel.setText(remaining + " left");
         flagsRemainingLabel.revalidate();
         flagsRemainingLabel.repaint();
 
-        //  warn only once when it becomes 1
         if (remaining == 1 && !warnedOneFlagLeft) {
             warnedOneFlagLeft = true;
-
-            String playerName = originalTitle; // your board title / player name
             JOptionPane.showMessageDialog(
                     SwingUtilities.getWindowAncestor(this),
-                    playerName + ", you have only 1 flag remaining!",
+                    originalTitle + ", you have only 1 flag remaining!",
                     "Warning",
                     JOptionPane.WARNING_MESSAGE
             );
         }
-
-        //  if flags go back above 1 , allow warning again later
-        if (remaining > 1) {
-            warnedOneFlagLeft = false;
-        }
+        if (remaining > 1) warnedOneFlagLeft = false;
     }
-
 
     public void setActive(boolean active) {
         Color borderColor = active ? new Color(255, 165, 0) : new Color(150, 150, 150);
 
         boardWrapper.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(borderColor, 4, true),
-                BorderFactory.createEmptyBorder(6, 6, 6, 6)
+                new LineBorder(borderColor, OUTER_BORDER_W, true),
+                BorderFactory.createEmptyBorder(INNER_PAD, INNER_PAD, INNER_PAD, INNER_PAD)
         ));
 
         boardWrapper.revalidate();
@@ -314,10 +347,8 @@ public class boardView extends JPanel implements model.BoardObserver {
 
     public void revealSafeCell(int row, int col, int count) {
         JButton btn = buttons[row][col];
-        if (btn.getIcon() == null && btn.getText() != null) return;
 
         btn.setIcon(null);
-        btn.setBorder(null);
         btn.setContentAreaFilled(false);
         btn.setFocusPainted(false);
 
@@ -327,119 +358,88 @@ public class boardView extends JPanel implements model.BoardObserver {
         }
 
         btn.setText(String.valueOf(count));
-        btn.setFont(numberFont);
         btn.setForeground(getNumberColor(count));
     }
 
     public void revealSurprise(int r, int c) {
-        buttons[r][c].setIcon(surpriseIcon);
+        JButton btn = buttons[r][c];
+        btn.setIcon(surpriseIcon);
+        btn.setText(null);
     }
 
     public void activateSurprise(int r, int c) {
         JButton btn = buttons[r][c];
         btn.setIcon(openedSurpriseIcon);
         btn.setText(null);
-        btn.setBorder(null);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
     }
 
     public void revealMineHit(int row, int col) {
         JButton btn = buttons[row][col];
         btn.setIcon(mineIcon);
         btn.setText(null);
-
-        for (java.awt.event.ActionListener al : btn.getActionListeners()) {
-            btn.removeActionListener(al);
-        }
-
-        btn.setBorder(null);
-        btn.setContentAreaFilled(false);
     }
 
     public void revealAllMines(board model) {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                JButton btn = buttons[r][c];
                 if (model.isMine(r, c)) {
+                    JButton btn = buttons[r][c];
                     btn.setIcon(mineIcon);
                     btn.setText(null);
-                    btn.setBorder(null);
-                    btn.setContentAreaFilled(false);
                 }
             }
         }
     }
 
     public void removeFlag(int row, int col) {
-        buttons[row][col].setIcon(stoneForCell[row][col]);
+        JButton btn = buttons[row][col];
+        btn.setIcon(stoneForCell[row][col]);
+        btn.setText(null);
     }
 
     public void revealQuestion(int r, int c) {
         JButton btn = buttons[r][c];
         btn.setIcon(questionIcon);
         btn.setText(null);
-        btn.setBorder(null);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
     }
 
     public void markQuestionUsed(int r, int c) {
         JButton btn = buttons[r][c];
         btn.setIcon(questionUsedIcon);
         btn.setText(null);
-        btn.setBorder(null);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
     }
 
     public void revealMineAuto(int row, int col) {
         JButton btn = buttons[row][col];
         btn.setIcon(mineIcon);
         btn.setText(null);
-        btn.setBorder(null);
-        btn.setContentAreaFilled(false);
     }
 
     public void revealHintCell(int row, int col) {
         JButton btn = buttons[row][col];
         btn.setIcon(null);
         btn.setText("");
-        btn.setBorder(null);
-        btn.setContentAreaFilled(false);
     }
 
     public void revealAllSurprises(board model) {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 if (model.isSurprise(r, c)) {
-
-                    if (model.isSurpriseActivated(r, c)) {
-                        buttons[r][c].setIcon(openedSurpriseIcon);
-                    } else {
-                        buttons[r][c].setIcon(surpriseIcon);
-                    }
-
+                    buttons[r][c].setIcon(model.isSurpriseActivated(r, c) ? openedSurpriseIcon : surpriseIcon);
                     buttons[r][c].setText(null);
-                    buttons[r][c].setBorder(null);
-                    buttons[r][c].setContentAreaFilled(false);
-
-                    for (java.awt.event.ActionListener al : buttons[r][c].getActionListeners()) {
-                        buttons[r][c].removeActionListener(al);
-                    }
                 }
             }
         }
     }
 
     private void loadStoneIcons() {
-        try {
-            for (int i = 1; i <= 20; i++) {
-                String path = STONES_FOLDER + "stone" + i + ".png";
-                java.net.URL url = getClass().getResource(path);
-                if (url != null) stoneIcons.add(loadIcon(path, TILE_SIZE, TILE_SIZE));
-            }
-        } catch (Exception ignored) {}
+        stoneIcons.clear();
+        for (int i = 1; i <= 20; i++) {
+            String path = STONES_FOLDER + "stone" + i + ".png";
+            java.net.URL url = getClass().getResource(path);
+            if (url != null) stoneIcons.add(loadIcon(path, tileSize, tileSize));
+        }
+        if (stoneIcons.isEmpty()) stoneIcons.add(emptyIcon(tileSize, tileSize));
     }
 
     private ImageIcon loadIcon(String path, int w, int h) {
@@ -481,21 +481,17 @@ public class boardView extends JPanel implements model.BoardObserver {
         }
     }
 
-    public void setPaused(boolean paused) {
-        this.paused = paused;
-    }
+    public void setPaused(boolean paused) { this.paused = paused; }
 
-    // ===== name ellipsis =====
     private void updateNameEllipsis() {
-        int boardW = cols * TILE_SIZE + (cols - 1) * 2;
-        int maxNameWidth = Math.max(80, boardW - 140); // leave space for badge
+        int gridW = cols * tileSize + (cols - 1) * GRID_GAP;
+        int maxNameWidth = Math.max(80, gridW - 140);
         nameLabel.setText(ellipsize(originalTitle, maxNameWidth, nameLabel.getFont()));
     }
 
     private String ellipsize(String text, int maxWidthPx, Font font) {
         if (text == null) return "";
         FontMetrics fm = getFontMetrics(font);
-
         if (fm.stringWidth(text) <= maxWidthPx) return text;
 
         String dots = "...";
@@ -509,51 +505,34 @@ public class boardView extends JPanel implements model.BoardObserver {
         }
         return dots;
     }
-    
+
     public void setTileSize(int newTileSize) {
+        newTileSize = Math.max(28, newTileSize);
+        if (newTileSize == this.tileSize) return;
 
-        if (newTileSize <= 0) return;
-        if (newTileSize == TILE_SIZE) return;
+        this.tileSize = newTileSize;
 
-        TILE_SIZE = newTileSize;
+        rebuildIcons();
+        loadStoneIcons();
 
-        // reload size-dependent icons
-        mineIcon = loadIcon(MINE, TILE_SIZE, TILE_SIZE);
-        surpriseIcon = loadIcon(SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
-        openedSurpriseIcon = loadIcon(OPENED_SURPRISE, TILE_SIZE - 6, TILE_SIZE - 6);
-        questionIcon = loadIcon(QUESTION, TILE_SIZE - 6, TILE_SIZE - 6);
-        questionUsedIcon = loadIcon(QUESTION_USED, TILE_SIZE - 6, TILE_SIZE - 6);
-
-        // resize all buttons + re-apply stone icons
+        Random rand = new Random();
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                JButton btn = buttons[r][c];
-                if (btn != null) {
-                    btn.setPreferredSize(new Dimension(TILE_SIZE, TILE_SIZE));
+                stoneForCell[r][c] = stoneIcons.get(rand.nextInt(stoneIcons.size()));
 
-                    // if still closed (stone), rescale the stone too
-                    if (btn.getIcon() != null && btn.getText() == null) {
-                        // rescale the stored stone icon for this cell
-                        ImageIcon oldStone = stoneForCell[r][c];
-                        if (oldStone != null && oldStone.getImage() != null) {
-                            Image scaled = oldStone.getImage().getScaledInstance(TILE_SIZE, TILE_SIZE, Image.SCALE_SMOOTH);
-                            stoneForCell[r][c] = new ImageIcon(scaled);
-                            btn.setIcon(stoneForCell[r][c]);
-                        }
-                    }
+                Dimension d = new Dimension(tileSize, tileSize);
+                JButton old = buttons[r][c];
+
+                if (old instanceof FixedCellButton) {
+                    FixedCellButton fb = (FixedCellButton) old;
+                    fb.setIcon(stoneForCell[r][c]);
+                } else {
+                    old.setIcon(stoneForCell[r][c]);
                 }
             }
         }
 
-        // update wrapper preferred size so the border stays tight
-        int boardW = cols * TILE_SIZE + (cols - 1) * 2;
-        int boardH = rows * TILE_SIZE + (rows - 1) * 2;
-        boardWrapper.setPreferredSize(new Dimension(boardW + 16, boardH + 16));
-
+        applyFixedSizesForCurrentTile();
         updateNameEllipsis();
-
-        revalidate();
-        repaint();
     }
-
 }

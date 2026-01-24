@@ -15,7 +15,6 @@ public class gameView extends JFrame {
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = Logger.getLogger(gameView.class.getName());
 
-    // ===== Motivation Overlay (CENTER, GOLD, BIG) =====
     private JPanel motivationOverlay;
     private JLabel motivationOverlayLabel;
     private javax.swing.Timer motivationTimer;
@@ -24,7 +23,6 @@ public class gameView extends JFrame {
     private final JLabel[] heartLabels;
     private JLabel scoreLabel;
 
-    // elapsed timer (existing)
     private JLabel timerLabel;
     private javax.swing.Timer gameTimer;
     private int elapsedSeconds = 0;
@@ -40,12 +38,16 @@ public class gameView extends JFrame {
 
     private boolean paused = false;
 
-    // ===== Pause Overlay =====
+    private JPanel boardsPanel;
+    private JPanel lifePanel;
+    private JPanel topPanel;
+    private JPanel timerPanel;
+    private JPanel bottomPanel;
+
     private JPanel pauseOverlay;
     private JButton resumeOverlayBtn;
     private JButton newGameOverlayBtn;
 
-    // references for restart & dialogs
     private final gameController controller;
     private final game model;
 
@@ -55,8 +57,13 @@ public class gameView extends JFrame {
     private static final String PAUSE_ICON  = "/images/Pause.png";
     private static final String RESUME_ICON = "/images/Resume.png";
 
-    // this keeps compatibility with your old code that calls motivationLabel (bottom line)
     private JLabel motivationLabel;
+    
+    private boolean clickHintDialogOpen = false;
+    private long lastClickHintMs = 0;
+
+
+    private javax.swing.Timer resizeDebounce;
 
     public gameView(gameController controller, game model) {
 
@@ -75,22 +82,18 @@ public class gameView extends JFrame {
         root.setLayout(new BorderLayout());
         root.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // ===== speaker icon (MUST be on layered pane) =====
         final JLabel speaker = SpeakerIcon.createSpeakerLabel();
         final int iconSize = 40;
         final int marginLeft = 10;
         final int marginBottom = 10;
 
-        // IMPORTANT: layered pane is null layout so bounds work
         getLayeredPane().setLayout(null);
         getLayeredPane().add(speaker, JLayeredPane.PALETTE_LAYER);
 
-        // ===== top left exit =====
         btnExit = new JButton("Exit");
         btnExit.setFocusable(false);
         btnExit.addActionListener(e -> controller.exitToHome());
 
-        // pause button
         btnPause = new JButton(pauseIcon);
         btnPause.setFocusable(false);
         btnPause.setBorderPainted(false);
@@ -98,12 +101,11 @@ public class gameView extends JFrame {
         btnPause.setOpaque(false);
         btnPause.addActionListener(e -> togglePause());
 
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         topPanel.setOpaque(false);
         topPanel.add(btnExit);
         topPanel.add(btnPause);
 
-        // ===== message area (bottom) =====
         JLabel msgLabel = new JLabel(" ");
         msgLabel.setForeground(Color.WHITE);
         msgLabel.setFont(new Font("Verdana", Font.BOLD, 18));
@@ -116,30 +118,27 @@ public class gameView extends JFrame {
         content.setOpaque(false);
         content.add(topPanel, BorderLayout.NORTH);
 
-        // ===== elapsed timer label =====
         timerLabel = new JLabel("Timer: 00:00");
         timerLabel.setForeground(Color.WHITE);
         timerLabel.setFont(new Font("Verdana", Font.BOLD, 26));
         timerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPanel timerPanel = new JPanel();
+        timerPanel = new JPanel();
         timerPanel.setOpaque(false);
         timerPanel.setLayout(new BoxLayout(timerPanel, BoxLayout.Y_AXIS));
         timerPanel.add(timerLabel);
         timerPanel.add(Box.createVerticalStrut(6));
 
-        JPanel boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
+        boardsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 0));
         boardsPanel.setOpaque(false);
 
-        int tileSize = computeTileSizeForBoards();
-
-        boardViews[0] = new boardView(0, model.getPlayer1Name(), controller, tileSize);
-        boardViews[1] = new boardView(1, model.getPlayer2Name(), controller, tileSize);
+        int initialTileSize = 30;
+        boardViews[0] = new boardView(0, model.getPlayer1Name(), controller, initialTileSize);
+        boardViews[1] = new boardView(1, model.getPlayer2Name(), controller, initialTileSize);
 
         boardsPanel.add(boardViews[0]);
         boardsPanel.add(boardViews[1]);
 
-        // flags counter
         updateRemainingFlags(0, controller.getRemainingFlags(0));
         updateRemainingFlags(1, controller.getRemainingFlags(1));
 
@@ -150,9 +149,13 @@ public class gameView extends JFrame {
 
         content.add(centerPanel, BorderLayout.CENTER);
 
-        // ===== hearts =====
-        JPanel lifePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        lifePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         lifePanel.setOpaque(false);
+
+        JPanel lifeWrapper = new JPanel(new BorderLayout());
+        lifeWrapper.setOpaque(false);
+        lifeWrapper.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        lifeWrapper.add(lifePanel, BorderLayout.CENTER);
 
         heartLabels = new JLabel[model.getMaxLives()];
         for (int i = 0; i < model.getMaxLives(); i++) {
@@ -161,7 +164,6 @@ public class gameView extends JFrame {
         }
         updateLives(model.getLivesRemaining());
 
-        // ===== score =====
         scoreLabel = new JLabel("Score: 0");
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setFont(new Font("Verdana", Font.BOLD, 22));
@@ -172,25 +174,25 @@ public class gameView extends JFrame {
         scoreLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
         scorePanel.add(scoreLabel);
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setOpaque(false);
 
+        msgPanel.setPreferredSize(new Dimension(0, 0));
+        msgPanel.setMinimumSize(new Dimension(0, 0));
+
         bottomPanel.add(msgPanel, BorderLayout.NORTH);
-        bottomPanel.add(lifePanel, BorderLayout.CENTER);
+        bottomPanel.add(lifeWrapper, BorderLayout.CENTER);
         bottomPanel.add(scorePanel, BorderLayout.EAST);
 
         content.add(bottomPanel, BorderLayout.SOUTH);
 
         root.add(content, BorderLayout.CENTER);
-
         setContentPane(root);
 
-        // keep it resizable (safe now)
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(true);
         setLocationRelativeTo(null);
 
-        // ===== big motivation overlay label (CENTER) =====
         motivationOverlayLabel = new JLabel("", SwingConstants.CENTER);
         motivationOverlayLabel.setForeground(new Color(212, 175, 55));
         motivationOverlayLabel.setFont(new Font("Serif", Font.BOLD, 52));
@@ -200,46 +202,91 @@ public class gameView extends JFrame {
         motivationOverlay.setOpaque(false);
         motivationOverlay.add(motivationOverlayLabel);
         motivationOverlay.setVisible(false);
-
         getLayeredPane().add(motivationOverlay, JLayeredPane.POPUP_LAYER);
 
-        setVisible(true);
-
-        // pause overlay
         buildPauseOverlay();
         resumeOverlayBtn.addActionListener(e -> resumeGame());
         newGameOverlayBtn.addActionListener(e -> controller.exitToHome());
 
-        // ✅ place speaker + overlays AFTER window is visible (layered pane has real size)
-        SwingUtilities.invokeLater(() -> refreshLayeredLayout(speaker, iconSize, marginLeft, marginBottom));
+        setVisible(true);
+        
+        installSafeHintClicks(root, content, centerPanel, timerPanel, bottomPanel, topPanel);
 
-        // update speaker + overlays on resize (NO tile resizing here)
+
+
+        SwingUtilities.invokeLater(() -> {
+            applyBestTileSize();
+            refreshLayeredLayout(speaker, iconSize, marginLeft, marginBottom);
+        });
+
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
                 refreshLayeredLayout(speaker, iconSize, marginLeft, marginBottom);
+                debounceTileResize();
             }
         });
 
         setActiveBoard(0);
         startTimer();
-
-        // keep old API call working (controller uses it)
         this.motivationLabel = msgLabel;
-        
-        
-        
     }
 
-    // ✅ stable layout refresher (speaker bottom-left + overlays full screen)
+    private void debounceTileResize() {
+        if (resizeDebounce != null && resizeDebounce.isRunning()) resizeDebounce.stop();
+        resizeDebounce = new javax.swing.Timer(140, e -> applyBestTileSize());
+        resizeDebounce.setRepeats(false);
+        resizeDebounce.start();
+    }
+
+    private void applyBestTileSize() {
+        int best = computeTileSizeToFit();
+        boardViews[0].setTileSize(best);
+        boardViews[1].setTileSize(best);
+        boardsPanel.revalidate();
+        boardsPanel.repaint();
+    }
+
+    private int computeTileSizeToFit() {
+
+        int availW = boardsPanel.getWidth();
+        int availH = boardsPanel.getHeight();
+
+        if (availW <= 0 || availH <= 0) {
+            Dimension d = getContentPane().getSize();
+            availW = Math.max(800, d.width);
+            availH = Math.max(600, d.height);
+        }
+
+        int rows = model.getBoard(0).getRows();
+        int cols = model.getBoard(0).getCols();
+
+        int gapBetweenBoards = 40;
+
+        Dimension outer0 = boardViews[0].getBoardOuterSize();
+        int perBoardExtraW = outer0.width - (cols * 1 + (cols - 1) * 2); // baseline for scaling
+        int perBoardExtraH = outer0.height - (rows * 1 + (rows - 1) * 2);
+
+        int maxBoardW = (availW - gapBetweenBoards) / 2;
+        int maxBoardH = availH;
+
+        int denomW = cols + (cols - 1) * 2;
+        int denomH = rows + (rows - 1) * 2;
+
+        int tileByW = (maxBoardW - perBoardExtraW) / cols;
+        int tileByH = (maxBoardH - perBoardExtraH) / rows;
+
+        int tile = Math.min(tileByW, tileByH);
+
+        tile = Math.max(tile, 18);
+        tile = Math.min(tile, 46);
+
+        return tile;
+    }
+
     private void refreshLayeredLayout(JLabel speaker, int iconSize, int marginLeft, int marginBottom) {
         JLayeredPane lp = getLayeredPane();
-
-        // if not ready yet, try again next tick
-        if (lp.getWidth() <= 0 || lp.getHeight() <= 0) {
-            SwingUtilities.invokeLater(() -> refreshLayeredLayout(speaker, iconSize, marginLeft, marginBottom));
-            return;
-        }
+        if (lp.getWidth() <= 0 || lp.getHeight() <= 0) return;
 
         speaker.setBounds(
                 marginLeft,
@@ -251,155 +298,7 @@ public class gameView extends JFrame {
         if (motivationOverlay != null) motivationOverlay.setBounds(0, 0, lp.getWidth(), lp.getHeight());
         if (pauseOverlay != null) pauseOverlay.setBounds(0, 0, lp.getWidth(), lp.getHeight());
     }
-    
-    public int showGameOverDialog() {
 
-        final int[] choice = { JOptionPane.NO_OPTION };
-
-        String p1 = model.getPlayer1Name();
-        String p2 = model.getPlayer2Name();
-        String level = capitalize(model.getLevel().name().toLowerCase());
-        int score = model.getScore();
-        int lives = model.getLivesRemaining();
-        String time = getFormattedElapsedTime();
-
-        // ===== FULL-SCREEN OVER THE GAME WINDOW =====
-        final JDialog dialog = new JDialog(this, true);
-        dialog.setUndecorated(true);
-        dialog.setBackground(new Color(0, 0, 0, 0));
-
-        // cover the whole window
-        dialog.setSize(this.getSize());
-        try {
-            dialog.setLocation(this.getLocationOnScreen());
-        } catch (Exception ex) {
-            dialog.setLocationRelativeTo(this);
-        }
-
-        // ===== overlay panel (dims entire window) =====
-        JPanel overlay = new JPanel(new GridBagLayout()) {
-            private static final long serialVersionUID = 1L;
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 0, 0, 140));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                g2.dispose();
-            }
-        };
-        overlay.setOpaque(false);
-
-        // ===== white center card (rounded) =====
-        JPanel card = new JPanel();
-        card.setOpaque(false);
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(BorderFactory.createEmptyBorder(20, 24, 18, 24));
-
-        JPanel cardWrapper = new JPanel(new BorderLayout()) {
-            private static final long serialVersionUID = 1L;
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                g2.setColor(new Color(255, 255, 255, 235));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-
-                g2.setColor(new Color(255, 255, 255, 200));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
-
-                g2.dispose();
-            }
-        };
-        cardWrapper.setOpaque(false);
-        cardWrapper.add(card, BorderLayout.CENTER);
-        cardWrapper.setPreferredSize(new Dimension(520, 320));
-
-        Font titleFont = new Font("Serif", Font.BOLD, 34);
-        Font mainFont  = new Font("Serif", Font.PLAIN, 16);
-        Font smallFont = new Font("Serif", Font.PLAIN, 14);
-
-        JLabel title = new JLabel("Game Over!", SwingConstants.CENTER);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        title.setFont(titleFont);
-        title.setForeground(new Color(60, 60, 60));
-
-        JLabel names = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
-        names.setAlignmentX(Component.CENTER_ALIGNMENT);
-        names.setFont(mainFont);
-        names.setForeground(new Color(70, 70, 70));
-
-        JLabel lvl = new JLabel("Level: " + level, SwingConstants.CENTER);
-        lvl.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lvl.setFont(smallFont);
-        lvl.setForeground(new Color(90, 90, 90));
-
-        JLabel result = new JLabel("You lost ☹ Give it another shot!", SwingConstants.CENTER);
-        result.setAlignmentX(Component.CENTER_ALIGNMENT);
-        result.setFont(smallFont);
-        result.setForeground(new Color(90, 90, 90));
-
-        JLabel stats = new JLabel("Score: " + score + "  Time: " + time, SwingConstants.CENTER);
-        stats.setAlignmentX(Component.CENTER_ALIGNMENT);
-        stats.setFont(smallFont);
-        stats.setForeground(new Color(90, 90, 90));
-
-        JLabel livesLbl = new JLabel("Remaining lives: " + lives, SwingConstants.CENTER);
-        livesLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
-        livesLbl.setFont(smallFont);
-        livesLbl.setForeground(new Color(90, 90, 90));
-
-        JButton tryAgain = new JButton("Try Again");
-        JButton exit = new JButton("Exit");
-
-        Dimension btnSize = new Dimension(110, 26);
-        tryAgain.setPreferredSize(btnSize);
-        exit.setPreferredSize(btnSize);
-
-        JPanel btns = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
-        btns.setOpaque(false);
-        btns.add(tryAgain);
-        btns.add(exit);
-
-        card.add(title);
-        card.add(Box.createVerticalStrut(8));
-        card.add(names);
-        card.add(Box.createVerticalStrut(10));
-        card.add(lvl);
-        card.add(Box.createVerticalStrut(6));
-        card.add(result);
-        card.add(Box.createVerticalStrut(12));
-        card.add(stats);
-        card.add(Box.createVerticalStrut(6));
-        card.add(livesLbl);
-        card.add(Box.createVerticalStrut(18));
-        card.add(btns);
-
-        tryAgain.addActionListener(e -> {
-            choice[0] = JOptionPane.YES_OPTION;
-            dialog.dispose();
-        });
-
-        exit.addActionListener(e -> {
-            choice[0] = JOptionPane.NO_OPTION;
-            dialog.dispose();
-        });
-
-        overlay.add(cardWrapper, new GridBagConstraints());
-        dialog.setContentPane(overlay);
-
-        dialog.validate();
-        dialog.repaint();
-        dialog.setVisible(true);
-
-        return choice[0];
-    }
-
-
-    // ===================== Motivation overlay =====================
     public void showMotivationMessage(String msg) {
         if (msg == null || msg.trim().isEmpty()) return;
 
@@ -419,7 +318,6 @@ public class gameView extends JFrame {
         motivationTimer.start();
     }
 
-    // ===================== elapsed timer =====================
     public void startTimer() {
         stopTimer();
         elapsedSeconds = 0;
@@ -439,7 +337,6 @@ public class gameView extends JFrame {
         }
     }
 
-    // ===================== API used by controller =====================
     public void setActiveBoard(int playerIndex) {
         boardViews[0].setActive(playerIndex == 0);
         boardViews[1].setActive(playerIndex == 1);
@@ -539,22 +436,22 @@ public class gameView extends JFrame {
         StringBuilder msg = new StringBuilder();
 
         if (good) {
-            msg.append("🎉 Lucky you!\nGood surprise!\n");
+            msg.append("Lucky you!\nGood surprise!\n");
             msg.append("Reward: +").append(rewardPoints).append(" points\n");
             msg.append("Activation cost: -").append(activationCost).append(" points\n");
 
             if (lifeDelta == 1) {
-                msg.append("Lives: +1 ❤️\n");
+                msg.append("Lives: +1\n");
             } else {
-                msg.append("Lives were full → extra cost: +")
+                msg.append("Lives were full -> extra cost: +")
                         .append(fullLifePenalty)
-                        .append(" points (for the extra life)\n");
+                        .append(" points\n");
             }
         } else {
-            msg.append("😬 Oops!\nBad surprise!\n");
+            msg.append("Oops!\nBad surprise!\n");
             msg.append("Effect: ").append(rewardPoints).append(" points\n");
             msg.append("Activation cost: -").append(activationCost).append(" points\n");
-            msg.append("Lives: -1 ❤️\n");
+            msg.append("Lives: -1\n");
         }
 
         msg.append("\nNet change: ").append(netPoints >= 0 ? "+" : "").append(netPoints).append(" points");
@@ -568,7 +465,6 @@ public class gameView extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
-    //pause
     private void buildPauseOverlay() {
 
         pauseOverlay = new JPanel(new GridBagLayout()) {
@@ -618,20 +514,10 @@ public class gameView extends JFrame {
         getLayeredPane().add(pauseOverlay, JLayeredPane.MODAL_LAYER);
     }
 
-    // ===================== util =====================
     private String formatTime(int totalSeconds) {
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
         return String.format("%02d:%02d", minutes, seconds);
-    }
-
-    public String getFormattedElapsedTime() {
-        return formatTime(elapsedSeconds);
-    }
-
-    private String capitalize(String s) {
-        if (s == null || s.isEmpty()) return s;
-        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private ImageIcon loadIcon(String path, int w, int h) {
@@ -640,8 +526,16 @@ public class gameView extends JFrame {
             if (url == null) return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
 
             BufferedImage img = ImageIO.read(url);
-            Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaled);
+
+            BufferedImage resized = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = resized.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.drawImage(img, 0, 0, w, h, null);
+            g2.dispose();
+
+            return new ImageIcon(resized);
         } catch (Exception e) {
             return new ImageIcon(new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB));
         }
@@ -667,38 +561,6 @@ public class gameView extends JFrame {
         }
     }
 
-    private int computeTileSizeForBoards() {
-
-        Dimension window = getContentPane().getSize();
-        if (window.width == 0 || window.height == 0) {
-            window = Toolkit.getDefaultToolkit().getScreenSize();
-        }
-
-        int reservedWidth = 260;
-        int reservedHeight = 320;
-
-        int rows = model.getBoard(0).getRows();
-        int cols = model.getBoard(0).getCols();
-
-        int maxBoardWidth = (window.width - reservedWidth) / 2;
-        int maxBoardHeight = window.height - reservedHeight;
-
-        int tileByWidth = maxBoardWidth / cols;
-        int tileByHeight = maxBoardHeight / rows;
-
-        int tile = Math.min(tileByWidth, tileByHeight);
-
-        tile = Math.max(tile, 22);
-        tile = Math.min(tile, 46);
-
-        return tile;
-    }
-
-    public boardView getBoardView(int i) {
-        return boardViews[i];
-    }
-
-    //Pause
     private void togglePause() {
         if (!paused) pauseGame();
         else resumeGame();
@@ -729,10 +591,8 @@ public class gameView extends JFrame {
     }
 
     private void setBoardsEnabled(boolean enabled) {
-        for (int i = 0; i < boardViews.length; i++) {
-            if (boardViews[i] != null) {
-                boardViews[i].setPaused(!enabled);
-            }
+        for (boardView bv : boardViews) {
+            if (bv != null) bv.setPaused(!enabled);
         }
     }
 
@@ -741,4 +601,244 @@ public class gameView extends JFrame {
             boardViews[boardIndex].setRemainingFlags(remaining);
         }
     }
+    
+    public boardView getBoardView(int i) {
+        if (i < 0 || i >= boardViews.length) return null;
+        return boardViews[i];
+    }
+
+    public String getFormattedElapsedTime() {
+        return formatTime(elapsedSeconds);
+    }
+
+    public int showGameOverDialog() {
+
+        final int[] choice = { JOptionPane.NO_OPTION };
+
+        String p1 = model.getPlayer1Name();
+        String p2 = model.getPlayer2Name();
+        String level = capitalize(model.getLevel().name().toLowerCase());
+        int score = model.getScore();
+        int lives = model.getLivesRemaining();
+        String time = getFormattedElapsedTime();
+
+        final JDialog dialog = new JDialog(this, true);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0));
+
+        dialog.setSize(this.getSize());
+        try {
+            dialog.setLocation(this.getLocationOnScreen());
+        } catch (Exception ex) {
+            dialog.setLocationRelativeTo(this);
+        }
+
+        JPanel overlay = new JPanel(new GridBagLayout()) {
+            private static final long serialVersionUID = 1L;
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0, 0, 0, 140));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        overlay.setOpaque(false);
+
+        JPanel card = new JPanel();
+        card.setOpaque(false);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(BorderFactory.createEmptyBorder(20, 24, 18, 24));
+
+        JPanel cardWrapper = new JPanel(new BorderLayout()) {
+            private static final long serialVersionUID = 1L;
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                g2.setColor(new Color(255, 255, 255, 235));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+                g2.setColor(new Color(255, 255, 255, 200));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+
+                g2.dispose();
+            }
+        };
+        cardWrapper.setOpaque(false);
+        cardWrapper.add(card, BorderLayout.CENTER);
+        cardWrapper.setPreferredSize(new Dimension(520, 320));
+
+        Font titleFont = new Font("Serif", Font.BOLD, 34);
+        Font mainFont  = new Font("Serif", Font.PLAIN, 16);
+        Font smallFont = new Font("Serif", Font.PLAIN, 14);
+
+        JLabel title = new JLabel("Game Over!", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setFont(titleFont);
+        title.setForeground(new Color(60, 60, 60));
+
+        JLabel names = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
+        names.setAlignmentX(Component.CENTER_ALIGNMENT);
+        names.setFont(mainFont);
+        names.setForeground(new Color(70, 70, 70));
+
+        JLabel lvl = new JLabel("Level: " + level, SwingConstants.CENTER);
+        lvl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lvl.setFont(smallFont);
+        lvl.setForeground(new Color(90, 90, 90));
+
+        JLabel result = new JLabel("You lost. Give it another shot!", SwingConstants.CENTER);
+        result.setAlignmentX(Component.CENTER_ALIGNMENT);
+        result.setFont(smallFont);
+        result.setForeground(new Color(90, 90, 90));
+
+        JLabel stats = new JLabel("Score: " + score + "  Time: " + time, SwingConstants.CENTER);
+        stats.setAlignmentX(Component.CENTER_ALIGNMENT);
+        stats.setFont(smallFont);
+        stats.setForeground(new Color(90, 90, 90));
+
+        JLabel livesLbl = new JLabel("Remaining lives: " + lives, SwingConstants.CENTER);
+        livesLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        livesLbl.setFont(smallFont);
+        livesLbl.setForeground(new Color(90, 90, 90));
+
+        JButton tryAgain = new JButton("Try Again");
+        JButton exit = new JButton("Exit");
+
+        JPanel btns = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
+        btns.setOpaque(false);
+        btns.add(tryAgain);
+        btns.add(exit);
+
+        card.add(title);
+        card.add(Box.createVerticalStrut(8));
+        card.add(names);
+        card.add(Box.createVerticalStrut(10));
+        card.add(lvl);
+        card.add(Box.createVerticalStrut(6));
+        card.add(result);
+        card.add(Box.createVerticalStrut(12));
+        card.add(stats);
+        card.add(Box.createVerticalStrut(6));
+        card.add(livesLbl);
+        card.add(Box.createVerticalStrut(18));
+        card.add(btns);
+
+        tryAgain.addActionListener(e -> {
+            choice[0] = JOptionPane.YES_OPTION;
+            dialog.dispose();
+        });
+
+        exit.addActionListener(e -> {
+            choice[0] = JOptionPane.NO_OPTION;
+            dialog.dispose();
+        });
+
+        overlay.add(cardWrapper, new GridBagConstraints());
+        dialog.setContentPane(overlay);
+
+        dialog.validate();
+        dialog.repaint();
+        dialog.setVisible(true);
+
+        return choice[0];
+    }
+
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+    
+    private long lastHintMs = 0;
+
+    private void showClickHintNonModal() {
+        long now = System.currentTimeMillis();
+        if (now - lastHintMs < 800) return; // throttle
+        lastHintMs = now;
+
+        showMotivationMessage("Please click on your board to play.");
+    }
+    
+    private void installSafeHintClicks(JComponent... targets) {
+    	java.awt.event.MouseAdapter hint = new java.awt.event.MouseAdapter() {
+    	    @Override
+    	    public void mousePressed(java.awt.event.MouseEvent e) {
+
+    	        if (paused) return;
+
+    	        Component src = (Component) e.getSource();
+
+    	        // ignore clicks on Exit / Pause
+    	        if (SwingUtilities.isDescendingFrom(src, btnExit)) return;
+    	        if (SwingUtilities.isDescendingFrom(src, btnPause)) return;
+
+    	        // convert click to frame coordinates
+    	        Point pInFrame = SwingUtilities.convertPoint(
+    	                src,
+    	                e.getPoint(),
+    	                gameView.this
+    	        );
+
+    	        int active = model.getCurrentPlayer();
+    	        int other  = (active == 0) ? 1 : 0;
+
+    	        // inside active board → normal gameplay
+    	        if (isInside(boardViews[active], pInFrame)) return;
+
+    	        // inside other board → not your turn
+    	        if (isInside(boardViews[other], pInFrame)) {
+    	            showNotYourTurnMessage();
+    	            return;
+    	        }
+
+    	        // background click → non-modal hint
+    	        showClickYourBoardWarning();
+
+    	    }
+    	};
+
+        for (JComponent t : targets) {
+            if (t != null) t.addMouseListener(hint);
+        }
+    }
+
+    private boolean isInside(Component comp, Point pInFrame) {
+        if (comp == null || !comp.isShowing()) return false;
+        Point p = SwingUtilities.convertPoint(this, pInFrame, comp);
+        return p.x >= 0 && p.y >= 0 && p.x < comp.getWidth() && p.y < comp.getHeight();
+    }
+    
+    public void showClickYourBoardWarning() {
+        long now = System.currentTimeMillis();
+
+        if (clickHintDialogOpen) return;
+        if (now - lastClickHintMs < 800) return; // throttle
+
+        lastClickHintMs = now;
+        clickHintDialogOpen = true;
+
+        try {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please click on your board to play.",
+                    "Invalid Action",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        } finally {
+            clickHintDialogOpen = false;
+        }
+    }
+
+
+
+    
+   
+
+
+
 }
