@@ -345,9 +345,9 @@ public class game {
     // WIN CHECK
     // ==========================================================
     public boolean boardFinishedAllMines(int boardIndex) {
-        board b = boards[boardIndex];
-        return b.getRevealedOrFlaggedMinesCount() == b.getMinesNum();
+        return boards[boardIndex].allSafeCellsRevealed();
     }
+
 
     public MotivationManager getMotivationManager() {
         return motivationManager;

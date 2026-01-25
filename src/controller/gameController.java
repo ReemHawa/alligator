@@ -235,6 +235,7 @@ public class gameController {
                 floodVisited = new boolean[b.getRows()][b.getCols()];
                 floodReveal(boardIndex, row, col);
             }
+            if (checkWinForBoard(boardIndex)) return;
         }
 
         if (model.isGameOver()) return;
@@ -1184,7 +1185,8 @@ public class gameController {
 
 
     private void onGameEnd(String result) {
-        if (model.isGameOver()) return;
+        // prevent double-execution
+        if (historySaved) return;
 
         // mark ended
         model.setGameOver(true);
@@ -1196,10 +1198,10 @@ public class gameController {
             if (view != null) view.updateScore(model.getScore());
         }
 
-        // save
+        // save history
         saveGameHistory(result);
 
-        // stop + reveal everything
+        // stop timer + reveal everything
         if (view != null) {
             view.stopTimer();
             revealAllCellsOnBothBoards();
