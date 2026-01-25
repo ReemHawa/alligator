@@ -29,6 +29,11 @@ public class GameRulesScreen extends JFrame {
 
         // ===== TOP-RIGHT Back =====
         btnBack = new JButton("\u2190 Go Back");
+        btnBack.setFocusPainted(false);
+
+        // ✅ same rounded/glass style as HomeScreen
+        styleButton(btnBack);
+
         GridBagConstraints gbcBack = new GridBagConstraints();
         gbcBack.gridx = 0;
         gbcBack.gridy = 0;
@@ -85,6 +90,9 @@ public class GameRulesScreen extends JFrame {
         btnToggleRules = new JButton("Read more rules...");
         btnToggleRules.setFocusPainted(false);
 
+        // ✅ optional: style toggle too (still not deleting anything)
+        styleButton(btnToggleRules);
+
         JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         bottomRow.setOpaque(false);
         bottomRow.add(btnToggleRules);
@@ -110,6 +118,10 @@ public class GameRulesScreen extends JFrame {
 
         // ===== BOTTOM-RIGHT Pick Level =====
         btnPickLevel = new JButton("Got it! Let's pick a level");
+        btnPickLevel.setFocusPainted(false);
+
+        // ✅ same rounded/glass style
+        styleButton(btnPickLevel);
 
         GridBagConstraints gbcPick = new GridBagConstraints();
         gbcPick.gridx = 0;
@@ -226,6 +238,62 @@ public class GameRulesScreen extends JFrame {
                 "   You win when all safe squares are revealed."
         );
         txt.setCaretPosition(0);
+    }
+
+    // ✅ SAME button style as HomeScreen
+    private void styleButton(JButton b) {
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false); // custom paint
+        b.setOpaque(false);
+
+        // keep your colors; only set if default
+        if (b.getBackground() == null || b.getBackground().equals(new JButton().getBackground())) {
+            b.setBackground(new Color(255, 255, 255, 235));
+        }
+        if (b.getForeground() == null || b.getForeground().equals(new JButton().getForeground())) {
+            b.setForeground(Color.BLACK);
+        }
+
+        b.setFont(new Font("Serif", Font.BOLD, 16));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setMargin(new Insets(8, 16, 8, 16));
+
+        final Color normalBg = b.getBackground();
+        final Color hoverBg = new Color(
+                normalBg.getRed(),
+                normalBg.getGreen(),
+                normalBg.getBlue(),
+                Math.min(255, normalBg.getAlpha() + 18)
+        );
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { b.setBackground(hoverBg); b.repaint(); }
+            @Override public void mouseExited (java.awt.event.MouseEvent e) { b.setBackground(normalBg); b.repaint(); }
+        });
+
+        b.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton btn = (AbstractButton) c;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int arc = 18;
+
+                // background
+                g2.setColor(btn.getBackground());
+                g2.fillRoundRect(0, 0, btn.getWidth(), btn.getHeight(), arc, arc);
+
+                // border
+                g2.setColor(new Color(200, 200, 200, 220));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(1, 1, btn.getWidth() - 3, btn.getHeight() - 3, arc, arc);
+
+                g2.dispose();
+                super.paint(g, c);
+            }
+        });
     }
 
     // ===== background scales automatically =====
