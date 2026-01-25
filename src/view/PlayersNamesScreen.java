@@ -37,7 +37,7 @@ public class PlayersNamesScreen extends JFrame {
         btnBack = new JButton("\u2190 Go Back");
         btnBack.setFocusPainted(false);
 
-        // ✅ ONLY button style change
+        //  ONLY button style change
         styleButton(btnBack);
 
         GridBagConstraints gbcBack = new GridBagConstraints();
@@ -95,7 +95,7 @@ public class PlayersNamesScreen extends JFrame {
         btnPlay.setPreferredSize(new Dimension(220, 45));
         btnPlay.setMaximumSize(new Dimension(220, 45));
 
-        // ✅ ONLY button style change
+        //  ONLY button style change
         styleButton(btnPlay);
 
         center.add(btnPlay);
@@ -184,7 +184,7 @@ public class PlayersNamesScreen extends JFrame {
         });
     }
 
-    // ✅ ONLY button styles helper (rounded/glass like HomeScreen)
+    //  ONLY button styles helper (rounded/glass like HomeScreen)
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);

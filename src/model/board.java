@@ -289,7 +289,6 @@ public class board {
 	    questionUsed[r][c] = true;
 	}
 
-	//Q BOUNOS:
 	// BONUS reveal: mark as revealed without any game logic (no score/life changes)
 	public void revealBonusCell(int r, int c) {
 	    if (r < 0 || r >= rows || c < 0 || c >= cols) return;

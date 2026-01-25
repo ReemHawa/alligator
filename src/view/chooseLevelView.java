@@ -119,7 +119,7 @@ public class chooseLevelView extends JFrame {
         descText.setMargin(new Insets(12, 22, 12, 22));
         descPanel.add(descText, BorderLayout.CENTER);
 
-        // ✅ if mouse enters description, cancel hiding (no flicker)
+        //  if mouse enters description, cancel hiding (no flicker)
         descPanel.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) {
                 cancelHideDesc();
@@ -139,7 +139,7 @@ public class chooseLevelView extends JFrame {
         btnNext.setPreferredSize(new Dimension(240, 52));
         btnNext.setMaximumSize(new Dimension(240, 52));
 
-        // ✅ ONLY button style change
+        //  ONLY button style change
         styleButton(btnNext);
 
         center.add(btnNext);
@@ -165,7 +165,7 @@ public class chooseLevelView extends JFrame {
         gbcSpeaker.insets = new Insets(0, 10, 8, 0);
         bg.add(speaker, gbcSpeaker);
 
-        // ✅ stable hover behaviour
+        //  stable hover behaviour
         addLevelBehaviour(btnEasy, "EASY");
         addLevelBehaviour(btnMedium, "MEDIUM");
         addLevelBehaviour(btnHard, "HARD");
@@ -204,18 +204,18 @@ public class chooseLevelView extends JFrame {
 
             @Override public void mouseEntered(MouseEvent e) {
                 cancelHideDesc();
-                lastHoverLevel = levelKey;   // ✅ set hover only when actually inside
+                lastHoverLevel = levelKey;   //  set hover only when actually inside
 
                 descPanel.setVisible(true);
                 showDescription(levelKey);
 
-                refreshButtonsStyle(); // ✅ apply hover/selected correctly
+                refreshButtonsStyle(); //  apply hover/selected correctly
             }
 
             @Override public void mouseExited(MouseEvent e) {
-                lastHoverLevel = null;       // ✅ IMPORTANT: clear hover when leaving button
-                refreshButtonsStyle();       // ✅ remove hover highlight immediately
-                startHideDesc();             // ✅ delay hide so moving to desc panel is smooth
+                lastHoverLevel = null;       //  clear hover when leaving button
+                refreshButtonsStyle();       //  remove hover highlight immediately
+                startHideDesc();             //  delay hide so moving to desc panel is smooth
             }
         });
 
@@ -225,7 +225,7 @@ public class chooseLevelView extends JFrame {
     private void startHideDesc() {
         cancelHideDesc();
         hideDescTimer = new Timer(180, e -> {
-            // ✅ hide and also clear hover state
+            //  hide and also clear hover state
             lastHoverLevel = null;
             descPanel.setVisible(false);
             descText.setText("");
@@ -243,7 +243,7 @@ public class chooseLevelView extends JFrame {
 
     private void selectLevel(String level) {
         selectedLevel = level;
-        lastHoverLevel = null; // ✅ selection should not keep hover state
+        lastHoverLevel = null; //  selection should not keep hover state
         btnNext.setEnabled(true);
 
         // keep description visible after click
@@ -291,7 +291,7 @@ public class chooseLevelView extends JFrame {
         }
     }
 
-    // ✅ ONLY button styles helper (rounded/glass like HomeScreen)
+    //  ONLY button styles helper (rounded/glass like HomeScreen)
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);

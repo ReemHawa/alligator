@@ -97,7 +97,7 @@ public class QuestionTableModel extends AbstractTableModel {
     }
 
     // =========================
-    // ✅ Edit Mode Helpers
+    //  Edit Mode Helpers
     // =========================
     public void startEditRow(int row) {
         int old = this.editableRow;

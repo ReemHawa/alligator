@@ -33,14 +33,14 @@ public class game {
     private boolean livesConverted = false;
 
     // ==========================================================
-    // ✅ DEFAULT CONSTRUCTOR (must also build boards!)
+    //  DEFAULT CONSTRUCTOR (must also build boards!)
     // ==========================================================
     public game() {
         this.level = DifficultyLevel.EASY;
         this.player1Name = "Player A";
         this.player2Name = "Player B";
 
-        // ✅ Factory Method usage
+        //  Factory Method usage
         BoardFactory factory = BoardFactoryProvider.getFactory(this.level);
 
         // Lives come from difficulty config
@@ -48,7 +48,7 @@ public class game {
 
         boards = new board[2];
 
-        // ✅ IMPORTANT: always use the constructor with QUESTIONS (handled inside factory)
+        //  always use the constructor with QUESTIONS (handled inside factory)
         boards[0] = factory.createBoard();
         boards[1] = factory.createBoard();
 
@@ -57,14 +57,14 @@ public class game {
     }
 
     // ==========================================================
-    // ✅ MAIN GAME CONSTRUCTOR
+    //  MAIN GAME CONSTRUCTOR
     // ==========================================================
     public game(DifficultyLevel level, String p1, String p2) {
         this.level = level;
         this.player1Name = p1;
         this.player2Name = p2;
 
-        // ✅ Factory Method usage
+        //  Factory Method usage
         BoardFactory factory = BoardFactoryProvider.getFactory(this.level);
 
         // Lives come from difficulty config
@@ -72,11 +72,11 @@ public class game {
 
         boards = new board[2];
 
-        // ✅ IMPORTANT: always use the constructor with QUESTIONS (handled inside factory)
+        //  IMPORTANT: always use the constructor with QUESTIONS (handled inside factory)
         boards[0] = factory.createBoard();
         boards[1] = factory.createBoard();
 
-        // ✅ IMPORTANT: enforce GLOBAL 50:50 across BOTH boards combined
+        //  IMPORTANT: enforce GLOBAL 50:50 across BOTH boards combined
         assignGlobalGoodBadForAllSurprises();
     }
 

@@ -31,7 +31,7 @@ public class GameRulesScreen extends JFrame {
         btnBack = new JButton("\u2190 Go Back");
         btnBack.setFocusPainted(false);
 
-        // ✅ same rounded/glass style as HomeScreen
+        //  same rounded/glass style as HomeScreen
         styleButton(btnBack);
 
         GridBagConstraints gbcBack = new GridBagConstraints();
@@ -90,7 +90,7 @@ public class GameRulesScreen extends JFrame {
         btnToggleRules = new JButton("Read more rules...");
         btnToggleRules.setFocusPainted(false);
 
-        // ✅ optional: style toggle too (still not deleting anything)
+        //   style toggle too (still not deleting anything)
         styleButton(btnToggleRules);
 
         JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -120,7 +120,7 @@ public class GameRulesScreen extends JFrame {
         btnPickLevel = new JButton("Got it! Let's pick a level");
         btnPickLevel.setFocusPainted(false);
 
-        // ✅ same rounded/glass style
+        //  same rounded/glass style
         styleButton(btnPickLevel);
 
         GridBagConstraints gbcPick = new GridBagConstraints();
@@ -176,7 +176,7 @@ public class GameRulesScreen extends JFrame {
         repaint();
     }
 
-    // ✅ just change preferred sizes, no setBounds()
+    //  just change preferred sizes, no setBounds()
     private void applyCardSize(boolean expanded) {
         if (expanded) {
             rulesCard.setPreferredSize(new Dimension(720, 360));
@@ -240,7 +240,7 @@ public class GameRulesScreen extends JFrame {
         txt.setCaretPosition(0);
     }
 
-    // ✅ SAME button style as HomeScreen
+    //  SAME button style as HomeScreen
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);
