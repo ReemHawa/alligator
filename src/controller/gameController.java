@@ -5,6 +5,7 @@ import model.QuestionOutcome;
 import model.board;
 import model.game;
 import view.HomeScreen;
+import view.SoundManager;
 import view.gameView;
 import model.CSVHandler;
 import model.gameHistory;
@@ -33,7 +34,6 @@ public class gameController {
     private static final Color CORRECT_BG = new Color(210, 245, 210); // ירוק בהיר
     private static final Color WRONG_BG   = new Color(245, 215, 215); // אדום בהיר
 
- //   private static final Color LOCKED_BG  = new Color(245, 245, 245); // אפור עדין (אופציונלי)
 
     
 
@@ -204,8 +204,10 @@ public class gameController {
             if (checkWinForBoard(boardIndex)) return;
 
             if (model.isGameOver()) {
-
+           	 SoundManager.lose();  
                 onGameEnd("lost");
+         
+
 
                 int choice = view.showGameOverDialog();
                 if (choice == JOptionPane.YES_OPTION) {
@@ -504,8 +506,17 @@ public class gameController {
         view.updateLives(model.getLivesRemaining());
 
         if (model.isGameOver()) {
-
+        	 SoundManager.lose(); 
             onGameEnd("lost");
+        	
+
+            for (int i = 0; i < 2; i++) {
+                view.revealAllMines(i, model.getBoard(i));
+                view.revealAllSurprises(i, model.getBoard(i));
+            }
+
+            view.stopTimer();
+
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -605,6 +616,8 @@ public class gameController {
         }
 
         if (model.isGameOver()) {
+
+        	SoundManager.lose(); 
             saveGameHistory("lost");
 
             for (int i = 0; i < 2; i++) {
@@ -764,6 +777,7 @@ public class gameController {
     private boolean checkWinForBoard(int boardIndex) {
         if (model.boardFinishedAllMines(boardIndex)) {
             onGameEnd("won");
+            SoundManager.win();              
             view.showWinForBoth(model.getScore());
             return true;
         }
