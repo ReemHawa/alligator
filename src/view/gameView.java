@@ -456,17 +456,9 @@ public class gameView extends JFrame {
         JOptionPane.showMessageDialog(this, msg.toString(), "Surprise!", JOptionPane.INFORMATION_MESSAGE);
     }
 
-  
     public void showWinForBoth(int finalScore) {
         stopTimer();
-        int choice = showWinDialog(finalScore);
-
-        
-        if (choice == JOptionPane.YES_OPTION) {
-            controller.exitToHome();
-        } else {
-            controller.exitToHome();
-        }
+        showWinDialog(finalScore);
     }
 
     private void buildPauseOverlay() {
@@ -626,6 +618,9 @@ public class gameView extends JFrame {
         int lives = model.getLivesRemaining();
         String time = getFormattedElapsedTime();
 
+        final Color headerLeft  = new Color(255, 60, 120);
+        final Color headerRight = new Color(255, 170, 0);
+
         final JDialog dialog = new JDialog(this, true);
         dialog.setUndecorated(true);
         dialog.setBackground(new Color(0, 0, 0, 0));
@@ -644,7 +639,7 @@ public class gameView extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 0, 0, 140));
+                g2.setColor(new Color(0, 0, 0, 150));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
             }
@@ -664,11 +659,19 @@ public class gameView extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                g2.setColor(new Color(255, 255, 255, 235));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                int arc = 22;
 
-                g2.setColor(new Color(255, 255, 255, 200));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+                g2.setColor(new Color(248, 250, 255, 245));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+
+                g2.setStroke(new BasicStroke(3f));
+                g2.setColor(new Color(255, 255, 255, 220));
+                g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
+
+                int headerH = 72;
+                GradientPaint gp = new GradientPaint(0, 0, headerLeft, getWidth(), 0, headerRight);
+                g2.setPaint(gp);
+                g2.fillRoundRect(0, 0, getWidth(), headerH, arc, arc);
 
                 g2.dispose();
             }
@@ -681,46 +684,67 @@ public class gameView extends JFrame {
         Font mainFont  = new Font("Serif", Font.PLAIN, 16);
         Font smallFont = new Font("Serif", Font.PLAIN, 14);
 
-        JLabel title = new JLabel("Game Over!", SwingConstants.CENTER);
+        JLabel title = new JLabel("💣 Game Over!", SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setFont(titleFont);
-        title.setForeground(new Color(60, 60, 60));
+        title.setForeground(Color.WHITE);
 
         JLabel names = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
         names.setAlignmentX(Component.CENTER_ALIGNMENT);
         names.setFont(mainFont);
-        names.setForeground(new Color(70, 70, 70));
+        names.setForeground(new Color(40, 40, 40));
 
-        JLabel lvl = new JLabel("Level: " + level, SwingConstants.CENTER);
+        JLabel lvl = new JLabel("🎮 Level: " + level, SwingConstants.CENTER);
         lvl.setAlignmentX(Component.CENTER_ALIGNMENT);
         lvl.setFont(smallFont);
-        lvl.setForeground(new Color(90, 90, 90));
+        lvl.setForeground(new Color(70, 70, 70));
 
-        JLabel result = new JLabel("You lost. Give it another shot!", SwingConstants.CENTER);
+        JLabel result = new JLabel("😵 You lost. Give it another shot!", SwingConstants.CENTER);
         result.setAlignmentX(Component.CENTER_ALIGNMENT);
-        result.setFont(smallFont);
-        result.setForeground(new Color(90, 90, 90));
+        result.setFont(new Font("Serif", Font.BOLD, 15));
+        result.setForeground(new Color(80, 80, 80));
 
-        JLabel stats = new JLabel("Score: " + score + "  Time: " + time, SwingConstants.CENTER);
+        JLabel stats = new JLabel("⭐ Score: " + score + "   ⏱ Time: " + time, SwingConstants.CENTER);
         stats.setAlignmentX(Component.CENTER_ALIGNMENT);
         stats.setFont(smallFont);
-        stats.setForeground(new Color(90, 90, 90));
+        stats.setForeground(new Color(60, 60, 60));
 
-        JLabel livesLbl = new JLabel("Remaining lives: " + lives, SwingConstants.CENTER);
+        JLabel livesLbl = new JLabel("❤️ Remaining lives: " + lives, SwingConstants.CENTER);
         livesLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
         livesLbl.setFont(smallFont);
-        livesLbl.setForeground(new Color(90, 90, 90));
+        livesLbl.setForeground(new Color(60, 60, 60));
 
         JButton tryAgain = new JButton("Try Again");
-        JButton exit = new JButton("Exit");
+        JButton exit = new JButton("🚪 Exit");
+
+        tryAgain.setBackground(new Color(255, 120, 0));
+        tryAgain.setForeground(Color.WHITE);
+        tryAgain.setFocusPainted(false);
+        tryAgain.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 90, 0), 2, true),
+                BorderFactory.createEmptyBorder(6, 18, 6, 18)
+        ));
+        tryAgain.setOpaque(true);
+        tryAgain.setFont(new Font("Verdana", Font.BOLD, 13));
+
+        exit.setBackground(new Color(245, 245, 245));
+        exit.setForeground(new Color(60, 60, 60));
+        exit.setFocusPainted(false);
+        exit.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 180, 180), 2, true),
+                BorderFactory.createEmptyBorder(6, 18, 6, 18)
+        ));
+        exit.setOpaque(true);
+        exit.setFont(new Font("Verdana", Font.BOLD, 13));
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
         btns.setOpaque(false);
         btns.add(tryAgain);
         btns.add(exit);
 
+        card.add(Box.createVerticalStrut(14));
         card.add(title);
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(10));
         card.add(names);
         card.add(Box.createVerticalStrut(10));
         card.add(lvl);
@@ -753,10 +777,7 @@ public class gameView extends JFrame {
         return choice[0];
     }
 
-    // ====== ADDED: WIN dialog that looks exactly like the lose dialog, only text differs ======
-    private int showWinDialog(int finalScore) {
-
-        final int[] choice = { JOptionPane.NO_OPTION };
+    private void showWinDialog(int finalScore) {
 
         String p1 = model.getPlayer1Name();
         String p2 = model.getPlayer2Name();
@@ -764,6 +785,9 @@ public class gameView extends JFrame {
         int score = finalScore;
         int lives = model.getLivesRemaining();
         String time = getFormattedElapsedTime();
+
+        final Color headerLeft  = new Color(0, 200, 255);
+        final Color headerRight = new Color(0, 230, 140);
 
         final JDialog dialog = new JDialog(this, true);
         dialog.setUndecorated(true);
@@ -783,7 +807,7 @@ public class gameView extends JFrame {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 0, 0, 140));
+                g2.setColor(new Color(0, 0, 0, 150));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
             }
@@ -803,11 +827,19 @@ public class gameView extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                g2.setColor(new Color(255, 255, 255, 235));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                int arc = 22;
 
-                g2.setColor(new Color(255, 255, 255, 200));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
+                g2.setColor(new Color(248, 250, 255, 245));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+
+                g2.setStroke(new BasicStroke(3f));
+                g2.setColor(new Color(255, 255, 255, 220));
+                g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, arc, arc);
+
+                int headerH = 72;
+                GradientPaint gp = new GradientPaint(0, 0, headerLeft, getWidth(), 0, headerRight);
+                g2.setPaint(gp);
+                g2.fillRoundRect(0, 0, getWidth(), headerH, arc, arc);
 
                 g2.dispose();
             }
@@ -820,46 +852,67 @@ public class gameView extends JFrame {
         Font mainFont  = new Font("Serif", Font.PLAIN, 16);
         Font smallFont = new Font("Serif", Font.PLAIN, 14);
 
-        JLabel title = new JLabel("Victory!", SwingConstants.CENTER);
+        JLabel title = new JLabel("🏆 Victory!", SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setFont(titleFont);
-        title.setForeground(new Color(60, 60, 60));
+        title.setForeground(Color.WHITE);
 
         JLabel names = new JLabel(p1 + " & " + p2, SwingConstants.CENTER);
         names.setAlignmentX(Component.CENTER_ALIGNMENT);
         names.setFont(mainFont);
-        names.setForeground(new Color(70, 70, 70));
+        names.setForeground(new Color(40, 40, 40));
 
-        JLabel lvl = new JLabel("Level: " + level, SwingConstants.CENTER);
+        JLabel lvl = new JLabel("🎮 Level: " + level, SwingConstants.CENTER);
         lvl.setAlignmentX(Component.CENTER_ALIGNMENT);
         lvl.setFont(smallFont);
-        lvl.setForeground(new Color(90, 90, 90));
+        lvl.setForeground(new Color(70, 70, 70));
 
-        JLabel result = new JLabel("You cleared both boards. Nice work!", SwingConstants.CENTER);
+        JLabel result = new JLabel("✨ You cleared both boards. Nice work!", SwingConstants.CENTER);
         result.setAlignmentX(Component.CENTER_ALIGNMENT);
-        result.setFont(smallFont);
-        result.setForeground(new Color(90, 90, 90));
+        result.setFont(new Font("Serif", Font.BOLD, 15));
+        result.setForeground(new Color(80, 80, 80));
 
-        JLabel stats = new JLabel("Score: " + score + "  Time: " + time, SwingConstants.CENTER);
+        JLabel stats = new JLabel("⭐ Score: " + score + "   ⏱ Time: " + time, SwingConstants.CENTER);
         stats.setAlignmentX(Component.CENTER_ALIGNMENT);
         stats.setFont(smallFont);
-        stats.setForeground(new Color(90, 90, 90));
+        stats.setForeground(new Color(60, 60, 60));
 
-        JLabel livesLbl = new JLabel("Remaining lives: " + lives, SwingConstants.CENTER);
+        JLabel livesLbl = new JLabel("❤️ Remaining lives: " + lives, SwingConstants.CENTER);
         livesLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
         livesLbl.setFont(smallFont);
-        livesLbl.setForeground(new Color(90, 90, 90));
+        livesLbl.setForeground(new Color(60, 60, 60));
 
-        JButton playAgain = new JButton("Play Again");
+        JButton playAgain = new JButton("🔁 Play Again");
         JButton exit = new JButton("Exit");
+
+        playAgain.setBackground(new Color(0, 170, 255));
+        playAgain.setForeground(Color.WHITE);
+        playAgain.setFocusPainted(false);
+        playAgain.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0, 120, 200), 2, true),
+                BorderFactory.createEmptyBorder(6, 18, 6, 18)
+        ));
+        playAgain.setOpaque(true);
+        playAgain.setFont(new Font("Verdana", Font.BOLD, 13));
+
+        exit.setBackground(new Color(245, 245, 245));
+        exit.setForeground(new Color(60, 60, 60));
+        exit.setFocusPainted(false);
+        exit.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 180, 180), 2, true),
+                BorderFactory.createEmptyBorder(6, 18, 6, 18)
+        ));
+        exit.setOpaque(true);
+        exit.setFont(new Font("Verdana", Font.BOLD, 13));
 
         JPanel btns = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
         btns.setOpaque(false);
         btns.add(playAgain);
         btns.add(exit);
 
+        card.add(Box.createVerticalStrut(14));
         card.add(title);
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(10));
         card.add(names);
         card.add(Box.createVerticalStrut(10));
         card.add(lvl);
@@ -873,13 +926,13 @@ public class gameView extends JFrame {
         card.add(btns);
 
         playAgain.addActionListener(e -> {
-            choice[0] = JOptionPane.YES_OPTION;
             dialog.dispose();
+            controller.exitToHome();
         });
 
         exit.addActionListener(e -> {
-            choice[0] = JOptionPane.NO_OPTION;
             dialog.dispose();
+            controller.exitToHome();
         });
 
         overlay.add(cardWrapper, new GridBagConstraints());
@@ -888,8 +941,6 @@ public class gameView extends JFrame {
         dialog.validate();
         dialog.repaint();
         dialog.setVisible(true);
-
-        return choice[0];
     }
 
     private String capitalize(String s) {
