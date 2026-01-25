@@ -35,16 +35,28 @@ public class AddQuestionDialog extends JDialog {
 
         idField = new JTextField(String.valueOf(model.getNextId()));
         idField.setEditable(false);
+        styleTextBox(idField);
 
         questionField = new JTextField();
+        styleTextBox(questionField);
 
         difficultyBox = new JComboBox<>(new String[]{"Easy", "Medium", "Hard", "Expert"});
+        styleComboBox(difficultyBox);
+
         correctBox = new JComboBox<>(new String[]{"A", "B", "C", "D"});
+        styleComboBox(correctBox);
 
         aField = new JTextField();
+        styleTextBox(aField);
+
         bField = new JTextField();
+        styleTextBox(bField);
+
         cField = new JTextField();
+        styleTextBox(cField);
+
         dField = new JTextField();
+        styleTextBox(dField);
 
         form.add(new JLabel("ID:"));
         form.add(idField);
@@ -75,6 +87,9 @@ public class AddQuestionDialog extends JDialog {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         JButton save = new JButton("Save");
         JButton cancel = new JButton("Cancel");
+
+        styleButton(save);
+        styleButton(cancel);
 
         buttons.add(save);
         buttons.add(cancel);
@@ -118,5 +133,81 @@ public class AddQuestionDialog extends JDialog {
 
         JOptionPane.showMessageDialog(this, "Question added successfully!");
         dispose();
+    }
+
+    // ===== STYLE HELPERS ONLY =====
+    private void styleButton(JButton b) {
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setOpaque(false);
+        b.setBackground(new Color(255, 255, 255, 235));
+        b.setForeground(Color.BLACK);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setMargin(new Insets(8, 14, 8, 14));
+
+        final Color normalBg = b.getBackground();
+        final Color hoverBg = new Color(
+                normalBg.getRed(),
+                normalBg.getGreen(),
+                normalBg.getBlue(),
+                Math.min(255, normalBg.getAlpha() + 20)
+        );
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { b.setBackground(hoverBg); b.repaint(); }
+            @Override public void mouseExited (java.awt.event.MouseEvent e) { b.setBackground(normalBg); b.repaint(); }
+        });
+
+        b.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton btn = (AbstractButton) c;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int arc = 16;
+
+                g2.setColor(btn.getBackground());
+                g2.fillRoundRect(0, 0, btn.getWidth(), btn.getHeight(), arc, arc);
+
+                g2.setColor(new Color(200, 200, 200, 220));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(1, 1, btn.getWidth() - 3, btn.getHeight() - 3, arc, arc);
+
+                g2.dispose();
+                super.paint(g, c);
+            }
+        });
+    }
+
+    private void styleTextBox(JTextField f) {
+        f.setOpaque(false);
+        f.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+
+        f.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
+            @Override
+            protected void paintSafely(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int arc = 14;
+
+                g2.setColor(new Color(255, 255, 255, 230));
+                g2.fillRoundRect(0, 0, f.getWidth(), f.getHeight(), arc, arc);
+
+                g2.setColor(new Color(200, 200, 200, 220));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(1, 1, f.getWidth() - 3, f.getHeight() - 3, arc, arc);
+
+                g2.dispose();
+                super.paintSafely(g);
+            }
+        });
+    }
+
+    private void styleComboBox(JComboBox<?> cb) {
+        cb.setBackground(new Color(255, 255, 255, 235));
+        cb.setOpaque(true);
+        cb.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200, 220)));
     }
 }
