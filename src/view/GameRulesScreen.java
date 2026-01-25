@@ -16,7 +16,6 @@ public class GameRulesScreen extends JFrame {
 
     private boolean expanded = false;
 
-    // for resizing card nicely
     private RoundedPanel rulesCard;
 
     public GameRulesScreen(HomeScreen homeScreen) {
@@ -29,9 +28,6 @@ public class GameRulesScreen extends JFrame {
 
         // ===== TOP-RIGHT Back =====
         btnBack = new JButton("\u2190 Go Back");
-        btnBack.setFocusPainted(false);
-
-        // ✅ same rounded/glass style as HomeScreen
         styleButton(btnBack);
 
         GridBagConstraints gbcBack = new GridBagConstraints();
@@ -48,25 +44,32 @@ public class GameRulesScreen extends JFrame {
             dispose();
         });
 
-        // ===== CENTER content =====
-        JPanel center = new JPanel();
+        // ===== CENTER content (✅ GridBagLayout بدل BoxLayout) =====
+        JPanel center = new JPanel(new GridBagLayout());
         center.setOpaque(false);
-        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+
+        GridBagConstraints cc = new GridBagConstraints();
+        cc.gridx = 0;
+        cc.weightx = 1;
+        cc.fill = GridBagConstraints.HORIZONTAL;
 
         JLabel title = new JLabel("Game Rules", SwingConstants.CENTER);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Serif", Font.BOLD, 32));
 
         JLabel sub = new JLabel("Learn how to play before you start", SwingConstants.CENTER);
-        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
         sub.setForeground(Color.WHITE);
         sub.setFont(new Font("Serif", Font.PLAIN, 16));
 
-        center.add(title);
-        center.add(Box.createVerticalStrut(6));
-        center.add(sub);
-        center.add(Box.createVerticalStrut(18));
+        // title
+        cc.gridy = 0;
+        cc.insets = new Insets(0, 0, 6, 0);
+        center.add(title, cc);
+
+        // subtitle
+        cc.gridy = 1;
+        cc.insets = new Insets(0, 0, 18, 0);
+        center.add(sub, cc);
 
         // ===== Rules card (glass) =====
         rulesCard = new RoundedPanel(22, new Color(210, 222, 222, 230));
@@ -79,6 +82,7 @@ public class GameRulesScreen extends JFrame {
         txt.setLineWrap(true);
         txt.setWrapStyleWord(true);
         txt.setFont(new Font("Serif", Font.PLAIN, 15));
+        txt.setForeground(Color.BLACK); // ✅ ضمان لون واضح
 
         setCollapsedRules();
 
@@ -86,11 +90,9 @@ public class GameRulesScreen extends JFrame {
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
+        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         btnToggleRules = new JButton("Read more rules...");
-        btnToggleRules.setFocusPainted(false);
-
-        // ✅ optional: style toggle too (still not deleting anything)
         styleButton(btnToggleRules);
 
         JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -100,17 +102,20 @@ public class GameRulesScreen extends JFrame {
         rulesCard.add(scroll, BorderLayout.CENTER);
         rulesCard.add(bottomRow, BorderLayout.SOUTH);
 
-        // initial size (collapsed)
-        applyCardSize(false);
+        // ✅ أهم شيء: rulesCard ياخد مساحة فعلية داخل center
+        cc.gridy = 2;
+        cc.insets = new Insets(0, 0, 0, 0);
+        cc.fill = GridBagConstraints.BOTH;
+        cc.weighty = 1; // ✅ خلي الكارد يتمدد عموديًا
+        center.add(rulesCard, cc);
 
-        center.add(rulesCard);
-
+        // add center to background (middle area)
         GridBagConstraints gbcCenter = new GridBagConstraints();
         gbcCenter.gridx = 0;
         gbcCenter.gridy = 1;
         gbcCenter.weightx = 1;
         gbcCenter.weighty = 1;
-        gbcCenter.anchor = GridBagConstraints.CENTER;
+        gbcCenter.fill = GridBagConstraints.BOTH; // ✅ مهم
         gbcCenter.insets = new Insets(0, 25, 10, 25);
         bg.add(center, gbcCenter);
 
@@ -118,9 +123,6 @@ public class GameRulesScreen extends JFrame {
 
         // ===== BOTTOM-RIGHT Pick Level =====
         btnPickLevel = new JButton("Got it! Let's pick a level");
-        btnPickLevel.setFocusPainted(false);
-
-        // ✅ same rounded/glass style
         styleButton(btnPickLevel);
 
         GridBagConstraints gbcPick = new GridBagConstraints();
@@ -151,6 +153,9 @@ public class GameRulesScreen extends JFrame {
         gbcSpeaker.insets = new Insets(0, 10, 8, 0);
         bg.add(speaker, gbcSpeaker);
 
+        // initial sizing
+        applyCardSize(false);
+
         setMinimumSize(new Dimension(800, 550));
         setSize(950, 650);
         setLocationRelativeTo(null);
@@ -170,20 +175,21 @@ public class GameRulesScreen extends JFrame {
 
         applyCardSize(expanded);
 
+        // ✅ لا نستخدم pack() لأنه ممكن يصغّر الفريم!
         rulesCard.revalidate();
         rulesCard.repaint();
-        revalidate();
+        getContentPane().revalidate();
         repaint();
     }
 
-    // ✅ just change preferred sizes, no setBounds()
+    // ✅ now the layout respects this because rulesCard is in GridBag with weighty+fill BOTH
     private void applyCardSize(boolean expanded) {
         if (expanded) {
-            rulesCard.setPreferredSize(new Dimension(720, 360));
-            rulesCard.setMaximumSize(new Dimension(980, 420));
+            scroll.setPreferredSize(new Dimension(720, 360));
+            scroll.setMinimumSize(new Dimension(500, 240));
         } else {
-            rulesCard.setPreferredSize(new Dimension(720, 290));
-            rulesCard.setMaximumSize(new Dimension(980, 340));
+            scroll.setPreferredSize(new Dimension(720, 210));
+            scroll.setMinimumSize(new Dimension(500, 160));
         }
     }
 
@@ -206,9 +212,7 @@ public class GameRulesScreen extends JFrame {
     private void setExpandedRules() {
         txt.setText(
                 "1. Your goal: Reveal all safe squares on your board without hitting mines.\n\n" +
-                "2. Turns:\n" +
-                "   • Only the active player can play on their board.\n" +
-                "   • Normal reveals usually end your turn.\n\n" +
+                		  "2. Turns: Only the active player can play on their board.\n\n" +
                 "3. What happens when you click a square:\n" +
                 "   • Empty square → opens and triggers a cascade (auto-open).\n" +
                 "   • Number square (1–8) → shows how many mines touch it.\n" +
@@ -244,10 +248,9 @@ public class GameRulesScreen extends JFrame {
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);
-        b.setContentAreaFilled(false); // custom paint
+        b.setContentAreaFilled(false);
         b.setOpaque(false);
 
-        // keep your colors; only set if default
         if (b.getBackground() == null || b.getBackground().equals(new JButton().getBackground())) {
             b.setBackground(new Color(255, 255, 255, 235));
         }
@@ -281,11 +284,9 @@ public class GameRulesScreen extends JFrame {
 
                 int arc = 18;
 
-                // background
                 g2.setColor(btn.getBackground());
                 g2.fillRoundRect(0, 0, btn.getWidth(), btn.getHeight(), arc, arc);
 
-                // border
                 g2.setColor(new Color(200, 200, 200, 220));
                 g2.setStroke(new BasicStroke(2f));
                 g2.drawRoundRect(1, 1, btn.getWidth() - 3, btn.getHeight() - 3, arc, arc);
@@ -296,7 +297,6 @@ public class GameRulesScreen extends JFrame {
         });
     }
 
-    // ===== background scales automatically =====
     private static class BackgroundPanel extends JPanel {
         private static final long serialVersionUID = 1L;
         private Image bg;
