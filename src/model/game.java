@@ -30,6 +30,8 @@ public class game {
     // Question system (optional, only used if you still use QuestionBank somewhere)
     private Set<Integer> usedQuestionIds = new HashSet<>();
 
+    private boolean livesConverted = false;
+
     // ==========================================================
     // ✅ DEFAULT CONSTRUCTOR (must also build boards!)
     // ==========================================================
@@ -101,6 +103,18 @@ public class game {
             case HARD:
             default: return 12;
         }
+    }
+
+    public int convertRemainingLivesToPointsOnce() {
+        if (livesConverted) return 0;
+
+        int bonus = livesRemaining * getActivationCost();
+        score += bonus;
+
+        livesRemaining = 0;
+        livesConverted = true;
+
+        return bonus;
     }
 
     // ==========================================================

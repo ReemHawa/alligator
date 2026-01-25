@@ -205,14 +205,7 @@ public class gameController {
 
             if (model.isGameOver()) {
 
-                saveGameHistory("lost");
-
-                for (int i = 0; i < 2; i++) {
-                    view.revealAllMines(i, model.getBoard(i));
-                    view.revealAllSurprises(i, model.getBoard(i));
-                }
-
-                view.stopTimer();
+                onGameEnd("lost");
 
                 int choice = view.showGameOverDialog();
                 if (choice == JOptionPane.YES_OPTION) {
@@ -223,6 +216,7 @@ public class gameController {
                 }
                 return;
             }
+
         }
         // ===== SAFE CELL =====
         else {
@@ -510,14 +504,8 @@ public class gameController {
         view.updateLives(model.getLivesRemaining());
 
         if (model.isGameOver()) {
-            saveGameHistory("lost");
 
-            for (int i = 0; i < 2; i++) {
-                view.revealAllMines(i, model.getBoard(i));
-                view.revealAllSurprises(i, model.getBoard(i));
-            }
-
-            view.stopTimer();
+            onGameEnd("lost");
 
             int choice = view.showGameOverDialog();
             if (choice == JOptionPane.YES_OPTION) {
@@ -527,6 +515,7 @@ public class gameController {
                 System.exit(0);
             }
         }
+
     }
 
     private void activateQuestionCell(int boardIndex, int row, int col) {
@@ -1151,23 +1140,72 @@ public class gameController {
         if (s == null) return "";
         return s.replaceAll("\\<.*?\\>", "").trim();
     }
+    private void revealAllCellsOnBothBoards() {
+        for (int bi = 0; bi < 2; bi++) {
+            board b = model.getBoard(bi);
+
+            for (int r = 0; r < b.getRows(); r++) {
+                for (int c = 0; c < b.getCols(); c++) {
+
+                    // mines
+                    if (b.isMine(r, c)) {
+                        view.revealMineAuto(bi, r, c);
+                        continue;
+                    }
+
+                    // question cells
+                    if (b.isQuestionCell(r, c)) {
+                        if (b.isQuestionUsed(r, c)) {
+                            view.markQuestionUsed(bi, r, c);
+                        } else {
+                            view.revealQuestion(bi, r, c);
+                        }
+                        continue;
+                    }
+
+                    // surprise cells
+                    if (b.isSurprise(r, c)) {
+                        if (b.isSurpriseActivated(r, c)) {
+                            view.activateSurprise(bi, r, c);
+                        } else {
+                            view.revealSurprise(bi, r, c);
+                        }
+                        continue;
+                    }
+
+                    // normal safe cells
+                    int count = b.getSurroundingMines(r, c);
+                    view.revealSafeCell(bi, r, c, count);
+                }
+            }
+        }
+    }
+
 
 
     private void onGameEnd(String result) {
         if (model.isGameOver()) return;
 
+        // mark ended
         model.setGameOver(true);
+
+        // convert remaining lives to points (once)
+        int bonus = model.getLivesRemaining() * getActivationCost();
+        if (bonus > 0) {
+            model.addToScore(bonus);
+            if (view != null) view.updateScore(model.getScore());
+        }
+
+        // save
         saveGameHistory(result);
 
+        // stop + reveal everything
         if (view != null) {
             view.stopTimer();
-
-            for (int i = 0; i < 2; i++) {
-                view.revealAllMines(i, model.getBoard(i));
-                view.revealAllSurprises(i, model.getBoard(i));
-            }
+            revealAllCellsOnBothBoards();
         }
     }
+
 
     private void styleAnswerButton(JButton btn) {
         btn.setFocusPainted(false);
