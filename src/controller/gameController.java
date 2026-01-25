@@ -46,7 +46,7 @@ public class gameController {
     private List<model.Question> gameQuestions;
 
     // =========================
-    // ✅ NEW: FLAGS LIMIT SYSTEM
+    // FLAGS LIMIT SYSTEM
     // =========================
     private int maxFlagsPerPlayer = 0;
     private final int[] remainingFlags = new int[]{0, 0};
@@ -76,7 +76,7 @@ public class gameController {
         }
     }
 
-    // ✅ computes half-of-mines and sets per-player remaining counters
+    //  computes half-of-mines and sets per-player remaining counters
     private void initFlagsLimitAndUI() {
         int mines = model.getBoard(0).getMinesNum();   // same mines per board
         maxFlagsPerPlayer = mines ;                 // your rule: half of mines
@@ -237,6 +237,7 @@ public class gameController {
                 floodVisited = new boolean[b.getRows()][b.getCols()];
                 floodReveal(boardIndex, row, col);
             }
+            if (checkWinForBoard(boardIndex)) return;
         }
 
         if (model.isGameOver()) return;
@@ -261,7 +262,7 @@ public class gameController {
 
         board b = model.getBoard(boardIndex);
 
-        // ✅ if player used all flags -> block
+        //  if player used all flags -> block
         if (remainingFlags[boardIndex] <= 0) {
             JOptionPane.showMessageDialog(
                     view,
@@ -306,11 +307,11 @@ public class gameController {
         model.addToScore(delta);
         view.updateScore(model.getScore());
 
-        // ✅ consume 1 flag placement
+        //  consume 1 flag placement
         remainingFlags[boardIndex]--;
         view.updateRemainingFlags(boardIndex, remainingFlags[boardIndex]);
 
-        // ✅ cute message when last flag is used
+        //  cute message when last flag is used
         if (remainingFlags[boardIndex] == 0) {
             JOptionPane.showMessageDialog(
                     view,
@@ -327,12 +328,12 @@ public class gameController {
 
         if (checkWinForBoard(boardIndex)) return;
 
-        // ✅ IMPORTANT: DO NOT SWITCH TURN when placing a flag
+        //  IMPORTANT: DO NOT SWITCH TURN when placing a flag
         view.setActiveBoard(model.getCurrentPlayer());
     }
 
     // ====================================================
-    // ✅ NEW: RIGHT CLICK REMOVAL DOES NOT REFUND FLAGS
+    //  RIGHT CLICK REMOVAL DOES NOT REFUND FLAGS
     // ====================================================
     public void handleRightClick(int boardIndex, int row, int col) {
 
@@ -375,7 +376,7 @@ public class gameController {
             return;
         }
 
-        // ✅ confirmed → remove flag
+        // confirmed → remove flag
         b.removeFlag(row, col);
         view.removeFlag(boardIndex, row, col);
 
@@ -386,7 +387,7 @@ public class gameController {
                 JOptionPane.INFORMATION_MESSAGE
         );
 
-        // ✅ stay on same player's turn
+        //  stay on same player's turn
         view.setActiveBoard(model.getCurrentPlayer());
     }
 
@@ -403,7 +404,7 @@ public class gameController {
             return;
         }
 
-        // ✅ optional: if no flags left, don't even enable mode
+        //  if no flags left, don't even enable mode
         if (remainingFlags[boardIndex] <= 0) {
             JOptionPane.showMessageDialog(
                     view,
@@ -451,13 +452,8 @@ public class gameController {
         activateStep.run();
         if (model.isGameOver()) return false;
 
-        return true; // direct click activated it -> consume turn
+        return true; 
     }
-
-
-    // ====================================================
-    // =============== Your existing logic below ===========
-    // ====================================================
 
     private void activateSurpriseCell(int boardIndex, int row, int col) {
         board b = model.getBoard(boardIndex);
@@ -1198,7 +1194,8 @@ public class gameController {
 
 
     private void onGameEnd(String result) {
-        if (model.isGameOver()) return;
+        // prevent double-execution
+        if (historySaved) return;
 
         // mark ended
         model.setGameOver(true);
@@ -1210,10 +1207,10 @@ public class gameController {
             if (view != null) view.updateScore(model.getScore());
         }
 
-        // save
+        // save history
         saveGameHistory(result);
 
-        // stop + reveal everything
+        // stop timer + reveal everything
         if (view != null) {
             view.stopTimer();
             revealAllCellsOnBothBoards();
@@ -1351,8 +1348,8 @@ public class gameController {
         try {
             CSVHandler csv = new CSVHandler("ignored");
             gameQuestions = csv.readQuestions();
-            System.out.println("✅ GAME LOADED QUESTIONS: " + gameQuestions.size());
-            System.out.println("✅ QUESTIONS PATH: " + CSVHandler.getWritableQuestionsFile().getAbsolutePath());
+            System.out.println(" GAME LOADED QUESTIONS: " + gameQuestions.size());
+            System.out.println(" QUESTIONS PATH: " + CSVHandler.getWritableQuestionsFile().getAbsolutePath());
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed loading questions!", e);
             gameQuestions = new ArrayList<>();

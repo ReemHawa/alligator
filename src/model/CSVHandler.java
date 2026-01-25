@@ -103,7 +103,7 @@ public class CSVHandler {
         ensureQuestionsFileExists();
 
         File file = getWritableQuestionsFile();
-        System.out.println("✅ QUESTIONS FILE USED = " + file.getAbsolutePath());
+        System.out.println(" QUESTIONS FILE USED = " + file.getAbsolutePath());
 
         // Try UTF-8 first, then Windows-1252 (Excel on Windows sometimes saves this)
         List<Charset> tries = Arrays.asList(StandardCharsets.UTF_8, Charset.forName("windows-1252"));

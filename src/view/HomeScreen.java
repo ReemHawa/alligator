@@ -17,7 +17,6 @@ public class HomeScreen extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         BackgroundPanel bg = new BackgroundPanel();
-        // ✅ IMPORTANT: use layout manager (not null)
         bg.setLayout(new GridBagLayout());
         setContentPane(bg);
 
@@ -45,7 +44,7 @@ public class HomeScreen extends JFrame {
         btnViewQuestions = createWideButton("View Questions Management");
         btnStartNewGame = createWideButton("Start A New Game");
 
-        // ✅ apply rounded/glass style (without changing your colors)
+        //  apply rounded/glass style (without changing your colors)
         styleButton(btnViewHistory);
         styleButton(btnViewQuestions);
         styleButton(btnStartNewGame);
@@ -56,7 +55,7 @@ public class HomeScreen extends JFrame {
         center.add(Box.createVerticalStrut(18));
         center.add(btnStartNewGame);
 
-        // ✅ Add center panel, always centered
+        // Add center panel, always centered
         GridBagConstraints gbcCenter = new GridBagConstraints();
         gbcCenter.gridx = 0;
         gbcCenter.gridy = 0;
@@ -82,7 +81,7 @@ public class HomeScreen extends JFrame {
 
         new homeScreenController(this);
 
-        // ✅ Better resize behavior
+        // Better resize behavior
         setMinimumSize(new Dimension(800, 550));
         setSize(900, 600);
         setLocationRelativeTo(null);
@@ -93,14 +92,14 @@ public class HomeScreen extends JFrame {
         JButton b = new JButton(text);
         b.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // ✅ fixed nice size; stays centered on resize
+        //  fixed nice size; stays centered on resize
         b.setPreferredSize(new Dimension(320, 45));
         b.setMaximumSize(new Dimension(320, 45));
         b.setMinimumSize(new Dimension(320, 45));
         return b;
     }
 
-    // ✅ Rounded / glass button style (keeps your existing colors unless you set them elsewhere)
+    //  Rounded / glass button style (keeps your existing colors unless you set them elsewhere)
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);

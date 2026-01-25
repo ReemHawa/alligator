@@ -154,6 +154,7 @@ public class board {
 
     public void revealSurprise(int r, int c) {
         surpriseRevealed[r][c] = true;
+        revealed[r][c] = true;
     }
 
 
@@ -167,6 +168,8 @@ public class board {
 
     public void activateSurprise(int r, int c) {
         surpriseActivated[r][c] = true;
+        surpriseRevealed[r][c] = true;
+        revealed[r][c] = true;
     }
     
     public void setGoodSurprise(int r, int c, boolean good) {
@@ -286,7 +289,6 @@ public class board {
 	    questionUsed[r][c] = true;
 	}
 
-	//Q BOUNOS:
 	// BONUS reveal: mark as revealed without any game logic (no score/life changes)
 	public void revealBonusCell(int r, int c) {
 	    if (r < 0 || r >= rows || c < 0 || c >= cols) return;
@@ -335,13 +337,7 @@ public class board {
     }
 
 
-
-
-  
-
-    /* ======================================================
-       REQUIRED BY game.java
-       ====================================================== */
+    
     public int getMinesNum() {
         return minesNum;
     }
@@ -353,6 +349,20 @@ public class board {
                 if (mines[r][c] && (revealed[r][c] || flagged[r][c]))
                     count++;
         return count;
+    }
+    
+    public boolean allSafeCellsRevealed() {
+        int safeTotal = (rows * cols) - minesNum;
+
+        int safeRevealed = 0;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (!mines[r][c] && revealed[r][c]) {
+                    safeRevealed++;
+                }
+            }
+        }
+        return safeRevealed == safeTotal;
     }
 
     /* ======================================================

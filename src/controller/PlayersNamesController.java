@@ -53,7 +53,7 @@ public class PlayersNamesController {
         view.setVisible(false);
     }
 
-    // ✅ NEW validation: returns null if valid, otherwise returns a message
+    // returns null if valid, otherwise returns a message
     private String validateName(String name) {
         if (name == null) return "Name is required.";
 
@@ -70,7 +70,7 @@ public class PlayersNamesController {
         return null;
     }
 
-    // ✅ COMPATIBILITY: if other code still calls isValidName(...)
+    // if other code still calls isValidName(...)
     public boolean isValidName(String name) {
         return validateName(name) == null;
     }

@@ -212,7 +212,9 @@ public class GameRulesScreen extends JFrame {
     private void setExpandedRules() {
         txt.setText(
                 "1. Your goal: Reveal all safe squares on your board without hitting mines.\n\n" +
-                		  "2. Turns: Only the active player can play on their board.\n\n" +
+                "2. Turns:\n" +
+                "   • Only the active player can play on their board.\n" +
+                "   • Normal reveals usually end your turn.\n\n" +
                 "3. What happens when you click a square:\n" +
                 "   • Empty square → opens and triggers a cascade (auto-open).\n" +
                 "   • Number square (1–8) → shows how many mines touch it.\n" +

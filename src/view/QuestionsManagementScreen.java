@@ -144,7 +144,7 @@ public class QuestionsManagementScreen extends JFrame {
         questionsTable.setFillsViewportHeight(true);
         questionsTable.setRowHeight(42);
 
-        // ✅ No auto resize -> horizontal scroll if needed
+        //  No auto resize -> horizontal scroll if needed
         questionsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         sorter = new TableRowSorter<>(tableModel);
@@ -192,7 +192,7 @@ public class QuestionsManagementScreen extends JFrame {
         wireSearchAndFilters();
         updateCounter();
 
-        // ✅ On resize/maximize -> recalc heights
+        //  On resize/maximize -> recalc heights
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -203,7 +203,7 @@ public class QuestionsManagementScreen extends JFrame {
         setVisible(true);
     }
 
-    // ✅ ONLY button styles helper (rounded/glass like HomeScreen)
+    //  ONLY button styles helper (rounded/glass like HomeScreen)
     private void styleButton(JButton b) {
         b.setBorderPainted(false);
         b.setContentAreaFilled(false);
@@ -254,7 +254,7 @@ public class QuestionsManagementScreen extends JFrame {
         });
     }
 
-    // ✅ ONLY style for search field (rounded glass)
+    //  ONLY style for search field (rounded glass)
     private void styleTextBox(JTextField f) {
         f.setOpaque(false);
         f.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
@@ -280,7 +280,7 @@ public class QuestionsManagementScreen extends JFrame {
         });
     }
 
-    // ✅ ONLY style for difficulty dropdown (glass + rounded)
+    //  ONLY style for difficulty dropdown (glass + rounded)
     private void styleComboBox(JComboBox<?> cb) {
         cb.setBackground(new Color(255, 255, 255, 235));
         cb.setOpaque(true);
@@ -363,7 +363,7 @@ public class QuestionsManagementScreen extends JFrame {
         counterLabel.setText("Showing: " + shown + " / " + total);
     }
 
-    // ✅ ensures full visibility after changes
+    //  ensures full visibility after changes
     private void recalcAllRowHeights() {
         for (int row = 0; row < questionsTable.getRowCount(); row++) {
             int maxH = 42; // minimum
@@ -441,7 +441,7 @@ public class QuestionsManagementScreen extends JFrame {
                 setForeground(Color.BLACK);
             }
 
-            // ✅ set width so preferred height is correct
+            //  set width so preferred height is correct
             int width = table.getColumnModel().getColumn(column).getWidth();
             setSize(new Dimension(width, Short.MAX_VALUE));
 
@@ -449,7 +449,7 @@ public class QuestionsManagementScreen extends JFrame {
         }
     }
 
-    // ===== Background Panel (✅ JAR SAFE) =====
+    // ===== Background Panel  =====
     private static class BackgroundPanel extends JPanel {
         private static final long serialVersionUID = 1L;
         private final Image img;

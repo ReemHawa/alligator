@@ -24,7 +24,7 @@ public class gameHistoryView extends JFrame {
         JButton btnBack = new JButton("\u2190 Go Back");
         btnBack.setFocusPainted(false);
 
-        // ✅ make it SAME style as HomeScreen buttons
+        //  make it SAME style as HomeScreen buttons
         styleButton(btnBack);
 
         GridBagConstraints gbcBack = new GridBagConstraints();
@@ -144,7 +144,7 @@ public class gameHistoryView extends JFrame {
         setVisible(true);
     }
 
-    // ✅ SAME button style as HomeScreen
+    //  SAME button style as HomeScreen
     private void styleButton(JButton b) {
         b.setFocusPainted(false);
         b.setBorderPainted(false);
