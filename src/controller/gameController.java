@@ -445,7 +445,11 @@ public class gameController {
 
         if (!isRevealed) {
             revealStep.run();
-            return true; // direct click revealed it -> consume turn
+            if (model.isGameOver()) return false;
+
+            model.switchTurn();
+            view.setActiveBoard(model.getCurrentPlayer());
+            return true;
         }
 
         activateStep.run();
