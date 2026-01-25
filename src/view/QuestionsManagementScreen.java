@@ -50,9 +50,13 @@ public class QuestionsManagementScreen extends JFrame {
 
         backButton = new JButton("← Go Back");
         backButton.setFont(new Font("Arial", Font.BOLD, 16));
+        backButton.setFocusPainted(false);
+        styleButton(backButton);
 
         addQuestionButton = new JButton("+ Add Question");
         addQuestionButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addQuestionButton.setFocusPainted(false);
+        styleButton(addQuestionButton);
 
         JLabel titleLabel = new JLabel("Questions Management", SwingConstants.CENTER);
         titleLabel.setForeground(Color.WHITE);
@@ -77,6 +81,7 @@ public class QuestionsManagementScreen extends JFrame {
         searchField = new JTextField(30);
         searchField.setFont(new Font("Arial", Font.PLAIN, 14));
         searchField.setToolTipText("Search across question & answers...");
+        styleTextBox(searchField);
 
         leftTools.add(searchLbl);
         leftTools.add(searchField);
@@ -88,12 +93,16 @@ public class QuestionsManagementScreen extends JFrame {
 
         difficultyFilter = new JComboBox<>(new String[] { "All", "Easy", "Medium", "Hard", "Expert" });
         difficultyFilter.setFont(new Font("Arial", Font.PLAIN, 14));
+        styleComboBox(difficultyFilter);
 
         leftTools.add(diffLbl);
         leftTools.add(difficultyFilter);
 
         resetFiltersButton = new JButton("Reset");
         resetFiltersButton.setFont(new Font("Arial", Font.BOLD, 13));
+        resetFiltersButton.setFocusPainted(false);
+        styleButton(resetFiltersButton);
+
         leftTools.add(Box.createHorizontalStrut(12));
         leftTools.add(resetFiltersButton);
 
@@ -192,6 +201,101 @@ public class QuestionsManagementScreen extends JFrame {
         });
 
         setVisible(true);
+    }
+
+    // ✅ ONLY button styles helper (rounded/glass like HomeScreen)
+    private void styleButton(JButton b) {
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setOpaque(false);
+
+        if (b.getBackground() == null || b.getBackground().equals(new JButton().getBackground())) {
+            b.setBackground(new Color(255, 255, 255, 235));
+        }
+        if (b.getForeground() == null || b.getForeground().equals(new JButton().getForeground())) {
+            b.setForeground(Color.BLACK);
+        }
+
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setMargin(new Insets(10, 18, 10, 18));
+
+        final Color normalBg = b.getBackground();
+        final Color hoverBg = new Color(
+                normalBg.getRed(),
+                normalBg.getGreen(),
+                normalBg.getBlue(),
+                Math.min(255, normalBg.getAlpha() + 18)
+        );
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { b.setBackground(hoverBg); b.repaint(); }
+            @Override public void mouseExited (java.awt.event.MouseEvent e) { b.setBackground(normalBg); b.repaint(); }
+        });
+
+        b.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton btn = (AbstractButton) c;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int arc = 18;
+
+                g2.setColor(btn.getBackground());
+                g2.fillRoundRect(0, 0, btn.getWidth(), btn.getHeight(), arc, arc);
+
+                g2.setColor(new Color(200, 200, 200, 220));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(1, 1, btn.getWidth() - 3, btn.getHeight() - 3, arc, arc);
+
+                g2.dispose();
+                super.paint(g, c);
+            }
+        });
+    }
+
+    // ✅ ONLY style for search field (rounded glass)
+    private void styleTextBox(JTextField f) {
+        f.setOpaque(false);
+        f.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+
+        f.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
+            @Override
+            protected void paintSafely(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int arc = 16;
+
+                g2.setColor(new Color(255, 255, 255, 230));
+                g2.fillRoundRect(0, 0, f.getWidth(), f.getHeight(), arc, arc);
+
+                g2.setColor(new Color(200, 200, 200, 220));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(1, 1, f.getWidth() - 3, f.getHeight() - 3, arc, arc);
+
+                g2.dispose();
+                super.paintSafely(g);
+            }
+        });
+    }
+
+    // ✅ ONLY style for difficulty dropdown (glass + rounded)
+    private void styleComboBox(JComboBox<?> cb) {
+        cb.setBackground(new Color(255, 255, 255, 235));
+        cb.setOpaque(true);
+        cb.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200, 220)));
+
+        cb.setRenderer(new DefaultListCellRenderer() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+                JLabel l = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                l.setBorder(new EmptyBorder(6, 10, 6, 10));
+                return l;
+            }
+        });
     }
 
     // ===== PUBLIC GETTERS =====

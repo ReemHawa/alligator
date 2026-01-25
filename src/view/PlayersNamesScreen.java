@@ -35,6 +35,11 @@ public class PlayersNamesScreen extends JFrame {
 
         // ===== TOP-RIGHT Back =====
         btnBack = new JButton("\u2190 Go Back");
+        btnBack.setFocusPainted(false);
+
+        // ✅ ONLY button style change
+        styleButton(btnBack);
+
         GridBagConstraints gbcBack = new GridBagConstraints();
         gbcBack.gridx = 0;
         gbcBack.gridy = 0;
@@ -89,6 +94,10 @@ public class PlayersNamesScreen extends JFrame {
         btnPlay.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnPlay.setPreferredSize(new Dimension(220, 45));
         btnPlay.setMaximumSize(new Dimension(220, 45));
+
+        // ✅ ONLY button style change
+        styleButton(btnPlay);
+
         center.add(btnPlay);
 
         GridBagConstraints gbcCenter = new GridBagConstraints();
@@ -171,6 +180,58 @@ public class PlayersNamesScreen extends JFrame {
                     field.setForeground(new Color(180, 180, 180));
                 }
                 if (controller != null) controller.onInputChanged();
+            }
+        });
+    }
+
+    // ✅ ONLY button styles helper (rounded/glass like HomeScreen)
+    private void styleButton(JButton b) {
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setOpaque(false);
+
+        if (b.getBackground() == null || b.getBackground().equals(new JButton().getBackground())) {
+            b.setBackground(new Color(255, 255, 255, 235));
+        }
+        if (b.getForeground() == null || b.getForeground().equals(new JButton().getForeground())) {
+            b.setForeground(Color.BLACK);
+        }
+
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setMargin(new Insets(10, 18, 10, 18));
+
+        final Color normalBg = b.getBackground();
+        final Color hoverBg = new Color(
+                normalBg.getRed(),
+                normalBg.getGreen(),
+                normalBg.getBlue(),
+                Math.min(255, normalBg.getAlpha() + 18)
+        );
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) { b.setBackground(hoverBg); b.repaint(); }
+            @Override public void mouseExited (java.awt.event.MouseEvent e) { b.setBackground(normalBg); b.repaint(); }
+        });
+
+        b.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton btn = (AbstractButton) c;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int arc = 18;
+
+                g2.setColor(btn.getBackground());
+                g2.fillRoundRect(0, 0, btn.getWidth(), btn.getHeight(), arc, arc);
+
+                g2.setColor(new Color(200, 200, 200, 220));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(1, 1, btn.getWidth() - 3, btn.getHeight() - 3, arc, arc);
+
+                g2.dispose();
+                super.paint(g, c);
             }
         });
     }
